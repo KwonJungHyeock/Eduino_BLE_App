@@ -208,11 +208,21 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             const Icon(Icons.bluetooth_disabled,
                 size: 40, color: AppColors.textMuted),
             Gap.h16,
-            Text('권한이 없어 스캔할 수 없습니다.',
+            Text('블루투스 권한이 필요합니다.',
                 style: AppType.mono(size: 13, color: AppColors.textMuted)),
+            Gap.h4,
+            Text('권한을 거부했다면 설정에서 직접 허용해 주세요.',
+                textAlign: TextAlign.center,
+                style: AppType.mono(size: 11, color: AppColors.textMuted)),
             Gap.h16,
             FilledButton(
                 onPressed: _requestPerms, child: const Text('권한 다시 요청')),
+            Gap.h8,
+            OutlinedButton.icon(
+              onPressed: openAppSettings,
+              icon: const Icon(Icons.settings, size: 18),
+              label: const Text('설정 열기'),
+            ),
           ],
         ),
       );

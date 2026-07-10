@@ -92,12 +92,41 @@ class ControllerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final connected = ref.watch(connectionProvider).isConnected;
     final car = ref.read(carControllerProvider);
+    // 마지막으로 보낸 명령(교육용 표시 R1).
+    final outs = ref
+        .watch(terminalProvider)
+        .where((e) => e.dir == LogDir.out)
+        .toList();
+    final lastCmd = outs.isEmpty ? '—' : outs.last.text;
 
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(Gap.md),
         child: Column(
           children: [
+            // 보내는 명령 실시간 표시
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: Gap.md, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.signalTint,
+                borderRadius: Radii.pill,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('보내는 명령  ',
+                      style: AppType.mono(size: 12, color: AppColors.textMuted)),
+                  Text(lastCmd,
+                      style: AppType.mono(
+                          size: 15,
+                          weight: FontWeight.w700,
+                          color: AppColors.signalDeep)),
+                ],
+              ),
+            ),
+            Gap.h8,
             Expanded(
               child: Center(
                 child: _DPad(

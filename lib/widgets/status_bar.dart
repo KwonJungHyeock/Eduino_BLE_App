@@ -3,7 +3,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../app/router.dart';
 import '../app/theme.dart';
 import '../core/bt/bt_transport.dart';
 import '../providers/bt_providers.dart';
@@ -18,6 +20,7 @@ class StatusBar extends ConsumerWidget {
     final tele = ref.watch(telemetryProvider);
     final device = ref.watch(transportProvider).connectedDevice;
     final module = ref.watch(moduleProvider).valueOrNull ?? BtModule.ble;
+    final connected = conn == BtConnectionState.connected;
 
     final (color, label) = switch (conn) {
       BtConnectionState.connected => (AppColors.signal, '연결됨'),
@@ -27,39 +30,53 @@ class StatusBar extends ConsumerWidget {
       BtConnectionState.disconnected => (AppColors.textMuted, '미연결'),
     };
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: 10),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          _Dot(color: color, pulse: conn == BtConnectionState.connected),
-          Gap.w8,
-          Text(label, style: AppType.mono(size: 12, color: color)),
-          Gap.w8,
-          Container(width: 1, height: 14, color: AppColors.border),
-          Gap.w8,
-          _Chip(text: module.title),
-          Gap.w8,
-          Flexible(
-            child: Text(
-              device?.displayName ?? '기기 없음',
-              overflow: TextOverflow.ellipsis,
-              style: AppType.mono(size: 12, color: AppColors.textPrimary),
-            ),
+    return Material(
+      color: connected ? AppColors.surface : AppColors.warn.withValues(alpha: 0.10),
+      child: InkWell(
+        // 상태바 탭 → 연결 화면(끊겼을 때 바로 재연결). 편의성(B2).
+        onTap: () => context.push(Routes.connect),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: 10),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: AppColors.border)),
           ),
-          const Spacer(),
-          if (tele.distanceCm != null) ...[
-            _metric(Icons.straighten, '${tele.distanceCm}cm'),
-            Gap.w8,
-          ],
-          _metric(
-            Icons.battery_full,
-            tele.batteryPercent != null ? '${tele.batteryPercent}%' : '--',
+          child: Row(
+            children: [
+              _Dot(color: color, pulse: connected),
+              Gap.w8,
+              Text(label, style: AppType.mono(size: 12, color: color)),
+              Gap.w8,
+              Container(width: 1, height: 14, color: AppColors.border),
+              Gap.w8,
+              _Chip(text: module.title),
+              Gap.w8,
+              Flexible(
+                child: Text(
+                  connected ? (device?.displayName ?? '') : '탭하여 연결',
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.mono(
+                    size: 12,
+                    color: connected ? AppColors.textPrimary : AppColors.warn,
+                    weight: connected ? FontWeight.w500 : FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              if (connected && tele.distanceCm != null) ...[
+                _metric(Icons.straighten, '${tele.distanceCm}cm'),
+                Gap.w8,
+              ],
+              if (connected)
+                _metric(
+                  Icons.battery_full,
+                  tele.batteryPercent != null ? '${tele.batteryPercent}%' : '--',
+                )
+              else
+                const Icon(Icons.chevron_right,
+                    size: 18, color: AppColors.warn),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

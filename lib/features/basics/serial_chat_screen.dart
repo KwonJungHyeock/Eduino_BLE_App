@@ -30,13 +30,19 @@ class _SerialChatScreenState extends ConsumerState<SerialChatScreen> {
     super.dispose();
   }
 
-  void _send() {
-    final t = _input.text.trim();
-    if (t.isEmpty) return;
+  static const List<String> _presets = ['안녕하세요', 'hello', 'LED ON', 'LED OFF', '1', '0'];
+
+  void _sendText(String t) {
+    final text = t.trim();
+    if (text.isEmpty) return;
     HapticFeedback.selectionClick();
-    ref.read(carControllerProvider).sendPlain(t);
-    _input.clear();
+    ref.read(carControllerProvider).sendPlain(text);
     _scrollToEnd();
+  }
+
+  void _send() {
+    _sendText(_input.text);
+    _input.clear();
   }
 
   void _scrollToEnd() {
@@ -65,9 +71,29 @@ class _SerialChatScreenState extends ConsumerState<SerialChatScreen> {
           color: AppColors.signalTint,
           padding:
               const EdgeInsets.symmetric(horizontal: Gap.md, vertical: Gap.sm),
-          child: Text(
-            '앱에서 보낸 글자는 아두이노를 거쳐 PC 시리얼 모니터에 뜨고, PC에서 입력한 글자는 여기로 옵니다. (9600 bps)',
-            style: AppType.mono(size: 11, color: AppColors.textMuted, height: 1.4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '앱↔아두이노↔PC 시리얼 모니터로 글자를 주고받습니다. (9600 bps)',
+                  style: AppType.mono(
+                      size: 11, color: AppColors.textMuted, height: 1.4),
+                ),
+              ),
+              if (chat.isNotEmpty)
+                GestureDetector(
+                  onTap: () => ref.read(terminalProvider.notifier).clear(),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.delete_outline,
+                          size: 16, color: AppColors.textMuted),
+                      Text('지우기',
+                          style: AppType.mono(
+                              size: 11, color: AppColors.textMuted)),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
         Expanded(
@@ -85,6 +111,28 @@ class _SerialChatScreenState extends ConsumerState<SerialChatScreen> {
                   itemBuilder: (context, i) => _Bubble(entry: chat[i]),
                 ),
         ),
+        // 자주 쓰는 문장 프리셋
+        if (connected)
+          SizedBox(
+            height: 40,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: Gap.md),
+              itemCount: _presets.length,
+              separatorBuilder: (_, __) => Gap.w8,
+              itemBuilder: (context, i) => Center(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    side: const BorderSide(color: AppColors.border),
+                  ),
+                  onPressed: () => _sendText(_presets[i]),
+                  child: Text(_presets[i], style: AppType.mono(size: 12)),
+                ),
+              ),
+            ),
+          ),
         _InputBar(controller: _input, enabled: connected, onSend: _send),
       ],
     );
@@ -136,10 +184,24 @@ class _Bubble extends StatelessWidget {
                 color: mine ? Colors.white : AppColors.textPrimary,
               ),
             ),
+            const SizedBox(height: 2),
+            Text(
+              _hhmm(entry.atMillis),
+              style: AppType.mono(
+                size: 9,
+                color: mine ? Colors.white70 : AppColors.textMuted,
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  static String _hhmm(int ms) {
+    final d = DateTime.fromMillisecondsSinceEpoch(ms);
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
   }
 }
 
