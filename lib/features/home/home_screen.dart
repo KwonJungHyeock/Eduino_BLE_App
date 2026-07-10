@@ -72,7 +72,7 @@ class HomeScreen extends ConsumerWidget {
             _MenuTile(
               icon: Icons.sports_esports_outlined,
               title: '블루투스 컨트롤러',
-              subtitle: '조이스틱·방향·기울기·음성·LED·자율주행',
+              subtitle: '조이스틱 · 방향 · 기울기 · 음성 · LED',
               onTap: () => context.push(Routes.controller),
             ),
             Gap.h8,

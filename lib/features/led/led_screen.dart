@@ -1,5 +1,5 @@
 // Author: eduino
-// LED 제어 (§5.5): ON/OFF + 프리셋 컬러(LED:r,g,b) + 밝기 표현. 게임패드 톤과 맞춘 라이트 UI.
+// LED 제어 (§5.5): 보드 13번 핀 ON/OFF (digitalWrite). 단순·명확한 큰 토글.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
-import '../../widgets/surface_card.dart';
 
 class LedScreen extends ConsumerStatefulWidget {
   const LedScreen({super.key});
@@ -19,35 +18,11 @@ class LedScreen extends ConsumerStatefulWidget {
 
 class _LedScreenState extends ConsumerState<LedScreen> {
   bool _on = false;
-  Color _color = const Color(0xFF1C7DF3);
 
-  static const List<Color> _presets = [
-    Color(0xFFE53935), // red
-    Color(0xFFF59E0B), // amber
-    Color(0xFF43A047), // green
-    Color(0xFF1C7DF3), // blue
-    Color(0xFF8E24AA), // purple
-    Color(0xFF00BCD4), // cyan
-    Color(0xFFFFFFFF), // white
-  ];
-
-  void _toggle(bool v) {
-    HapticFeedback.selectionClick();
+  void _set(bool v) {
+    HapticFeedback.mediumImpact();
     setState(() => _on = v);
     ref.read(carControllerProvider).ledOnOff(v);
-  }
-
-  void _pick(Color c) {
-    HapticFeedback.selectionClick();
-    setState(() {
-      _color = c;
-      _on = true;
-    });
-    ref.read(carControllerProvider).ledRgb(
-          (c.r * 255).round(),
-          (c.g * 255).round(),
-          (c.b * 255).round(),
-        );
   }
 
   @override
@@ -56,80 +31,67 @@ class _LedScreenState extends ConsumerState<LedScreen> {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(Gap.md),
+        padding: const EdgeInsets.all(Gap.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 현재 상태 프리뷰
-            SurfaceCard(
-              child: Column(
-                children: [
-                  Container(
-                    height: 96,
-                    decoration: BoxDecoration(
-                      color: _on ? _color : AppColors.surfaceHigh,
-                      borderRadius: Radii.card,
-                      boxShadow: _on
-                          ? [
-                              BoxShadow(
-                                color: _color.withValues(alpha: 0.5),
-                                blurRadius: 28,
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        _on ? Icons.lightbulb : Icons.lightbulb_outline,
-                        color: _on ? Colors.white : AppColors.textMuted,
-                        size: 40,
-                      ),
-                    ),
+            const Spacer(),
+            // 큰 전구 프리뷰
+            Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 180,
+                height: 180,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _on ? AppColors.warn : AppColors.surface,
+                  border: Border.all(
+                    color: _on ? AppColors.warn : AppColors.border,
+                    width: 2,
                   ),
-                  Gap.h16,
-                  Row(
-                    children: [
-                      Text('전원',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w700)),
-                      const Spacer(),
-                      Switch(
-                        value: _on,
-                        onChanged: connected ? _toggle : null,
-                      ),
-                    ],
-                  ),
-                ],
+                  boxShadow: _on
+                      ? [
+                          BoxShadow(
+                            color: AppColors.warn.withValues(alpha: 0.5),
+                            blurRadius: 48,
+                            spreadRadius: 4,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Icon(
+                  _on ? Icons.lightbulb : Icons.lightbulb_outline,
+                  size: 84,
+                  color: _on ? Colors.white : AppColors.textMuted,
+                ),
               ),
             ),
             Gap.h24,
-            Text('컬러 (RGB)',
-                style: AppType.mono(
-                    size: 12, color: AppColors.textMuted, letterSpacing: 2)),
+            Center(
+              child: Text(
+                _on ? 'ON' : 'OFF',
+                style: AppType.instrument(
+                    size: 40, color: _on ? AppColors.warn : AppColors.textMuted),
+              ),
+            ),
             Gap.h8,
-            Wrap(
-              spacing: Gap.md,
-              runSpacing: Gap.md,
-              children: [
-                for (final c in _presets)
-                  _Swatch(
-                    color: c,
-                    selected: _on && _color.toARGB32() == c.toARGB32(),
-                    enabled: connected,
-                    onTap: () => _pick(c),
-                  ),
-              ],
+            Center(
+              child: Text('보드 13번 핀 (digitalWrite)',
+                  style: AppType.mono(size: 12, color: AppColors.textMuted)),
             ),
             const Spacer(),
-            if (!connected)
-              Text('연결 후 사용할 수 있어요.',
-                  textAlign: TextAlign.center,
-                  style: AppType.mono(size: 12, color: AppColors.textMuted)),
-            Text(
-              '단색 LED면 ON/OFF만, 네오픽셀이면 컬러가 반영됩니다.',
-              textAlign: TextAlign.center,
-              style: AppType.mono(size: 11, color: AppColors.textMuted),
+            // 큰 토글 버튼
+            _BigToggle(
+              on: _on,
+              enabled: connected,
+              onTap: () => _set(!_on),
             ),
+            Gap.h16,
+            if (!connected)
+              Center(
+                child: Text('연결 후 사용할 수 있어요.',
+                    style: AppType.mono(size: 12, color: AppColors.textMuted)),
+              ),
           ],
         ),
       ),
@@ -137,15 +99,13 @@ class _LedScreenState extends ConsumerState<LedScreen> {
   }
 }
 
-class _Swatch extends StatelessWidget {
-  const _Swatch({
-    required this.color,
-    required this.selected,
+class _BigToggle extends StatelessWidget {
+  const _BigToggle({
+    required this.on,
     required this.enabled,
     required this.onTap,
   });
-  final Color color;
-  final bool selected;
+  final bool on;
   final bool enabled;
   final VoidCallback onTap;
 
@@ -153,28 +113,36 @@ class _Swatch extends StatelessWidget {
   Widget build(BuildContext context) {
     return Opacity(
       opacity: enabled ? 1 : 0.5,
-      child: GestureDetector(
+      child: InkWell(
         onTap: enabled ? onTap : null,
+        borderRadius: Radii.pill,
         child: Container(
-          width: 56,
-          height: 56,
+          height: 64,
           decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: selected ? AppColors.signal : AppColors.border,
-              width: selected ? 3 : 1,
-            ),
+            color: on ? AppColors.accent : AppColors.signal,
+            borderRadius: Radii.pill,
             boxShadow: [
               BoxShadow(
-                  color: color.withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3)),
+                color: (on ? AppColors.accent : AppColors.signal)
+                    .withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
             ],
           ),
-          child: selected
-              ? const Icon(Icons.check, color: Colors.white, size: 22)
-              : null,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(on ? Icons.power_settings_new : Icons.power_settings_new,
+                  color: Colors.white, size: 24),
+              Gap.w8,
+              Text(on ? '끄기' : '켜기',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800)),
+            ],
+          ),
         ),
       ),
     );
