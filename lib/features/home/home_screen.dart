@@ -12,6 +12,7 @@ import '../../app/theme.dart';
 import '../../core/bt/bt_transport.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
+import '../../providers/module_providers.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -62,9 +63,9 @@ class HomeScreen extends ConsumerWidget {
             ),
             Gap.h8,
             _MenuTile(
-              icon: Icons.school_outlined,
-              title: '통신 기초 예제',
-              subtitle: '명령을 보내며 배우는 "보이는 통신"',
+              icon: Icons.forum_outlined,
+              title: '시리얼 통신 채팅',
+              subtitle: '앱 ↔ PC 시리얼 모니터 문자 주고받기 실습',
               onTap: () => context.push(Routes.basics),
             ),
             Gap.h8,
@@ -78,6 +79,16 @@ class HomeScreen extends ConsumerWidget {
             Text('내 장비',
                 style: AppType.mono(
                     size: 12, color: AppColors.textMuted, letterSpacing: 2)),
+            Gap.h8,
+            _MenuTile(
+              icon: Icons.settings_bluetooth,
+              title: '블루투스 모듈',
+              subtitle: ref.watch(moduleProvider).valueOrNull == null
+                  ? 'HM-10 / HC-06 선택'
+                  : '선택됨: ${ref.watch(moduleProvider).valueOrNull!.title} · 변경',
+              accent: AppColors.signal,
+              onTap: () => context.push(Routes.module),
+            ),
             Gap.h8,
             _MenuTile(
               icon: Icons.smart_toy_outlined,
@@ -103,6 +114,7 @@ class _StatusCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final device = ref.watch(bleTransportProvider).connectedDevice;
+    final module = ref.watch(moduleProvider).valueOrNull;
     final connected = conn.isConnected;
     final (color, label) = switch (conn) {
       BtConnectionState.connected => (AppColors.signal, '연결됨'),
@@ -157,7 +169,8 @@ class _StatusCard extends ConsumerWidget {
                 ),
                 Gap.h4,
                 Text(
-                  kit == null ? '키트 미선택' : '키트: ${kit.name}',
+                  '${module == null ? "모듈 미선택" : "모듈: ${module.shortName}"}'
+                  ' · ${kit == null ? "키트 미선택" : kit.name}',
                   style: AppType.mono(size: 12, color: AppColors.textMuted),
                 ),
               ],

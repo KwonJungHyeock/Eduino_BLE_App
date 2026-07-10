@@ -29,8 +29,11 @@ class _AutonomousScreenState extends ConsumerState<AutonomousScreen> {
   int _obstDist = 20; // DIST cm
   int _autoSpeed = 60; // SPD 0-100
 
+  bool _auto = false; // 앱이 의도한 현재 모드(펌웨어 응답을 기다리지 않고 즉시 반영).
+
   void _setMode(DriveMode mode) {
     HapticFeedback.selectionClick();
+    setState(() => _auto = mode == DriveMode.auto);
     ref.read(carControllerProvider).setMode(mode);
   }
 
@@ -46,7 +49,8 @@ class _AutonomousScreenState extends ConsumerState<AutonomousScreen> {
 
     final hasLine = kit?.hasLineSensor ?? true;
     final hasUltrasonic = kit?.hasUltrasonic ?? true;
-    final isAuto = tele.mode == DriveMode.auto;
+    // 앱 의도 모드를 우선(펌웨어가 MOD 응답을 안 보내도 즉시 전환). 응답이 오면 그걸로 동기화.
+    final isAuto = _auto || tele.mode == DriveMode.auto;
 
     return SafeArea(
       child: ListView(
@@ -63,16 +67,27 @@ class _AutonomousScreenState extends ConsumerState<AutonomousScreen> {
           // 자율 모드일 때만 실험 계기·튜닝 노출(수동 모드에선 안내).
           if (!isAuto)
             SurfaceCard(
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline, color: AppColors.textMuted),
-                  Gap.w16,
-                  Expanded(
-                    child: Text(
-                      '자율 모드로 전환하면 센서 텔레메트리와 파라미터 튜닝이 열립니다.',
-                      style: AppType.mono(
-                          size: 12, color: AppColors.textMuted, height: 1.5),
-                    ),
+                  Row(
+                    children: [
+                      const Icon(Icons.auto_mode, color: AppColors.signal),
+                      Gap.w8,
+                      Text('자율주행 실험이란?',
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                  Gap.h8,
+                  Text(
+                    '위 "자율주행" 버튼을 누르면 로봇이 스스로 주행합니다.\n'
+                    '① 초음파 거리·라인센서 값을 실시간으로 확인\n'
+                    '② 아래 슬라이더로 민감도·임계거리·속도를 바꾸면\n'
+                    '   코드 재업로드 없이 로봇 행동이 즉시 달라집니다.\n\n'
+                    '"값을 바꾸면 → 로봇이 달라진다"를 눈으로 실험해 보세요.',
+                    style: AppType.mono(
+                        size: 12, color: AppColors.textMuted, height: 1.7),
                   ),
                 ],
               ),

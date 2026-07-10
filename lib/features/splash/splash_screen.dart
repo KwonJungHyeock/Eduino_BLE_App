@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
-import '../../providers/kit_providers.dart';
+import '../../providers/module_providers.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -27,12 +27,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   void initState() {
     super.initState();
-    // 저장된 키트 로드를 미리 트리거(홈 진입 시 반영).
-    ref.read(kitProfileProvider);
-    // 로고 노출 후 홈으로 전환.
-    Future.delayed(const Duration(milliseconds: 1900), () {
-      if (mounted) context.go(Routes.home);
-    });
+    // 로고 노출 후, 모듈 선택 여부에 따라 라우팅.
+    Future.delayed(const Duration(milliseconds: 1900), _advance);
+  }
+
+  Future<void> _advance() async {
+    final module = await ref.read(moduleProvider.future);
+    if (!mounted) return;
+    context.go(module == null ? Routes.module : Routes.home);
   }
 
   @override

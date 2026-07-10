@@ -6,19 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/autonomous/autonomous_screen.dart';
-import '../features/basics/basics_screen.dart';
+import '../features/basics/serial_chat_screen.dart';
 import '../features/connect/connect_screen.dart';
 import '../features/controller/controller_menu_screen.dart';
 import '../features/controller/controller_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/joystick/joystick_screen.dart';
 import '../features/kit/kit_select_screen.dart';
+import '../features/module/module_select_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/terminal/terminal_screen.dart';
 import '../widgets/mode_scaffold.dart';
 
 abstract class Routes {
   static const intro = '/';
+  static const module = '/module';
   static const home = '/home';
   static const connect = '/connect';
   static const kit = '/kit';
@@ -40,6 +42,10 @@ class GoRouterHolder {
           builder: (context, state) => const SplashScreen(),
         ),
         GoRoute(
+          path: Routes.module,
+          builder: (context, state) => const ModuleSelectScreen(),
+        ),
+        GoRoute(
           path: Routes.home,
           builder: (context, state) => const HomeScreen(),
         ),
@@ -59,7 +65,7 @@ class GoRouterHolder {
         GoRoute(
           path: Routes.basics,
           builder: (context, state) =>
-              const ModeScaffold(title: '통신 기초 예제', child: BasicsScreen()),
+              const ModeScaffold(title: '시리얼 통신 채팅', child: SerialChatScreen()),
         ),
         GoRoute(
           path: Routes.controller,

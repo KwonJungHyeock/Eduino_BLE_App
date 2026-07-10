@@ -5,17 +5,21 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// §6.1 컬러 팔레트 (다크)
+/// 컬러 팔레트 (라이트 + 블루투스 블루) — 흰 배경, 선택/연결은 신뢰감 있는 블루.
 abstract class AppColors {
-  static const Color baseBg = Color(0xFF12151C);
-  static const Color surface = Color(0xFF171B24);
-  static const Color surfaceHigh = Color(0xFF1E2431); // elevation 한 단계 위
-  static const Color border = Color(0xFF2A3140);
-  static const Color accent = Color(0xFFE31E24); // EDUINO 레드 · 정지/강조
-  static const Color signal = Color(0xFF7CE0C3); // 연결/텔레메트리 정상
-  static const Color textPrimary = Color(0xFFE8ECF2);
-  static const Color textMuted = Color(0xFF5B6472);
-  static const Color warn = Color(0xFFF5A524);
+  static const Color baseBg = Color(0xFFEEF3FA); // 아주 옅은 블루-그레이 배경
+  static const Color surface = Color(0xFFFFFFFF); // 카드/표면 = 화이트
+  static const Color surfaceHigh = Color(0xFFF3F7FC); // 살짝 눌린 표면
+  static const Color border = Color(0xFFDCE4EF);
+  static const Color accent = Color(0xFFE53935); // 레드 · 정지/위험
+  static const Color signal = Color(0xFF1C7DF3); // 블루투스 블루 · 선택/연결/주요
+  static const Color signalDeep = Color(0xFF0A5FD0); // 블루 그라디언트 하단
+  static const Color textPrimary = Color(0xFF15202E); // 진한 텍스트
+  static const Color textMuted = Color(0xFF6B7684);
+  static const Color warn = Color(0xFFF59E0B);
+
+  /// 블루 선택효과에 쓰는 옅은 배경 틴트.
+  static const Color signalTint = Color(0xFFE7F1FE);
 }
 
 /// 8pt 그리드 간격 토큰 (§6.4 여백과 정밀 그리드)
@@ -78,26 +82,26 @@ abstract class AppType {
 }
 
 ThemeData buildNeoCockpitTheme() {
-  const scheme = ColorScheme.dark(
-    primary: AppColors.accent,
+  const scheme = ColorScheme.light(
+    primary: AppColors.signal, // 블루투스 블루 = 주요 색
     onPrimary: Colors.white,
-    secondary: AppColors.signal,
-    onSecondary: AppColors.baseBg,
+    secondary: AppColors.signalDeep,
+    onSecondary: Colors.white,
     surface: AppColors.surface,
     onSurface: AppColors.textPrimary,
     error: AppColors.accent,
+    onError: Colors.white,
     outline: AppColors.border,
   );
 
   final base = ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: Brightness.light,
     colorScheme: scheme,
     scaffoldBackgroundColor: AppColors.baseBg,
     splashFactory: InkSparkle.splashFactory,
   );
 
-  // 본문 라벨은 Pretendard(폴백) — 폰트 파일이 있으면 pubspec 에서 fontFamily 로 지정.
   return base.copyWith(
     textTheme: base.textTheme.apply(
       bodyColor: AppColors.textPrimary,
@@ -106,13 +110,16 @@ ThemeData buildNeoCockpitTheme() {
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.baseBg,
+      foregroundColor: AppColors.textPrimary,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      scrolledUnderElevation: 0,
       centerTitle: false,
+      iconTheme: IconThemeData(color: AppColors.textPrimary),
       titleTextStyle: TextStyle(
         color: AppColors.textPrimary,
         fontSize: 18,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         fontFamily: 'Pretendard',
       ),
     ),
@@ -125,29 +132,29 @@ ThemeData buildNeoCockpitTheme() {
       activeTrackColor: AppColors.signal,
       inactiveTrackColor: AppColors.border,
       thumbColor: AppColors.signal,
-      overlayColor: Color(0x337CE0C3),
-      trackHeight: 4,
+      overlayColor: Color(0x261C7DF3),
+      trackHeight: 5,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.surfaceHigh,
-        foregroundColor: AppColors.textPrimary,
-        minimumSize: const Size(0, 52), // 48dp+ 터치 영역 (§6.3)
+        backgroundColor: AppColors.signal,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(0, 54),
         shape: const RoundedRectangleBorder(borderRadius: Radii.chip),
-        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.signal,
         side: const BorderSide(color: AppColors.border),
-        minimumSize: const Size(0, 52),
+        minimumSize: const Size(0, 54),
         shape: const RoundedRectangleBorder(borderRadius: Radii.chip),
       ),
     ),
     snackBarTheme: const SnackBarThemeData(
-      backgroundColor: AppColors.surfaceHigh,
-      contentTextStyle: TextStyle(color: AppColors.textPrimary),
+      backgroundColor: AppColors.textPrimary,
+      contentTextStyle: TextStyle(color: Colors.white),
       behavior: SnackBarBehavior.floating,
     ),
   );

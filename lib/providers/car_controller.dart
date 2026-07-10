@@ -3,6 +3,7 @@
 // 화면은 raw transport.send() 를 절대 부르지 않고 이 컨트롤러만 호출한다.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -119,8 +120,17 @@ class CarController {
   /// LED ON/OFF (P6 화면 이전에도 사용 가능하도록 API 제공).
   void ledOnOff(bool on) => _sendFrame(Commands.ledOnOff(on));
 
-  /// 터미널 원문 전송.
+  /// 터미널 원문 전송(RAW: 프로토콜 프레임).
   void raw(String text) => _sendFrame(Commands.raw(text));
+
+  /// 시리얼 채팅용 — 프로토콜 프레임 없이 입력 문자열 그대로 + 개행 전송.
+  /// (아두이노 SoftwareSerial.readStringUntil('\n') 예제와 짝을 이룸)
+  void sendPlain(String text) {
+    if (!_connected) return;
+    final t = text.endsWith('\n') ? text : '$text\n';
+    _ref.read(bleTransportProvider).send(utf8.encode(t));
+    _ref.read(terminalProvider.notifier).logOutgoing(text);
+  }
 
   /// 백그라운드/끊김 전환 시 안전 정지 (§4.4). 하트비트도 정지.
   void emergencyStop() {

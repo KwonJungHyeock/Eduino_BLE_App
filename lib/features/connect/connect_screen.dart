@@ -12,6 +12,7 @@ import '../../app/theme.dart';
 import '../../core/bt/bt_transport.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
+import '../../providers/module_providers.dart';
 import '../../widgets/surface_card.dart';
 
 class ConnectScreen extends ConsumerStatefulWidget {
@@ -66,10 +67,14 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
   Widget build(BuildContext context) {
     final conn = ref.watch(connectionProvider);
     final kit = ref.watch(kitProfileProvider).valueOrNull;
+    final module = ref.watch(moduleProvider).valueOrNull ?? BtModule.ble;
+    final connected = conn.isConnected;
 
-    // 연결되면 홈으로 복귀.
+    // 연결되면 홈으로 복귀(연결하려고 새로 들어온 경우만 — 이미 연결된 채 들어오면 유지).
     ref.listen<BtConnectionState>(connectionProvider, (prev, next) {
-      if (next == BtConnectionState.connected && mounted) {
+      if (prev != BtConnectionState.connected &&
+          next == BtConnectionState.connected &&
+          mounted) {
         if (context.canPop()) {
           context.pop();
         } else {
@@ -99,18 +104,25 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               SurfaceCard(
                 child: Row(
                   children: [
-                    const Icon(Icons.bluetooth_searching,
-                        color: AppColors.signal),
+                    Icon(
+                      connected
+                          ? Icons.bluetooth_connected
+                          : Icons.bluetooth_searching,
+                      color: AppColors.signal,
+                    ),
                     Gap.w16,
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('HM-10 (BLE) 모듈 검색',
+                          Text('${module.title} 모듈',
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 15)),
+                                  fontWeight: FontWeight.w700, fontSize: 15)),
                           Gap.h4,
-                          Text('전원이 켜진 RC카를 근처에 두세요.',
+                          Text(
+                              connected
+                                  ? '연결되어 있습니다.'
+                                  : '전원이 켜진 RC카를 근처에 두세요.',
                               style: AppType.mono(
                                   size: 12, color: AppColors.textMuted)),
                         ],
@@ -126,23 +138,88 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                     style: AppType.mono(size: 12, color: AppColors.accent)),
               ],
               Gap.h16,
-              Expanded(child: _body(conn)),
+              Expanded(child: _body(conn, module, connected)),
             ],
           ),
         ),
       ),
-      floatingActionButton: _permsReady
+      floatingActionButton: (_permsReady && !connected && module == BtModule.ble)
           ? FloatingActionButton.extended(
-              backgroundColor: AppColors.surfaceHigh,
+              backgroundColor: AppColors.surface,
               onPressed: () => ref.invalidate(scanResultsProvider),
               icon: const Icon(Icons.refresh, color: AppColors.signal),
-              label: Text('다시 스캔', style: AppType.mono(size: 13)),
+              label: Text('다시 스캔',
+                  style: AppType.mono(size: 13, color: AppColors.signal)),
             )
           : null,
     );
   }
 
-  Widget _body(BtConnectionState conn) {
+  Widget _body(BtConnectionState conn, BtModule module, bool connected) {
+    // 이미 연결됨 → 스캔하지 않고(상태 유지) 연결 패널만 표시.
+    if (connected) {
+      final device = ref.watch(bleTransportProvider).connectedDevice;
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle,
+                size: 56, color: AppColors.signal),
+            Gap.h16,
+            Text('연결됨',
+                style: AppType.mono(
+                    size: 18,
+                    weight: FontWeight.w700,
+                    color: AppColors.signal)),
+            Gap.h8,
+            Text(device?.displayName ?? '',
+                style: AppType.mono(size: 13, color: AppColors.textMuted)),
+            Gap.h24,
+            FilledButton(
+              onPressed: () {
+                if (context.canPop()) context.pop();
+              },
+              child: const Text('완료'),
+            ),
+            Gap.h8,
+            OutlinedButton(
+              onPressed: () async {
+                await ref.read(bleTransportProvider).disconnect();
+              },
+              child: const Text('연결 해제'),
+            ),
+          ],
+        ),
+      );
+    }
+    // HC-06(SPP) 라디오는 2단계에서 활성화 예정 — 현재는 안내.
+    if (module == BtModule.spp) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(Gap.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.settings_bluetooth,
+                  size: 44, color: AppColors.textMuted),
+              Gap.h16,
+              Text(
+                'HC-06(Classic SPP) 실제 무선 연결은\n다음 업데이트에서 켜집니다.',
+                textAlign: TextAlign.center,
+                style: AppType.mono(
+                    size: 13, color: AppColors.textMuted, height: 1.6),
+              ),
+              Gap.h16,
+              Text(
+                '먼저 HM-10 으로 바꿔서 화면을 둘러볼 수 있어요.',
+                textAlign: TextAlign.center,
+                style: AppType.mono(size: 11, color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     if (_requesting) {
       return const Center(
           child: CircularProgressIndicator(color: AppColors.signal));

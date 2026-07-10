@@ -12,6 +12,79 @@ import '../../providers/car_controller.dart';
 import '../../widgets/speed_cap_slider.dart';
 import '../../widgets/surface_card.dart';
 
+class _RotateButton extends StatefulWidget {
+  const _RotateButton({
+    required this.label,
+    required this.icon,
+    required this.enabled,
+    required this.onPress,
+    required this.onRelease,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onPress;
+  final VoidCallback onRelease;
+
+  @override
+  State<_RotateButton> createState() => _RotateButtonState();
+}
+
+class _RotateButtonState extends State<_RotateButton> {
+  bool _down = false;
+
+  void _press() {
+    if (!widget.enabled) return;
+    setState(() => _down = true);
+    HapticFeedback.selectionClick();
+    widget.onPress();
+  }
+
+  void _release() {
+    if (!widget.enabled) return;
+    setState(() => _down = false);
+    widget.onRelease();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: widget.enabled ? 1 : 0.4,
+      child: Listener(
+        onPointerDown: (_) => _press(),
+        onPointerUp: (_) => _release(),
+        onPointerCancel: (_) => _release(),
+        child: Container(
+          height: 60,
+          decoration: BoxDecoration(
+            color: _down ? AppColors.signal : AppColors.surface,
+            borderRadius: Radii.chip,
+            border: Border.all(
+              color: _down ? AppColors.signal : AppColors.border,
+              width: _down ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon,
+                  color: _down ? Colors.white : AppColors.signal, size: 24),
+              Gap.w8,
+              Text(widget.label,
+                  style: AppType.mono(
+                    size: 15,
+                    weight: FontWeight.w700,
+                    color: _down ? Colors.white : AppColors.textPrimary,
+                  )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ControllerScreen extends ConsumerWidget {
   const ControllerScreen({super.key});
 
@@ -33,6 +106,31 @@ class ControllerScreen extends ConsumerWidget {
                   onStop: car.stop,
                 ),
               ),
+            ),
+            const SizedBox(height: Gap.md),
+            // 제자리 좌/우 회전 버튼 (누르는 동안 회전, 떼면 정지).
+            Row(
+              children: [
+                Expanded(
+                  child: _RotateButton(
+                    label: '좌회전',
+                    icon: Icons.rotate_left,
+                    enabled: connected,
+                    onPress: () => car.drive(0, -100),
+                    onRelease: car.stop,
+                  ),
+                ),
+                Gap.w16,
+                Expanded(
+                  child: _RotateButton(
+                    label: '우회전',
+                    icon: Icons.rotate_right,
+                    enabled: connected,
+                    onPress: () => car.drive(0, 100),
+                    onRelease: car.stop,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: Gap.md),
             SurfaceCard(child: const SpeedCapSlider()),

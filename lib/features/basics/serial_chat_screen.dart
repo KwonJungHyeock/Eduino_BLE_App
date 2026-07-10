@@ -1,0 +1,210 @@
+// Author: eduino
+// 시리얼 통신 채팅 — 앱 ↔ (블루투스) ↔ 아두이노 ↔ PC 시리얼 모니터.
+// 문자열을 채팅처럼 주고받는 실습. 아두이노는 SoftwareSerial 로 BT↔Serial 을 중계.
+//   앱 입력  → BT → 아두이노 → "[App → Arduino]" PC 시리얼 모니터 출력
+//   PC 입력  → 아두이노 → BT → 앱에 수신 표시
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../app/theme.dart';
+import '../../providers/bt_providers.dart';
+import '../../providers/car_controller.dart';
+
+class SerialChatScreen extends ConsumerStatefulWidget {
+  const SerialChatScreen({super.key});
+
+  @override
+  ConsumerState<SerialChatScreen> createState() => _SerialChatScreenState();
+}
+
+class _SerialChatScreenState extends ConsumerState<SerialChatScreen> {
+  final TextEditingController _input = TextEditingController();
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _input.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _send() {
+    final t = _input.text.trim();
+    if (t.isEmpty) return;
+    HapticFeedback.selectionClick();
+    ref.read(carControllerProvider).sendPlain(t);
+    _input.clear();
+    _scrollToEnd();
+  }
+
+  void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(_scroll.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final connected = ref.watch(connectionProvider).isConnected;
+    // 시스템 로그 제외한 실제 채팅(송/수신)만 표시.
+    final chat = ref
+        .watch(terminalProvider)
+        .where((e) => e.dir != LogDir.system)
+        .toList();
+    ref.listen(terminalProvider, (_, __) => _scrollToEnd());
+
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          color: AppColors.signalTint,
+          padding:
+              const EdgeInsets.symmetric(horizontal: Gap.md, vertical: Gap.sm),
+          child: Text(
+            '앱에서 보낸 글자는 아두이노를 거쳐 PC 시리얼 모니터에 뜨고, PC에서 입력한 글자는 여기로 옵니다. (9600 bps)',
+            style: AppType.mono(size: 11, color: AppColors.textMuted, height: 1.4),
+          ),
+        ),
+        Expanded(
+          child: chat.isEmpty
+              ? Center(
+                  child: Text(
+                    connected ? '메시지를 입력해 보세요.' : '연결 후 채팅할 수 있어요.',
+                    style: AppType.mono(size: 13, color: AppColors.textMuted),
+                  ),
+                )
+              : ListView.builder(
+                  controller: _scroll,
+                  padding: const EdgeInsets.all(Gap.md),
+                  itemCount: chat.length,
+                  itemBuilder: (context, i) => _Bubble(entry: chat[i]),
+                ),
+        ),
+        _InputBar(controller: _input, enabled: connected, onSend: _send),
+      ],
+    );
+  }
+}
+
+class _Bubble extends StatelessWidget {
+  const _Bubble({required this.entry});
+  final TerminalEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final mine = entry.dir == LogDir.out;
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.72,
+        ),
+        decoration: BoxDecoration(
+          color: mine ? AppColors.signal : AppColors.surface,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(mine ? 16 : 4),
+            bottomRight: Radius.circular(mine ? 4 : 16),
+          ),
+          border: mine ? null : Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment:
+              mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Text(
+              mine ? '앱 → 아두이노' : '수신',
+              style: AppType.mono(
+                size: 9,
+                letterSpacing: 0.5,
+                color: mine ? Colors.white70 : AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              entry.text,
+              style: AppType.mono(
+                size: 14,
+                color: mine ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InputBar extends StatelessWidget {
+  const _InputBar({
+    required this.controller,
+    required this.enabled,
+    required this.onSend,
+  });
+  final TextEditingController controller;
+  final bool enabled;
+  final VoidCallback onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(Gap.md, Gap.sm, Gap.md, Gap.md),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                enabled: enabled,
+                style: AppType.mono(size: 14),
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => onSend(),
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: enabled ? '메시지 입력…' : '연결 후 입력 가능',
+                  hintStyle:
+                      AppType.mono(size: 13, color: AppColors.textMuted),
+                  filled: true,
+                  fillColor: AppColors.surfaceHigh,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: Gap.md, vertical: 12),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: Radii.chip,
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: Radii.chip,
+                    borderSide: const BorderSide(color: AppColors.signal),
+                  ),
+                ),
+              ),
+            ),
+            Gap.w8,
+            FilledButton(
+              onPressed: enabled ? onSend : null,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(54, 48),
+                shape: const CircleBorder(),
+                padding: EdgeInsets.zero,
+              ),
+              child: const Icon(Icons.send, size: 18),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
