@@ -1,0 +1,50 @@
+name: eduino_rc
+description: EDUINO 자율주행 RC카 블루투스 컨트롤러 (Neo Cockpit)
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0" # Color.withValues 등 사용
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 상태관리 — 연결/텔레메트리 전역 (§3.1)
+  flutter_riverpod: ^2.6.1
+
+  # 라우팅
+  go_router: ^14.6.2
+
+  # BLE (HM-10) — 주력·크로스플랫폼 통신 (§2.2)
+  flutter_blue_plus: ^1.35.5
+
+  # 권한 (BT/위치 — 스캔·연결)
+  permission_handler: ^11.3.1
+
+  # 로컬 저장 — 키트 선택·설정 (§3.1)
+  shared_preferences: ^2.3.3
+
+  # 계기용 모노 폰트 (수치·터미널) — JetBrains Mono (§6.2)
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # 실제 제품 사진 에셋 슬롯 — EDUINO가 실사진을 넣도록 구조만 마련 (§6.4)
+  assets:
+    - assets/kits/
+
+  # 본문·라벨용 Pretendard 는 폰트 파일을 fonts/ 에 넣고 아래 주석을 해제해 사용 (§6.2).
+  # fonts:
+  #   - family: Pretendard
+  #     fonts:
+  #       - asset: fonts/Pretendard-Regular.otf
+  #       - asset: fonts/Pretendard-Medium.otf
+  #         weight: 500
+  #       - asset: fonts/Pretendard-Bold.otf
+  #         weight: 700

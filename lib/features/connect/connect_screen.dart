@@ -1,0 +1,297 @@
+// Author: eduino
+// 연결 화면 (§5.1): 권한 → 스캔 → 연결. HM-10(BLE) 주력. HC-06 탭은 현재 스코프 미포함.
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../../app/router.dart';
+import '../../app/theme.dart';
+import '../../core/bt/bt_transport.dart';
+import '../../providers/bt_providers.dart';
+import '../../providers/kit_providers.dart';
+import '../../widgets/surface_card.dart';
+
+class ConnectScreen extends ConsumerStatefulWidget {
+  const ConnectScreen({super.key});
+
+  @override
+  ConsumerState<ConnectScreen> createState() => _ConnectScreenState();
+}
+
+class _ConnectScreenState extends ConsumerState<ConnectScreen> {
+  bool _permsReady = false;
+  bool _requesting = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _requestPerms());
+  }
+
+  Future<void> _requestPerms() async {
+    setState(() => _requesting = true);
+    try {
+      final statuses = await [
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+        Permission.locationWhenInUse, // Android 11↓ 스캔용 (§3.3)
+      ].request();
+      final ok = statuses[Permission.bluetoothScan]?.isGranted ?? false;
+      final okConnect =
+          statuses[Permission.bluetoothConnect]?.isGranted ?? false;
+      setState(() {
+        _permsReady = ok && okConnect;
+        _error = _permsReady ? null : '블루투스 권한이 필요합니다. 설정에서 허용해 주세요.';
+      });
+    } finally {
+      if (mounted) setState(() => _requesting = false);
+    }
+  }
+
+  Future<void> _connect(BtDevice device) async {
+    HapticFeedback.selectionClick();
+    setState(() => _error = null);
+    try {
+      await ref.read(bleTransportProvider).connect(device);
+    } catch (e) {
+      if (mounted) setState(() => _error = '연결 실패: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final conn = ref.watch(connectionProvider);
+    final kit = ref.watch(kitProfileProvider).valueOrNull;
+
+    // 연결되면 허브로 이동.
+    ref.listen<BtConnectionState>(connectionProvider, (prev, next) {
+      if (next == BtConnectionState.connected && mounted) {
+        context.go(Routes.hub);
+      }
+    });
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('연결'),
+        actions: [
+          if (kit != null)
+            TextButton.icon(
+              onPressed: () => context.push(Routes.kit),
+              icon: const Icon(Icons.tune, size: 18),
+              label: Text(kit.name, style: AppType.mono(size: 12)),
+            ),
+        ],
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(Gap.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SurfaceCard(
+                child: Row(
+                  children: [
+                    const Icon(Icons.bluetooth_searching,
+                        color: AppColors.signal),
+                    Gap.w16,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('HM-10 (BLE) 모듈 검색',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 15)),
+                          Gap.h4,
+                          Text('전원이 켜진 RC카를 근처에 두세요.',
+                              style: AppType.mono(
+                                  size: 12, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ),
+                    _ConnStateChip(state: conn),
+                  ],
+                ),
+              ),
+              if (_error != null) ...[
+                Gap.h8,
+                Text(_error!,
+                    style: AppType.mono(size: 12, color: AppColors.accent)),
+              ],
+              Gap.h16,
+              Expanded(child: _body(conn)),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: _permsReady
+          ? FloatingActionButton.extended(
+              backgroundColor: AppColors.surfaceHigh,
+              onPressed: () => ref.invalidate(scanResultsProvider),
+              icon: const Icon(Icons.refresh, color: AppColors.signal),
+              label: Text('다시 스캔', style: AppType.mono(size: 13)),
+            )
+          : null,
+    );
+  }
+
+  Widget _body(BtConnectionState conn) {
+    if (_requesting) {
+      return const Center(
+          child: CircularProgressIndicator(color: AppColors.signal));
+    }
+    if (!_permsReady) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.bluetooth_disabled,
+                size: 40, color: AppColors.textMuted),
+            Gap.h16,
+            Text('권한이 없어 스캔할 수 없습니다.',
+                style: AppType.mono(size: 13, color: AppColors.textMuted)),
+            Gap.h16,
+            FilledButton(
+                onPressed: _requestPerms, child: const Text('권한 다시 요청')),
+          ],
+        ),
+      );
+    }
+    return _DeviceList(onConnect: _connect, connecting: conn.isBusy);
+  }
+}
+
+class _DeviceList extends ConsumerWidget {
+  const _DeviceList({required this.onConnect, required this.connecting});
+  final void Function(BtDevice) onConnect;
+  final bool connecting;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scan = ref.watch(scanResultsProvider);
+
+    return scan.when(
+      loading: () => _hint('스캔 중…', spinner: true),
+      error: (e, _) => _hint('스캔 오류: $e'),
+      data: (devices) {
+        if (devices.isEmpty) return _hint('검색된 기기가 없습니다. 스캔 중…', spinner: true);
+        return ListView.separated(
+          itemCount: devices.length,
+          separatorBuilder: (_, __) => Gap.h8,
+          itemBuilder: (context, i) {
+            final d = devices[i];
+            return _DeviceTile(
+              device: d,
+              enabled: !connecting,
+              onTap: () => onConnect(d),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _hint(String text, {bool spinner = false}) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (spinner) ...[
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppColors.signal),
+              ),
+              Gap.h16,
+            ],
+            Text(text, style: AppType.mono(size: 13, color: AppColors.textMuted)),
+          ],
+        ),
+      );
+}
+
+class _DeviceTile extends StatelessWidget {
+  const _DeviceTile({
+    required this.device,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final BtDevice device;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: Radii.card,
+        child: SurfaceCard(
+          padding: const EdgeInsets.symmetric(
+              horizontal: Gap.md, vertical: Gap.sm + 2),
+          child: Row(
+            children: [
+              Icon(
+                device.isKnownModule
+                    ? Icons.bluetooth_connected
+                    : Icons.bluetooth,
+                color: device.isKnownModule
+                    ? AppColors.signal
+                    : AppColors.textMuted,
+              ),
+              Gap.w16,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(device.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(device.id,
+                        style: AppType.mono(
+                            size: 11, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+              if (device.rssi != null)
+                Text('${device.rssi} dBm',
+                    style:
+                        AppType.mono(size: 11, color: AppColors.textMuted)),
+              Gap.w8,
+              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConnStateChip extends StatelessWidget {
+  const _ConnStateChip({required this.state});
+  final BtConnectionState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, text) = switch (state) {
+      BtConnectionState.connected => (AppColors.signal, '연결됨'),
+      BtConnectionState.connecting => (AppColors.warn, '연결 중'),
+      BtConnectionState.scanning => (AppColors.warn, '스캔'),
+      BtConnectionState.disconnecting => (AppColors.warn, '해제'),
+      BtConnectionState.disconnected => (AppColors.textMuted, '대기'),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.baseBg,
+        borderRadius: Radii.pill,
+        border: Border.all(color: color),
+      ),
+      child: Text(text, style: AppType.mono(size: 11, color: color)),
+    );
+  }
+}
