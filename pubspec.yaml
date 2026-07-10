@@ -35,9 +35,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # 실제 제품 사진 에셋 슬롯 — EDUINO가 실사진을 넣도록 구조만 마련 (§6.4)
+  # 실제 제품 사진·브랜드 로고 에셋 슬롯 — EDUINO가 실사진을 넣도록 구조만 마련 (§6.4)
   assets:
     - assets/kits/
+    - assets/brand/
 
   # 본문·라벨용 Pretendard 는 폰트 파일을 fonts/ 에 넣고 아래 주석을 해제해 사용 (§6.2).
   # fonts:

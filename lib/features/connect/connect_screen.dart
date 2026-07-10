@@ -67,10 +67,14 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     final conn = ref.watch(connectionProvider);
     final kit = ref.watch(kitProfileProvider).valueOrNull;
 
-    // 연결되면 허브로 이동.
+    // 연결되면 홈으로 복귀.
     ref.listen<BtConnectionState>(connectionProvider, (prev, next) {
       if (next == BtConnectionState.connected && mounted) {
-        context.go(Routes.hub);
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go(Routes.home);
+        }
       }
     });
 
