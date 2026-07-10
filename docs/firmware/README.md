@@ -5,8 +5,11 @@
 
 | 파일 | 용도 | 비고 |
 |---|---|---|
+| `eduino_all_in_one.ino` | **통합 데모** (주행·LED·기울기·음성·자율주행·텔레메트리) | 시연은 대부분 이 스케치 하나로. AFMotor M1=좌/M4=우 |
 | `serial_chat.ino` | **시리얼 통신 채팅** 실습 | 앱 ↔ 아두이노 ↔ PC 시리얼 모니터 문자 중계 |
-| `rc_drive_2wheel_afmotor.ino` | **2휠 RC카 주행** | Adafruit Motor Shield v1(AFMotor), 왼쪽=M1 / 오른쪽=M4 |
+| `rc_drive_2wheel_afmotor.ino` | 2휠 주행만 (최소 예제) | 주행 기능만 볼 때 |
+
+> **담당자 시연은 [`../DEMO.md`](../DEMO.md) 순서대로** 진행하세요. 채팅은 `serial_chat.ino`, 나머지 전부는 `eduino_all_in_one.ino`.
 
 ## 공통 배선 (HC-06, 사용자 기준)
 - Arduino **A5 (RX)** ← HC-06 **TX**
