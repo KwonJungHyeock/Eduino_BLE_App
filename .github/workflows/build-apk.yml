@@ -1,0 +1,55 @@
+# Author: eduino
+# 로컬 Flutter 설치 없이 GitHub 에서 안드로이드 디버그 APK 를 빌드한다.
+# platform 폴더(android/)는 저장소에 없으므로 CI 에서 flutter create 로 생성 후 권한 주입.
+
+name: Build APK
+
+on:
+  push:
+    branches:
+      - claude/new-session-jnm6sg
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Generate Android platform files
+        run: flutter create . --platforms=android --project-name eduino_rc --org kr.eduino
+
+      - name: Inject BLE permissions into AndroidManifest
+        run: python3 tool/inject_manifest.py
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Analyze (non-blocking, for logs)
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eduino-rc-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
