@@ -12,6 +12,7 @@ import '../../app/theme.dart';
 import '../../core/bt/bt_transport.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
+import '../../providers/last_device_providers.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/surface_card.dart';
 
@@ -58,6 +59,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     setState(() => _error = null);
     try {
       await ref.read(transportProvider).connect(device);
+      await ref.read(lastDeviceProvider.notifier).save(device); // 재연결용 기억
     } catch (e) {
       if (mounted) setState(() => _error = '연결 실패: $e');
     }
@@ -215,7 +217,47 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         ),
       );
     }
-    return _DeviceList(onConnect: _connect, connecting: conn.isBusy);
+    // 지난 기기(현재 모듈과 동일)면 빠른 재연결 카드 노출.
+    final last = ref.watch(lastDeviceProvider).valueOrNull;
+    final showReconnect = last != null && last.module == module && !conn.isBusy;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showReconnect) ...[
+          InkWell(
+            onTap: () => _connect(last.toDevice()),
+            borderRadius: Radii.card,
+            child: SurfaceCard(
+              color: AppColors.signalTint,
+              child: Row(
+                children: [
+                  const Icon(Icons.history, color: AppColors.signal),
+                  Gap.w16,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('지난 기기 재연결',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 14)),
+                        Text(last.name,
+                            style: AppType.mono(
+                                size: 12, color: AppColors.textMuted)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.refresh, color: AppColors.signal),
+                ],
+              ),
+            ),
+          ),
+          Gap.h16,
+        ],
+        Expanded(
+          child: _DeviceList(onConnect: _connect, connecting: conn.isBusy),
+        ),
+      ],
+    );
   }
 }
 
