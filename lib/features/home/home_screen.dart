@@ -99,6 +99,13 @@ class HomeScreen extends ConsumerWidget {
               accent: kit == null ? AppColors.textPrimary : AppColors.signal,
               onTap: () => context.push(Routes.kit),
             ),
+            Gap.h8,
+            _MenuTile(
+              icon: Icons.settings_input_component,
+              title: '모터 포트 설정',
+              subtitle: '바퀴 ↔ 쉴드 포트(M1~M4) 매핑',
+              onTap: () => context.push(Routes.motor),
+            ),
           ],
         ),
       ),

@@ -13,6 +13,7 @@ import '../features/controller/controller_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/joystick/joystick_screen.dart';
 import '../features/led/led_screen.dart';
+import '../features/motor/motor_config_screen.dart';
 import '../features/kit/kit_select_screen.dart';
 import '../features/module/module_select_screen.dart';
 import '../features/splash/splash_screen.dart';
@@ -25,6 +26,7 @@ abstract class Routes {
   static const home = '/home';
   static const connect = '/connect';
   static const kit = '/kit';
+  static const motor = '/motor';
   static const terminal = '/terminal';
   static const basics = '/basics';
   static const controller = '/controller';
@@ -58,6 +60,10 @@ class GoRouterHolder {
         GoRoute(
           path: Routes.kit,
           builder: (context, state) => const KitSelectScreen(),
+        ),
+        GoRoute(
+          path: Routes.motor,
+          builder: (context, state) => const MotorConfigScreen(),
         ),
         GoRoute(
           path: Routes.terminal,
