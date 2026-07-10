@@ -12,6 +12,7 @@ import '../features/controller/controller_menu_screen.dart';
 import '../features/controller/controller_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/joystick/joystick_screen.dart';
+import '../features/led/led_screen.dart';
 import '../features/kit/kit_select_screen.dart';
 import '../features/module/module_select_screen.dart';
 import '../features/splash/splash_screen.dart';
@@ -30,6 +31,7 @@ abstract class Routes {
   static const joystick = '/controller/joystick';
   static const dpad = '/controller/dpad';
   static const auto = '/controller/auto';
+  static const led = '/controller/led';
 }
 
 class GoRouterHolder {
@@ -85,6 +87,11 @@ class GoRouterHolder {
           path: Routes.auto,
           builder: (context, state) => const ModeScaffold(
               title: '자율주행 · 실험', child: AutonomousScreen()),
+        ),
+        GoRoute(
+          path: Routes.led,
+          builder: (context, state) =>
+              const ModeScaffold(title: 'LED 제어', child: LedScreen()),
         ),
       ],
     );

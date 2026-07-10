@@ -14,7 +14,8 @@ SoftwareSerial bt(A5, A4); // (RX, TX)
 AF_DCMotor motorL(1); // 왼쪽 = M1
 AF_DCMotor motorR(4); // 오른쪽 = M4
 
-int speedCap = 200;              // 0-255, SPD 명령으로 조절
+int speedCap = 255;              // 0-255, SPD 명령으로 조절(기본 최대)
+const int MIN_PWM = 70;          // 이 미만은 모터가 안 도는 정지마찰 → 최소 출력 보정
 unsigned long lastCmd = 0;
 const unsigned long TIMEOUT = 500; // ms — 통신 끊기면 자동 정지(안전)
 String buf = "";
@@ -70,6 +71,7 @@ void drive(int th, int st) {
 
 void runMotor(AF_DCMotor &m, int val) {
   int pwm = map(abs(val), 0, 100, 0, speedCap);
+  if (pwm > 0 && pwm < MIN_PWM) pwm = MIN_PWM; // 최소 출력 보정
   m.setSpeed(pwm);
   if (val > 0) m.run(FORWARD);
   else if (val < 0) m.run(BACKWARD);

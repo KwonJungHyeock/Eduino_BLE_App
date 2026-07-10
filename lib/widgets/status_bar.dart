@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app/theme.dart';
 import '../core/bt/bt_transport.dart';
 import '../providers/bt_providers.dart';
+import '../providers/module_providers.dart';
 
 class StatusBar extends ConsumerWidget {
   const StatusBar({super.key});
@@ -16,6 +17,7 @@ class StatusBar extends ConsumerWidget {
     final conn = ref.watch(connectionProvider);
     final tele = ref.watch(telemetryProvider);
     final device = ref.watch(transportProvider).connectedDevice;
+    final module = ref.watch(moduleProvider).valueOrNull ?? BtModule.ble;
 
     final (color, label) = switch (conn) {
       BtConnectionState.connected => (AppColors.signal, '연결됨'),
@@ -39,7 +41,7 @@ class StatusBar extends ConsumerWidget {
           Gap.w8,
           Container(width: 1, height: 14, color: AppColors.border),
           Gap.w8,
-          const _Chip(text: 'HM-10 BLE'),
+          _Chip(text: module.title),
           Gap.w8,
           Flexible(
             child: Text(

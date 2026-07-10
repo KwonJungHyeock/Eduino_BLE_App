@@ -37,7 +37,8 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     final t = text.trim();
     if (t.isEmpty) return;
     HapticFeedback.selectionClick();
-    ref.read(carControllerProvider).raw(t);
+    // 문자 그대로 전송(AT/일반 시리얼). RAW: 프레임을 붙이지 않는다.
+    ref.read(carControllerProvider).sendPlain(t);
     _input.clear();
     _scrollToEnd();
   }

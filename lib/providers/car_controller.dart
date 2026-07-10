@@ -117,8 +117,11 @@ class CarController {
     _prm[key]!.run(() => _sendFrame(Commands.param(key, value)));
   }
 
-  /// LED ON/OFF (P6 화면 이전에도 사용 가능하도록 API 제공).
+  /// LED ON/OFF.
   void ledOnOff(bool on) => _sendFrame(Commands.ledOnOff(on));
+
+  /// LED RGB (네오픽셀).
+  void ledRgb(int r, int g, int b) => _sendFrame(Commands.ledRgb(r, g, b));
 
   /// 터미널 원문 전송(RAW: 프로토콜 프레임).
   void raw(String text) => _sendFrame(Commands.raw(text));
