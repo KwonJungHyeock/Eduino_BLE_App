@@ -29,6 +29,12 @@ dependencies:
   # 로컬 저장 — 키트 선택·설정 (§3.1)
   shared_preferences: ^2.3.3
 
+  # 기울기(틸트) 제어 — 가속도계 (§3.1)
+  sensors_plus: ^6.0.1
+
+  # 음성 제어 — 온디바이스 STT (§3.1)
+  speech_to_text: ^7.0.0
+
   # 계기용 모노 폰트 (수치·터미널) — JetBrains Mono (§6.2)
   google_fonts: ^6.2.1
 

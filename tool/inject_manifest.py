@@ -13,6 +13,7 @@ PERMISSIONS = """    <uses-permission android:name="android.permission.BLUETOOTH
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 """
 
 

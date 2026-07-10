@@ -72,8 +72,22 @@ class HomeScreen extends ConsumerWidget {
             _MenuTile(
               icon: Icons.sports_esports_outlined,
               title: '블루투스 컨트롤러',
-              subtitle: '조이스틱 · 방향 버튼 · 자율주행 등 주행 제어',
+              subtitle: '조이스틱·방향·기울기·음성·LED·자율주행',
               onTap: () => context.push(Routes.controller),
+            ),
+            Gap.h8,
+            _MenuTile(
+              icon: Icons.emoji_events_outlined,
+              title: '미션 · 챌린지',
+              subtitle: '랩타임 측정 · 개인 베스트 기록',
+              onTap: () => context.push(Routes.missions),
+            ),
+            Gap.h8,
+            _MenuTile(
+              icon: Icons.code,
+              title: '명령 ↔ 코드',
+              subtitle: '이 동작 = 이 아두이노 코드 (코딩 교육)',
+              onTap: () => context.push(Routes.learn),
             ),
             Gap.h24,
             Text('내 장비',

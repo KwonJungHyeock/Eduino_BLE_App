@@ -12,8 +12,12 @@ import '../features/controller/controller_menu_screen.dart';
 import '../features/controller/controller_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/joystick/joystick_screen.dart';
+import '../features/learn/learn_screen.dart';
 import '../features/led/led_screen.dart';
+import '../features/missions/missions_screen.dart';
 import '../features/motor/motor_config_screen.dart';
+import '../features/tilt/tilt_screen.dart';
+import '../features/voice/voice_screen.dart';
 import '../features/kit/kit_select_screen.dart';
 import '../features/module/module_select_screen.dart';
 import '../features/splash/splash_screen.dart';
@@ -34,6 +38,10 @@ abstract class Routes {
   static const dpad = '/controller/dpad';
   static const auto = '/controller/auto';
   static const led = '/controller/led';
+  static const tilt = '/controller/tilt';
+  static const voice = '/controller/voice';
+  static const missions = '/missions';
+  static const learn = '/learn';
 }
 
 class GoRouterHolder {
@@ -98,6 +106,26 @@ class GoRouterHolder {
           path: Routes.led,
           builder: (context, state) =>
               const ModeScaffold(title: 'LED 제어', child: LedScreen()),
+        ),
+        GoRoute(
+          path: Routes.tilt,
+          builder: (context, state) =>
+              const ModeScaffold(title: '기울기 제어', child: TiltScreen()),
+        ),
+        GoRoute(
+          path: Routes.voice,
+          builder: (context, state) =>
+              const ModeScaffold(title: '음성 제어', child: VoiceScreen()),
+        ),
+        GoRoute(
+          path: Routes.missions,
+          builder: (context, state) =>
+              const ModeScaffold(title: '미션 · 챌린지', child: MissionsScreen()),
+        ),
+        GoRoute(
+          path: Routes.learn,
+          builder: (context, state) =>
+              const ModeScaffold(title: '명령 ↔ 코드', child: LearnScreen()),
         ),
       ],
     );
