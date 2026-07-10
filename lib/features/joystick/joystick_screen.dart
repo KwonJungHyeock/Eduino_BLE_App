@@ -1,8 +1,7 @@
 // Author: eduino
-// 조이스틱(게임패드) 모드 — 아날로그 스틱 + HUD(속도/조향/전송값) + 대형 STOP + 속도상한 슬라이더 1개.
+// 조이스틱(게임패드) 모드 — 아날로그 스틱 + HUD(속도 게이지·니트로 조향 게이지·전송값) + 속도상한 슬라이더 1개.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
@@ -40,40 +39,23 @@ class _JoystickScreenState extends ConsumerState<JoystickScreen> {
         _steer = 0;
       });
 
-  void _stop() {
-    HapticFeedback.heavyImpact();
-    ref.read(carControllerProvider).stop();
-    _reset();
-  }
-
   @override
   Widget build(BuildContext context) {
     final connected = ref.watch(connectionProvider).isConnected;
-
-    final hud = _Hud(throttle: _throttle, steer: _steer);
-    final stick = _StickPanel(
-      enabled: connected,
-      onChanged: _onVector,
-      onReleased: _reset,
-    );
-    final stop = _StopButton(onTap: _stop);
 
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(Gap.md),
         child: Column(
           children: [
-            Expanded(flex: 4, child: hud),
+            Expanded(flex: 4, child: _Hud(throttle: _throttle, steer: _steer)),
             Gap.h12,
             Expanded(
               flex: 5,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(child: stick),
-                  Gap.w16,
-                  Center(child: stop),
-                ],
+              child: _StickPanel(
+                enabled: connected,
+                onChanged: _onVector,
+                onReleased: _reset,
               ),
             ),
             Gap.h12,
@@ -110,7 +92,7 @@ class _Hud extends StatelessWidget {
               ),
             ),
           ),
-          _SteerBar(steer: steer),
+          _NitroSteer(steer: steer),
           Gap.h8,
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -132,55 +114,80 @@ class _Hud extends StatelessWidget {
   }
 }
 
-class _SteerBar extends StatelessWidget {
-  const _SteerBar({required this.steer});
-  final int steer;
+/// 니트로 스타일 조향 게이지 — 중앙에서 좌/우로 초록→노랑→빨강 칸이 차오른다.
+class _NitroSteer extends StatelessWidget {
+  const _NitroSteer({required this.steer});
+  final int steer; // -100..100
+
+  static const int _seg = 8;
+
+  static Color _segColor(int dist) {
+    final t = ((dist - 1) / (_seg - 1)).clamp(0.0, 1.0);
+    // 초록 → 노랑 → 빨강
+    if (t < 0.5) {
+      return Color.lerp(
+          const Color(0xFF2FBF4F), const Color(0xFFF5C518), t * 2)!;
+    }
+    return Color.lerp(
+        const Color(0xFFF5C518), AppColors.accent, (t - 0.5) * 2)!;
+  }
+
+  Widget _cell(bool active, int dist) {
+    final c = _segColor(dist);
+    return Expanded(
+      child: Container(
+        height: 16,
+        margin: const EdgeInsets.symmetric(horizontal: 1.5),
+        decoration: BoxDecoration(
+          color: active ? c : AppColors.border.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(3),
+          boxShadow: active
+              ? [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 6)]
+              : null,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final t = (steer + 100) / 200;
+    final activeCount = (steer.abs() / 100 * _seg).round();
     return Column(
       children: [
         Row(
           children: [
-            Text('L', style: AppType.mono(size: 11, color: AppColors.textMuted)),
+            Text('◀ L',
+                style: AppType.mono(size: 10, color: AppColors.textMuted)),
             const Spacer(),
             Text('STEER',
                 style: AppType.mono(
                     size: 10, color: AppColors.textMuted, letterSpacing: 2)),
             const Spacer(),
-            Text('R', style: AppType.mono(size: 11, color: AppColors.textMuted)),
+            Text('R ▶',
+                style: AppType.mono(size: 10, color: AppColors.textMuted)),
           ],
         ),
-        const SizedBox(height: 4),
-        LayoutBuilder(builder: (context, c) {
-          final w = c.maxWidth;
-          return SizedBox(
-            height: 10,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                        color: AppColors.border, borderRadius: Radii.pill),
-                  ),
-                ),
-                Positioned(
-                  left: (t * w - 6).clamp(0.0, w - 12).toDouble(),
-                  top: -2,
-                  child: Container(
-                    width: 12,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: AppColors.signal,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-              ],
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            // 왼쪽: 바깥(dist=_seg) → 중앙(dist=1)
+            for (var p = 0; p < _seg; p++)
+              _cell(steer < 0 && (_seg - p) <= activeCount, _seg - p),
+            // 중앙 피벗
+            Container(
+              width: 3,
+              height: 20,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                color: AppColors.textMuted,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          );
-        }),
+            // 오른쪽: 중앙(dist=1) → 바깥(dist=_seg)
+            for (var p = 0; p < _seg; p++)
+              _cell(steer > 0 && (p + 1) <= activeCount, p + 1),
+          ],
+        ),
       ],
     );
   }
@@ -253,43 +260,3 @@ class _Panel extends StatelessWidget {
   }
 }
 
-class _StopButton extends StatelessWidget {
-  const _StopButton({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: Radii.pill,
-      child: Container(
-        width: 96,
-        height: 96,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFF5A5F), AppColors.accent],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.stop, color: Colors.white, size: 30),
-            Text('STOP',
-                style: AppType.mono(
-                    size: 12, weight: FontWeight.w800, color: Colors.white)),
-          ],
-        ),
-      ),
-    );
-  }
-}

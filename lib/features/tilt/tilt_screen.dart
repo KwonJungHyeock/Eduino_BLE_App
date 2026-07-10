@@ -78,6 +78,18 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
     });
   }
 
+  String get _sensGuide {
+    if (_sensitivity < 0.8) return '부드럽게 · 살짝 기울여도 천천히 (초보용)';
+    if (_sensitivity < 1.4) return '보통 · 균형잡힌 반응';
+    return '민감 · 조금만 기울여도 크게 움직여요';
+  }
+
+  IconData get _sensIcon {
+    if (_sensitivity < 0.8) return Icons.spa_outlined;
+    if (_sensitivity < 1.4) return Icons.balance;
+    return Icons.bolt;
+  }
+
   @override
   Widget build(BuildContext context) {
     final connected = ref.watch(connectionProvider).isConnected;
@@ -137,6 +149,17 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
                     max: 2.0,
                     onChanged: (v) => setState(() => _sensitivity = v),
                   ),
+                  Row(
+                    children: [
+                      Icon(_sensIcon, size: 15, color: AppColors.signal),
+                      Gap.w8,
+                      Expanded(
+                        child: Text(_sensGuide,
+                            style: AppType.mono(
+                                size: 12, color: AppColors.textMuted)),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -185,19 +208,24 @@ class _Level extends StatelessWidget {
             ),
             Container(width: 1, height: h, color: AppColors.border),
             Container(width: w, height: 1, color: AppColors.border),
+            // 폰 기울기 = 차 움직임 연동: 차 아이콘이 기울고(조향) 위아래로(스로틀) 이동.
             Transform.translate(
               offset: Offset(dx, dy),
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.signal,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                        color: AppColors.signal.withValues(alpha: 0.4),
-                        blurRadius: 12),
-                  ],
+              child: Transform.rotate(
+                angle: (steer / 100) * 0.5, // 좌우 기울임 = 조향 각
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.signal,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                          color: AppColors.signal.withValues(alpha: 0.45),
+                          blurRadius: 16),
+                    ],
+                  ),
+                  child: const Icon(Icons.directions_car,
+                      color: Colors.white, size: 26),
                 ),
               ),
             ),

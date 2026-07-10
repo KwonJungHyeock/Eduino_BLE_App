@@ -23,7 +23,29 @@ class HomeScreen extends ConsumerWidget {
     final kit = ref.watch(kitProfileProvider).valueOrNull;
     final connected = conn.isConnected;
 
-    return Scaffold(
+    return PopScope(
+      // 홈(루트)에서 뒤로가기 → 종료 확인. 다른 화면은 정상적으로 pop.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final exit = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            title: const Text('앱 종료'),
+            content: const Text('앱을 종료하시겠습니까?'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(c, false),
+                  child: const Text('취소')),
+              FilledButton(
+                  onPressed: () => Navigator.pop(c, true),
+                  child: const Text('종료')),
+            ],
+          ),
+        );
+        if (exit == true) SystemNavigator.pop();
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
@@ -122,6 +144,7 @@ class HomeScreen extends ConsumerWidget {
             ],
           ],
         ),
+      ),
       ),
     );
   }

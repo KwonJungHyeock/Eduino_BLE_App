@@ -12,6 +12,75 @@ import '../../providers/car_controller.dart';
 import '../../widgets/speed_cap_slider.dart';
 import '../../widgets/surface_card.dart';
 
+/// 자동차 계기판(디지털 클러스터) 스타일 명령 표시.
+class _CommandCluster extends StatelessWidget {
+  const _CommandCluster({required this.command});
+  final String command;
+
+  static const Color _digital = Color(0xFF7CE0C3);
+
+  String get _friendly {
+    final c = command;
+    if (c.startsWith('STP')) return '정지';
+    if (c.startsWith('DRV')) return '주행';
+    if (c.startsWith('MOV:')) {
+      switch (c.substring(4)) {
+        case 'F':
+          return '전진';
+        case 'B':
+          return '후진';
+        case 'L':
+          return '좌회전';
+        case 'R':
+          return '우회전';
+        case 'FL':
+          return '좌전진';
+        case 'FR':
+          return '우전진';
+        case 'BL':
+          return '좌후진';
+        case 'BR':
+          return '우후진';
+        case 'S':
+          return '정지';
+      }
+    }
+    return '대기';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0E1726),
+        borderRadius: Radii.card,
+        boxShadow: [
+          BoxShadow(
+            color: _digital.withValues(alpha: 0.18),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text('전송 명령 · COMMAND',
+              style: AppType.mono(
+                  size: 10, color: _digital, letterSpacing: 3)),
+          const SizedBox(height: 6),
+          Text(command,
+              style: AppType.instrument(size: 42, color: _digital)),
+          const SizedBox(height: 2),
+          Text(_friendly,
+              style: AppType.mono(size: 13, color: Colors.white70)),
+        ],
+      ),
+    );
+  }
+}
+
 class _RotateButton extends StatefulWidget {
   const _RotateButton({
     required this.label,
@@ -104,29 +173,9 @@ class ControllerScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(Gap.md),
         child: Column(
           children: [
-            // 보내는 명령 실시간 표시
-            Container(
-              width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: Gap.md, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.signalTint,
-                borderRadius: Radii.pill,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('보내는 명령  ',
-                      style: AppType.mono(size: 12, color: AppColors.textMuted)),
-                  Text(lastCmd,
-                      style: AppType.mono(
-                          size: 15,
-                          weight: FontWeight.w700,
-                          color: AppColors.signalDeep)),
-                ],
-              ),
-            ),
-            Gap.h8,
+            // 자동차 계기판 스타일 명령 표시
+            _CommandCluster(command: lastCmd),
+            Gap.h12,
             Expanded(
               child: Center(
                 child: _DPad(
