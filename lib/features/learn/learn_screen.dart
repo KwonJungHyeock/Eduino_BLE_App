@@ -2,9 +2,31 @@
 // 명령 ↔ 아두이노 코드 매핑 (§5.9, 차별 B). "이 동작 = 이 코드"로 코딩 교육과 연결.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../app/theme.dart';
 import '../../widgets/surface_card.dart';
+
+class _CopyButton extends StatelessWidget {
+  const _CopyButton({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      visualDensity: VisualDensity.compact,
+      icon: const Icon(Icons.copy, size: 16, color: Color(0xFF8CD3B0)),
+      tooltip: '코드 복사',
+      onPressed: () {
+        Clipboard.setData(ClipboardData(text: text));
+        HapticFeedback.selectionClick();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('코드를 복사했어요'), duration: Duration(seconds: 1)),
+        );
+      },
+    );
+  }
+}
 
 class LearnScreen extends StatelessWidget {
   const LearnScreen({super.key});
@@ -81,18 +103,28 @@ class LearnScreen extends StatelessWidget {
                             color: AppColors.signalDeep)),
                   ),
                   Gap.h8,
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(Gap.sm),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0E1726),
-                      borderRadius: Radii.chip,
-                    ),
-                    child: Text(m.$3,
-                        style: AppType.mono(
-                            size: 12,
-                            color: const Color(0xFF8CD3B0),
-                            height: 1.5)),
+                  Stack(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(
+                            Gap.sm, Gap.sm, 40, Gap.sm),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0E1726),
+                          borderRadius: Radii.chip,
+                        ),
+                        child: Text(m.$3,
+                            style: AppType.mono(
+                                size: 12,
+                                color: const Color(0xFF8CD3B0),
+                                height: 1.5)),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: _CopyButton(text: m.$3),
+                      ),
+                    ],
                   ),
                 ],
               ),
