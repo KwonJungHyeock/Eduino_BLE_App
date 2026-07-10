@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
+import '../../providers/module_providers.dart';
 
 class TerminalScreen extends ConsumerStatefulWidget {
   const TerminalScreen({super.key});
@@ -21,13 +22,9 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
 
-  // HM-10 AT 예제 (미연결 AT 모드에서만 모듈이 응답 — 화면 안내로 교육 포인트화, §5.9).
-  static const List<String> _atExamples = [
-    'AT',
-    'AT+NAME?',
-    'AT+ROLE?',
-    'AT+RESET',
-  ];
+  // 모듈별 AT 예제 (미연결 AT 모드에서만 모듈이 응답 — 화면 안내로 교육 포인트화, §5.9).
+  static const List<String> _atHm10 = ['AT', 'AT+NAME?', 'AT+ROLE?', 'AT+RESET'];
+  static const List<String> _atHc06 = ['AT', 'AT+VERSION', 'AT+NAME', 'AT+BAUD4'];
 
   @override
   void dispose() {
@@ -60,6 +57,8 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   @override
   Widget build(BuildContext context) {
     final log = ref.watch(terminalProvider);
+    final module = ref.watch(moduleProvider).valueOrNull ?? BtModule.ble;
+    final examples = module == BtModule.spp ? _atHc06 : _atHm10;
     ref.listen(terminalProvider, (_, __) => _scrollToEnd());
 
     return Column(
@@ -95,14 +94,14 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: Gap.md),
-            itemCount: _atExamples.length + 1,
+            itemCount: examples.length + 1,
             separatorBuilder: (_, __) => Gap.w8,
             itemBuilder: (context, i) {
-              if (i == _atExamples.length) {
+              if (i == examples.length) {
                 return _pill('지우기', Icons.clear_all,
                     () => ref.read(terminalProvider.notifier).clear());
               }
-              final at = _atExamples[i];
+              final at = examples[i];
               return _pill(at, null, () => _send(at));
             },
           ),

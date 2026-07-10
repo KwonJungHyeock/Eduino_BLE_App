@@ -43,6 +43,9 @@ jobs:
       - name: Pub get
         run: flutter pub get
 
+      - name: Patch HC-06 SPP plugin for AGP 8 (namespace)
+        run: python3 tool/patch_spp_plugin.py
+
       - name: Analyze (non-blocking, for logs)
         run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
 

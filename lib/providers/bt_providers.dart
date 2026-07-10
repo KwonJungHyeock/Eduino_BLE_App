@@ -1,12 +1,16 @@
 // Author: eduino
 // 통신·텔레메트리·터미널 전역 상태 (Riverpod). 화면은 이 provider 들로만 통신을 만난다.
 
+import 'dart:io' show Platform;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/bt/ble_transport.dart';
 import '../core/bt/bt_transport.dart';
+import '../core/bt/spp_transport.dart';
 import '../core/protocol/commands.dart';
 import '../core/protocol/telemetry.dart';
+import 'module_providers.dart';
 
 // connectionProvider 등의 공개 타입이 여기에 있으므로, 확장(isConnected/isBusy)까지
 // 함께 노출해 이 파일만 import 해도 화면에서 바로 쓸 수 있게 한다.
@@ -17,33 +21,37 @@ export '../core/bt/bt_transport.dart'
 // 전송 계층
 // ---------------------------------------------------------------------------
 
-/// 앱 수명 동안 단일 BLE 전송 인스턴스. (HC-06 추가 시 여기서 DI 로 분기)
-final bleTransportProvider = Provider<BtTransport>((ref) {
-  final t = BleTransport();
+/// 선택한 모듈에 맞는 전송 계층. HM-10→BLE, HC-06→Classic SPP(안드로이드).
+/// 모듈을 바꾸면 provider 가 재생성되며 이전 전송은 dispose 된다(연결은 끊김).
+final transportProvider = Provider<BtTransport>((ref) {
+  final module = ref.watch(moduleProvider).valueOrNull ?? BtModule.ble;
+  final BtTransport t = (module == BtModule.spp && Platform.isAndroid)
+      ? SppTransport()
+      : BleTransport();
   ref.onDispose(t.dispose);
   return t;
 });
 
 /// 연결 상태 변화 스트림.
 final connectionStreamProvider = StreamProvider<BtConnectionState>((ref) {
-  return ref.watch(bleTransportProvider).stateStream;
+  return ref.watch(transportProvider).stateStream;
 });
 
 /// 동기 조회용 연결 상태(스트림 첫 방출 전에도 현재값 제공).
 final connectionProvider = Provider<BtConnectionState>((ref) {
   final async = ref.watch(connectionStreamProvider);
-  return async.valueOrNull ?? ref.watch(bleTransportProvider).state;
+  return async.valueOrNull ?? ref.watch(transportProvider).state;
 });
 
 /// 스캔 결과 — 화면이 구독하면 스캔 시작, 벗어나면 autoDispose 로 중지.
 final scanResultsProvider =
     StreamProvider.autoDispose<List<BtDevice>>((ref) {
-  return ref.watch(bleTransportProvider).scan();
+  return ref.watch(transportProvider).scan();
 });
 
 /// 수신 원시 조각 → \n 재조립 → 라인 스트림. telemetry/terminal 이 공유 구독.
 final incomingLineProvider = StreamProvider<String>((ref) {
-  final transport = ref.watch(bleTransportProvider);
+  final transport = ref.watch(transportProvider);
   final reassembler = LineReassembler();
   return transport.incoming.expand(reassembler.add);
 });

@@ -57,7 +57,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     HapticFeedback.selectionClick();
     setState(() => _error = null);
     try {
-      await ref.read(bleTransportProvider).connect(device);
+      await ref.read(transportProvider).connect(device);
     } catch (e) {
       if (mounted) setState(() => _error = '연결 실패: $e');
     }
@@ -122,7 +122,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                           Text(
                               connected
                                   ? '연결되어 있습니다.'
-                                  : '전원이 켜진 RC카를 근처에 두세요.',
+                                  : module == BtModule.spp
+                                      ? '설정에서 페어링(PIN 1234) 후 목록에서 선택'
+                                      : '전원이 켜진 RC카를 근처에 두세요.',
                               style: AppType.mono(
                                   size: 12, color: AppColors.textMuted)),
                         ],
@@ -143,7 +145,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           ),
         ),
       ),
-      floatingActionButton: (_permsReady && !connected && module == BtModule.ble)
+      floatingActionButton: (_permsReady && !connected)
           ? FloatingActionButton.extended(
               backgroundColor: AppColors.surface,
               onPressed: () => ref.invalidate(scanResultsProvider),
@@ -158,7 +160,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
   Widget _body(BtConnectionState conn, BtModule module, bool connected) {
     // 이미 연결됨 → 스캔하지 않고(상태 유지) 연결 패널만 표시.
     if (connected) {
-      final device = ref.watch(bleTransportProvider).connectedDevice;
+      final device = ref.watch(transportProvider).connectedDevice;
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -184,39 +186,11 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Gap.h8,
             OutlinedButton(
               onPressed: () async {
-                await ref.read(bleTransportProvider).disconnect();
+                await ref.read(transportProvider).disconnect();
               },
               child: const Text('연결 해제'),
             ),
           ],
-        ),
-      );
-    }
-    // HC-06(SPP) 라디오는 2단계에서 활성화 예정 — 현재는 안내.
-    if (module == BtModule.spp) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(Gap.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.settings_bluetooth,
-                  size: 44, color: AppColors.textMuted),
-              Gap.h16,
-              Text(
-                'HC-06(Classic SPP) 실제 무선 연결은\n다음 업데이트에서 켜집니다.',
-                textAlign: TextAlign.center,
-                style: AppType.mono(
-                    size: 13, color: AppColors.textMuted, height: 1.6),
-              ),
-              Gap.h16,
-              Text(
-                '먼저 HM-10 으로 바꿔서 화면을 둘러볼 수 있어요.',
-                textAlign: TextAlign.center,
-                style: AppType.mono(size: 11, color: AppColors.textMuted),
-              ),
-            ],
-          ),
         ),
       );
     }

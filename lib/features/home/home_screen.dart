@@ -113,7 +113,7 @@ class _StatusCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final device = ref.watch(bleTransportProvider).connectedDevice;
+    final device = ref.watch(transportProvider).connectedDevice;
     final module = ref.watch(moduleProvider).valueOrNull;
     final connected = conn.isConnected;
     final (color, label) = switch (conn) {
@@ -182,7 +182,7 @@ class _StatusCard extends ConsumerWidget {
               icon: const Icon(Icons.link_off, color: AppColors.textMuted),
               onPressed: () async {
                 HapticFeedback.selectionClick();
-                await ref.read(bleTransportProvider).disconnect();
+                await ref.read(transportProvider).disconnect();
               },
             ),
         ],

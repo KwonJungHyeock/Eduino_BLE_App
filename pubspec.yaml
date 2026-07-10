@@ -20,6 +20,9 @@ dependencies:
   # BLE (HM-10) — 주력·크로스플랫폼 통신 (§2.2)
   flutter_blue_plus: ^1.35.5
 
+  # Classic SPP (HC-06) — Android 전용 (§2.1)
+  flutter_bluetooth_serial: ^0.4.0
+
   # 권한 (BT/위치 — 스캔·연결)
   permission_handler: ^11.3.1
 

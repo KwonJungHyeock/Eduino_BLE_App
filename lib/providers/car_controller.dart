@@ -55,7 +55,7 @@ class CarController {
   static const Duration _heartbeatInterval = Duration(milliseconds: 250);
 
   bool get _connected =>
-      _ref.read(bleTransportProvider).state == BtConnectionState.connected;
+      _ref.read(transportProvider).state == BtConnectionState.connected;
 
   // ---- 연결 수명 관리 -------------------------------------------------------
 
@@ -128,7 +128,7 @@ class CarController {
   void sendPlain(String text) {
     if (!_connected) return;
     final t = text.endsWith('\n') ? text : '$text\n';
-    _ref.read(bleTransportProvider).send(utf8.encode(t));
+    _ref.read(transportProvider).send(utf8.encode(t));
     _ref.read(terminalProvider.notifier).logOutgoing(text);
   }
 
@@ -143,7 +143,7 @@ class CarController {
   void _sendFrame(String frame, {bool silent = false}) {
     // 연결 상태 가드 — 미연결이면 조용히 무시(전송 실패로 화면이 깨지지 않게).
     if (!_connected) return;
-    _ref.read(bleTransportProvider).send(Commands.encode(frame));
+    _ref.read(transportProvider).send(Commands.encode(frame));
     if (!silent) _ref.read(terminalProvider.notifier).logOutgoing(frame);
   }
 

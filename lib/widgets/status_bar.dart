@@ -15,7 +15,7 @@ class StatusBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final conn = ref.watch(connectionProvider);
     final tele = ref.watch(telemetryProvider);
-    final device = ref.watch(bleTransportProvider).connectedDevice;
+    final device = ref.watch(transportProvider).connectedDevice;
 
     final (color, label) = switch (conn) {
       BtConnectionState.connected => (AppColors.signal, '연결됨'),
