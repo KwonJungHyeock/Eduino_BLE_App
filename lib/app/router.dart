@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../features/autonomous/autonomous_screen.dart';
 import '../features/basics/serial_chat_screen.dart';
 import '../features/connect/connect_screen.dart';
+import '../features/control/control_panel_screen.dart';
 import '../features/controller/controller_menu_screen.dart';
 import '../features/controller/controller_screen.dart';
 import '../features/home/home_screen.dart';
@@ -30,6 +31,7 @@ abstract class Routes {
   static const home = '/home';
   static const connect = '/connect';
   static const kit = '/kit';
+  static const control = '/control';
   static const motor = '/motor';
   static const terminal = '/terminal';
   static const basics = '/basics';
@@ -68,6 +70,10 @@ class GoRouterHolder {
         GoRoute(
           path: Routes.kit,
           builder: (context, state) => const KitSelectScreen(),
+        ),
+        GoRoute(
+          path: Routes.control,
+          builder: (context, state) => const ControlPanelScreen(),
         ),
         GoRoute(
           path: Routes.motor,

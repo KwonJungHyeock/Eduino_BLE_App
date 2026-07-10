@@ -83,6 +83,7 @@ class CarController {
   void _cancelThrottlers() {
     _drive.cancel();
     _speedCap.cancel();
+    _aux.cancel();
     for (final t in _prm.values) {
       t.cancel();
     }
@@ -122,6 +123,26 @@ class CarController {
 
   /// LED RGB (네오픽셀).
   void ledRgb(int r, int g, int b) => _sendFrame(Commands.ledRgb(r, g, b));
+
+  // ---- 교구(비주행) 액추에이터 --------------------------------------------
+
+  final _Throttler _aux = _Throttler(const Duration(milliseconds: 100));
+
+  /// 서보 각도(0-180). 슬라이더용 스로틀링.
+  void setServo(int id, int angle) {
+    _aux.run(() => _sendFrame(Commands.servo(id, angle)));
+  }
+
+  /// 릴레이/액추에이터 ON/OFF(팬·펌프·조명·컨베이어). 즉시.
+  void setActuator(int id, bool on) => _sendFrame(Commands.actuator(id, on));
+
+  /// 액추에이터 세기(PWM %). 슬라이더용 스로틀링.
+  void setActuatorPwm(int id, int percent) {
+    _aux.run(() => _sendFrame(Commands.actuatorPwm(id, percent)));
+  }
+
+  /// LCD 텍스트 전송.
+  void sendLcd(int line, String text) => _sendFrame(Commands.lcd(line, text));
 
   /// 터미널 원문 전송(RAW: 프로토콜 프레임).
   void raw(String text) => _sendFrame(Commands.raw(text));

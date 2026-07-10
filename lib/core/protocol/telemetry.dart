@@ -48,6 +48,13 @@ class LogEvent extends TelemetryEvent {
   final String text;
 }
 
+/// 범용 센서값 — SEN:<key>,<value> (온습도·토양·조도·물체감지 등 교구 공통).
+class SensorEvent extends TelemetryEvent {
+  const SensorEvent(this.key, this.value);
+  final String key; // 예: TMP, HUM, SOL, LUX, OBJ
+  final double value;
+}
+
 /// 알 수 없는/파싱 실패 라인(원문 보존, 터미널엔 그대로 표시).
 class UnknownEvent extends TelemetryEvent {
   const UnknownEvent(this.raw);
@@ -89,6 +96,13 @@ abstract class TelemetryDecoder {
         return AckEvent(arg.trim());
       case 'LOG':
         return LogEvent(arg);
+      case 'SEN':
+        final parts = arg.split(',');
+        if (parts.length < 2) return UnknownEvent(trimmed);
+        final v = double.tryParse(parts[1].trim());
+        return v == null
+            ? UnknownEvent(trimmed)
+            : SensorEvent(parts[0].trim().toUpperCase(), v);
       default:
         return UnknownEvent(trimmed);
     }

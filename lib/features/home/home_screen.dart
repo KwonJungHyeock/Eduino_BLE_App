@@ -43,44 +43,28 @@ class HomeScreen extends ConsumerWidget {
           children: [
             _StatusCard(conn: conn, kit: kit),
             Gap.h24,
-            Text('시작하기',
-                style: AppType.mono(
-                    size: 12, color: AppColors.textMuted, letterSpacing: 2)),
-            Gap.h8,
+            // ── 블루투스 실습 (모든 교구 공통) ──
+            _Section('블루투스 실습'),
             _MenuTile(
               icon: Icons.bluetooth_searching,
               title: '블루투스 연결',
-              subtitle: connected ? '연결됨 · 눌러서 관리' : 'HM-10 모듈 스캔·연결',
+              subtitle: connected ? '연결됨 · 눌러서 관리' : '모듈 스캔·연결',
               accent: connected ? AppColors.signal : AppColors.textPrimary,
               onTap: () => context.push(Routes.connect),
             ),
             Gap.h8,
             _MenuTile(
-              icon: Icons.terminal,
-              title: 'AT 커맨드',
-              subtitle: '모듈 설정 명령 실습 (AT / AT+NAME? …)',
-              onTap: () => context.push(Routes.terminal),
-            ),
-            Gap.h8,
-            _MenuTile(
               icon: Icons.forum_outlined,
               title: '시리얼 통신 채팅',
-              subtitle: '앱 ↔ PC 시리얼 모니터 문자 주고받기 실습',
+              subtitle: '앱 ↔ PC 시리얼 모니터 문자 주고받기',
               onTap: () => context.push(Routes.basics),
             ),
             Gap.h8,
             _MenuTile(
-              icon: Icons.sports_esports_outlined,
-              title: '블루투스 컨트롤러',
-              subtitle: '조이스틱 · 방향 · 기울기 · 음성 · LED',
-              onTap: () => context.push(Routes.controller),
-            ),
-            Gap.h8,
-            _MenuTile(
-              icon: Icons.emoji_events_outlined,
-              title: '미션 · 챌린지',
-              subtitle: '랩타임 측정 · 개인 베스트 기록',
-              onTap: () => context.push(Routes.missions),
+              icon: Icons.terminal,
+              title: 'AT 커맨드',
+              subtitle: '모듈 설정 명령 실습',
+              onTap: () => context.push(Routes.terminal),
             ),
             Gap.h8,
             _MenuTile(
@@ -90,39 +74,70 @@ class HomeScreen extends ConsumerWidget {
               onTap: () => context.push(Routes.learn),
             ),
             Gap.h24,
-            Text('내 장비',
-                style: AppType.mono(
-                    size: 12, color: AppColors.textMuted, letterSpacing: 2)),
+            // ── 교구 제어 (킷 선택 기반) ──
+            _Section('교구 제어'),
+            _MenuTile(
+              icon: Icons.tune,
+              title: '교구 제어판',
+              subtitle: kit == null ? '먼저 교구를 선택하세요' : '내 교구: ${kit.name}',
+              accent: kit == null ? AppColors.textMuted : AppColors.signal,
+              onTap: () =>
+                  context.push(kit == null ? Routes.kit : Routes.control),
+            ),
             Gap.h8,
+            _MenuTile(
+              icon: Icons.smart_toy_outlined,
+              title: '내 교구 선택',
+              subtitle: kit == null
+                  ? 'RC카 / 스마트 팩토리·홈·팜'
+                  : '선택됨: ${kit.name} · 변경',
+              onTap: () => context.push(Routes.kit),
+            ),
+            Gap.h8,
+            _MenuTile(
+              icon: Icons.emoji_events_outlined,
+              title: '미션 · 챌린지',
+              subtitle: '랩타임 측정 · 개인 베스트',
+              onTap: () => context.push(Routes.missions),
+            ),
+            Gap.h24,
+            // ── 설정 ──
+            _Section('설정'),
             _MenuTile(
               icon: Icons.settings_bluetooth,
               title: '블루투스 모듈',
               subtitle: ref.watch(moduleProvider).valueOrNull == null
                   ? 'HM-10 / HC-06 선택'
                   : '선택됨: ${ref.watch(moduleProvider).valueOrNull!.title} · 변경',
-              accent: AppColors.signal,
               onTap: () => context.push(Routes.module),
             ),
-            Gap.h8,
-            _MenuTile(
-              icon: Icons.smart_toy_outlined,
-              title: '에듀이노 교구',
-              subtitle: kit == null
-                  ? '내 키트 선택 (2휠 · 4휠 · 메탈)'
-                  : '선택됨: ${kit.name} · 변경하기',
-              accent: kit == null ? AppColors.textPrimary : AppColors.signal,
-              onTap: () => context.push(Routes.kit),
-            ),
-            Gap.h8,
-            _MenuTile(
-              icon: Icons.settings_input_component,
-              title: '모터 포트 설정',
-              subtitle: '바퀴 ↔ 쉴드 포트(M1~M4) 매핑',
-              onTap: () => context.push(Routes.motor),
-            ),
+            if (kit == null || kit.isRc) ...[
+              Gap.h8,
+              _MenuTile(
+                icon: Icons.settings_input_component,
+                title: '모터 포트 설정',
+                subtitle: '바퀴 ↔ 쉴드 포트(M1~M4) 매핑',
+                onTap: () => context.push(Routes.motor),
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _Section extends StatelessWidget {
+  const _Section(this.title);
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Gap.sm),
+      child: Text(title,
+          style: AppType.mono(
+              size: 12, color: AppColors.textMuted, letterSpacing: 2)),
     );
   }
 }

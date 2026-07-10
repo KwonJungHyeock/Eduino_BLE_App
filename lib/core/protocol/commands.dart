@@ -83,6 +83,19 @@ abstract class Commands {
   /// 파라미터 튜닝.
   static String param(PrmKey key, int value) => 'PRM:${key.code},$value';
 
+  /// 서보 각도 — 스마트홈 도어/팩토리 분류 등. id=서보 번호, angle 0-180.
+  static String servo(int id, int angle) => 'SRV:$id,${_clamp(angle, 0, 180)}';
+
+  /// 액추에이터/릴레이 ON/OFF — 팬·펌프·조명·컨베이어 등. id=채널.
+  static String actuator(int id, bool on) => 'ACT:$id,${on ? 1 : 0}';
+
+  /// 액추에이터 세기(PWM %) — 컨베이어 속도 등. id=채널, 0-100.
+  static String actuatorPwm(int id, int percent) =>
+      'ACT:$id,${_clamp(percent, 0, 100)}';
+
+  /// LCD 텍스트 — line=줄(0/1), text=표시할 문자.
+  static String lcd(int line, String text) => 'LCD:$line,$text';
+
   /// 하트비트.
   static String ping() => 'PNG:';
 

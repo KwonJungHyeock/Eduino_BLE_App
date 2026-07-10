@@ -67,6 +67,7 @@ class TelemetryState {
     this.mode = DriveMode.manual,
     this.batteryPercent,
     this.lastAck,
+    this.sensors = const {},
   });
 
   final int? distanceCm;
@@ -74,6 +75,9 @@ class TelemetryState {
   final DriveMode mode;
   final int? batteryPercent;
   final String? lastAck;
+
+  /// 범용 센서값 맵(TMP/HUM/SOL/LUX/OBJ 등) — 교구 센서 패널에서 사용.
+  final Map<String, double> sensors;
 
   TelemetryState _apply(TelemetryEvent e) {
     switch (e) {
@@ -87,6 +91,8 @@ class TelemetryState {
         return _copy(batteryPercent: percent);
       case AckEvent(:final cmd):
         return _copy(lastAck: cmd);
+      case SensorEvent(:final key, :final value):
+        return _copy(sensors: {...sensors, key: value});
       case LogEvent():
       case UnknownEvent():
         return this;
@@ -99,6 +105,7 @@ class TelemetryState {
     DriveMode? mode,
     int? batteryPercent,
     String? lastAck,
+    Map<String, double>? sensors,
   }) =>
       TelemetryState(
         distanceCm: distanceCm ?? this.distanceCm,
@@ -106,6 +113,7 @@ class TelemetryState {
         mode: mode ?? this.mode,
         batteryPercent: batteryPercent ?? this.batteryPercent,
         lastAck: lastAck ?? this.lastAck,
+        sensors: sensors ?? this.sensors,
       );
 }
 

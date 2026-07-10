@@ -31,25 +31,47 @@ class KitSelectScreen extends ConsumerWidget {
                   AppType.mono(size: 13, color: AppColors.textMuted, height: 1.5),
             ),
             const SizedBox(height: Gap.lg),
-            for (final type in KitProfile.all) ...[
-              _KitCard(
-                profile: KitProfile.forType(type),
-                selected: current?.type == type,
-                onTap: () async {
-                  HapticFeedback.selectionClick();
-                  await ref.read(kitProfileProvider.notifier).select(type);
-                  if (!context.mounted) return;
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go(Routes.home);
-                  }
-                },
-              ),
-              Gap.h16,
-            ],
+            _catLabel('RC카 제어'),
+            for (final type in KitProfile.rcKits)
+              _kitCard(context, ref, type, current),
+            const SizedBox(height: Gap.sm),
+            _catLabel('스마트 교구 제어'),
+            for (final type in KitProfile.applianceKits)
+              _kitCard(context, ref, type, current),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _catLabel(String t) => Padding(
+        padding: const EdgeInsets.only(bottom: Gap.sm),
+        child: Text(t,
+            style: AppType.mono(
+                size: 12, color: AppColors.textMuted, letterSpacing: 2)),
+      );
+
+  Widget _kitCard(
+    BuildContext context,
+    WidgetRef ref,
+    KitType type,
+    KitProfile? current,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Gap.md),
+      child: _KitCard(
+        profile: KitProfile.forType(type),
+        selected: current?.type == type,
+        onTap: () async {
+          HapticFeedback.selectionClick();
+          await ref.read(kitProfileProvider.notifier).select(type);
+          if (!context.mounted) return;
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go(Routes.home);
+          }
+        },
       ),
     );
   }
@@ -101,11 +123,16 @@ class _KitCard extends StatelessWidget {
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: [
-                      if (profile.hasUltrasonic) _tag('초음파'),
-                      _tag(profile.hasLineSensor ? 'IR 라인' : 'IR 없음',
-                          muted: !profile.hasLineSensor),
-                    ],
+                    children: profile.isRc
+                        ? [
+                            if (profile.hasUltrasonic) _tag('초음파'),
+                            _tag(profile.hasLineSensor ? 'IR 라인' : 'IR 없음',
+                                muted: !profile.hasLineSensor),
+                          ]
+                        : [
+                            for (final c in profile.controls.take(3))
+                              _tag(c.label),
+                          ],
                   ),
                 ],
               ),
