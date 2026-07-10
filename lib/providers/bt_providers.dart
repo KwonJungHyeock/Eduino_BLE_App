@@ -1,14 +1,17 @@
 // Author: eduino
 // 통신·텔레메트리·터미널 전역 상태 (Riverpod). 화면은 이 provider 들로만 통신을 만난다.
 
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/bt/ble_transport.dart';
 import '../core/bt/bt_transport.dart';
 import '../core/protocol/commands.dart';
 import '../core/protocol/telemetry.dart';
+
+// connectionProvider 등의 공개 타입이 여기에 있으므로, 확장(isConnected/isBusy)까지
+// 함께 노출해 이 파일만 import 해도 화면에서 바로 쓸 수 있게 한다.
+export '../core/bt/bt_transport.dart'
+    show BtConnectionState, BtConnectionStateX, BtDevice, BtModule;
 
 // ---------------------------------------------------------------------------
 // 전송 계층
