@@ -10,6 +10,7 @@ import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../providers/app_mode_providers.dart';
 import '../../providers/module_providers.dart';
+import '../../providers/onboarding_providers.dart';
 import '../../widgets/brand_mark.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -34,7 +35,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _advance() async {
-    // 온보딩 순서: 모드 선택 → 모듈 선택 → 홈.
+    // 온보딩 순서: (최초)튜토리얼 → 모드 선택 → 모듈 선택 → 홈.
+    final seenTutorial = await ref.read(tutorialSeenProvider.future);
+    if (!mounted) return;
+    if (!seenTutorial) {
+      context.go(Routes.tutorial);
+      return;
+    }
     final mode = await ref.read(appModeProvider.future);
     if (!mounted) return;
     if (mode == null) {

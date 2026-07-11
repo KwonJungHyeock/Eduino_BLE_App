@@ -22,6 +22,7 @@ import '../features/missions/missions_screen.dart';
 import '../features/mode/mode_select_screen.dart';
 import '../features/motor/motor_config_screen.dart';
 import '../features/motor/rc_config_screen.dart';
+import '../features/onboarding/tutorial_screen.dart';
 import '../features/tilt/tilt_screen.dart';
 import '../features/voice/voice_screen.dart';
 import '../features/kit/kit_select_screen.dart';
@@ -32,6 +33,7 @@ import '../widgets/mode_scaffold.dart';
 
 abstract class Routes {
   static const intro = '/';
+  static const tutorial = '/tutorial';
   static const mode = '/mode';
   static const module = '/module';
   static const home = '/home';
@@ -64,6 +66,10 @@ class GoRouterHolder {
         GoRoute(
           path: Routes.intro,
           builder: (context, state) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: Routes.tutorial,
+          builder: (context, state) => const TutorialScreen(),
         ),
         GoRoute(
           path: Routes.mode,
