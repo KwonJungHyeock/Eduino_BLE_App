@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
 import 'providers/car_controller.dart';
+import 'providers/connection_manager.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,8 +32,9 @@ class _EduinoAppState extends ConsumerState<EduinoApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _routerHolder = GoRouterHolder();
-    // CarController 를 즉시 인스턴스화(하트비트·연결 리스너 활성화).
+    // CarController·ConnectionManager 를 즉시 인스턴스화(하트비트·연결/재연결 리스너 활성화).
     ref.read(carControllerProvider);
+    ref.read(connectionManagerProvider);
   }
 
   @override
@@ -50,6 +52,9 @@ class _EduinoAppState extends ConsumerState<EduinoApp>
         state == AppLifecycleState.detached ||
         state == AppLifecycleState.hidden) {
       ref.read(carControllerProvider).emergencyStop();
+    } else if (state == AppLifecycleState.resumed) {
+      // 복귀 시 끊겨 있으면 지난 기기로 자동 재연결 시도.
+      ref.read(connectionManagerProvider).onResume();
     }
   }
 

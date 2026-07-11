@@ -13,6 +13,7 @@ import '../../core/bt/bt_transport.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/last_device_providers.dart';
+import '../../providers/connection_manager.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/success_check.dart';
 import '../../widgets/surface_card.dart';
@@ -193,7 +194,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Gap.h8,
             OutlinedButton(
               onPressed: () async {
-                await ref.read(transportProvider).disconnect();
+                await ref.read(connectionManagerProvider).userDisconnect();
               },
               child: const Text('연결 해제'),
             ),

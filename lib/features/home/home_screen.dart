@@ -12,6 +12,7 @@ import '../../app/theme.dart';
 import '../../core/bt/bt_transport.dart';
 import '../../providers/app_mode_providers.dart';
 import '../../providers/bt_providers.dart';
+import '../../providers/connection_manager.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/brand_mark.dart';
@@ -310,14 +311,19 @@ class _StatusCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final device = ref.watch(transportProvider).connectedDevice;
     final module = ref.watch(moduleProvider).valueOrNull;
+    final reconnecting = ref.watch(reconnectingProvider);
     final connected = conn.isConnected;
-    final (color, label) = switch (conn) {
+    var (color, label) = switch (conn) {
       BtConnectionState.connected => (AppColors.signal, '연결됨'),
       BtConnectionState.connecting => (AppColors.warn, '연결 중'),
       BtConnectionState.scanning => (AppColors.warn, '스캔 중'),
       BtConnectionState.disconnecting => (AppColors.warn, '해제 중'),
       BtConnectionState.disconnected => (AppColors.textMuted, '미연결'),
     };
+    if (reconnecting && !connected) {
+      color = AppColors.warn;
+      label = '재연결 중…';
+    }
 
     return InkWell(
       onTap: () => context.push(Routes.connect),
@@ -389,7 +395,7 @@ class _StatusCard extends ConsumerWidget {
                 icon: const Icon(Icons.link_off, color: AppColors.textMuted),
                 onPressed: () async {
                   HapticFeedback.selectionClick();
-                  await ref.read(transportProvider).disconnect();
+                  await ref.read(connectionManagerProvider).userDisconnect();
                 },
               )
             else
