@@ -14,6 +14,8 @@ import '../../providers/app_mode_providers.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/module_providers.dart';
+import '../../widgets/brand_mark.dart';
+import '../../widgets/pressable.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -111,6 +113,8 @@ class HomeScreen extends ConsumerWidget {
         appBar: AppBar(
           title: Row(
             children: [
+              const BrandMark(size: 26),
+              Gap.w8,
               Text('Eduino',
                   style: AppType.mono(size: 18, weight: FontWeight.w800)),
               Text(' AI',
@@ -124,7 +128,7 @@ class HomeScreen extends ConsumerWidget {
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(Gap.md),
-            children: [
+            children: _stagger([
               _StatusCard(conn: conn, kit: kit),
               Gap.h16,
               _ModeBanner(mode: mode),
@@ -158,11 +162,30 @@ class HomeScreen extends ConsumerWidget {
                 subtitle: '현재: ${mode.title}',
                 onTap: () => context.push(Routes.mode),
               ),
-            ],
+            ]),
           ),
         ),
       ),
     );
+  }
+
+  /// 진입 시 위에서부터 순차로 떠오르는 카드 연출(스태거).
+  List<Widget> _stagger(List<Widget> items) {
+    final out = <Widget>[];
+    var step = 0;
+    for (final w in items) {
+      // 간격(SizedBox)은 지연 대상에서 제외해 리듬을 유지.
+      if (w is SizedBox) {
+        out.add(w);
+        continue;
+      }
+      out.add(RiseIn(
+        delay: Duration(milliseconds: (step * 45).clamp(0, 340)),
+        child: w,
+      ));
+      step++;
+    }
+    return out;
   }
 }
 
@@ -246,6 +269,7 @@ class _StatusCard extends ConsumerWidget {
           borderRadius: Radii.card,
           border: Border.all(
               color: connected ? AppColors.signal : AppColors.border),
+          boxShadow: connected ? Shadows.glow(AppColors.signal) : Shadows.soft,
         ),
         child: Row(
           children: [
@@ -347,6 +371,7 @@ class _MenuTile extends StatelessWidget {
             color: AppColors.surface,
             borderRadius: Radii.card,
             border: Border.all(color: AppColors.border),
+            boxShadow: Shadows.soft,
           ),
           child: Row(
             children: [

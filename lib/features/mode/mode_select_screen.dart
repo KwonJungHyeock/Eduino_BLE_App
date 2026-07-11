@@ -10,6 +10,7 @@ import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../providers/app_mode_providers.dart';
 import '../../providers/module_providers.dart';
+import '../../widgets/pressable.dart';
 
 class ModeSelectScreen extends ConsumerWidget {
   const ModeSelectScreen({super.key});
@@ -40,24 +41,29 @@ class ModeSelectScreen extends ConsumerWidget {
               ),
               const SizedBox(height: Gap.lg),
               Expanded(
-                child: _ModeCard(
-                  mode: AppMode.kit,
-                  title: '교구 학습',
-                  subtitle: 'RC카 · 스마트 팩토리 · 홈 · 팜을\n앱으로 제어하고 체험',
-                  icon: Icons.smart_toy_outlined,
-                  selected: current == AppMode.kit,
-                  onTap: () => _pick(context, ref, AppMode.kit),
+                child: RiseIn(
+                  child: _ModeCard(
+                    mode: AppMode.kit,
+                    title: '교구 학습',
+                    subtitle: 'RC카 · 스마트 팩토리 · 홈 · 팜을\n앱으로 제어하고 체험',
+                    icon: Icons.smart_toy_outlined,
+                    selected: current == AppMode.kit,
+                    onTap: () => _pick(context, ref, AppMode.kit),
+                  ),
                 ),
               ),
               Gap.h16,
               Expanded(
-                child: _ModeCard(
-                  mode: AppMode.lab,
-                  title: '블루투스 실습',
-                  subtitle: '연결·시리얼 통신·AT 커맨드로\n통신 원리를 직접 학습',
-                  icon: Icons.bluetooth,
-                  selected: current == AppMode.lab,
-                  onTap: () => _pick(context, ref, AppMode.lab),
+                child: RiseIn(
+                  delay: const Duration(milliseconds: 90),
+                  child: _ModeCard(
+                    mode: AppMode.lab,
+                    title: '블루투스 실습',
+                    subtitle: '연결·시리얼 통신·AT 커맨드로\n통신 원리를 직접 학습',
+                    icon: Icons.bluetooth,
+                    selected: current == AppMode.lab,
+                    onTap: () => _pick(context, ref, AppMode.lab),
+                  ),
                 ),
               ),
             ],
@@ -100,23 +106,22 @@ class _ModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = mode == AppMode.kit ? AppColors.accent : AppColors.signal;
-    return InkWell(
+    return Pressable(
       onTap: onTap,
-      borderRadius: Radii.card,
-      child: Container(
+      haptic: false, // _pick 에서 이미 햅틱 처리.
+      child: AnimatedContainer(
+        duration: Motion.base,
+        curve: Motion.emphasized,
         width: double.infinity,
         padding: const EdgeInsets.all(Gap.lg),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: Radii.card,
+          borderRadius: Radii.cardLg,
           border: Border.all(
             color: selected ? accent : AppColors.border,
             width: selected ? 2.5 : 1,
           ),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x141B3A6B), blurRadius: 18, offset: Offset(0, 6)),
-          ],
+          boxShadow: selected ? Shadows.glow(accent) : Shadows.soft,
         ),
         child: Row(
           children: [

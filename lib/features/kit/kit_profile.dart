@@ -6,7 +6,17 @@
 
 import 'package:flutter/material.dart';
 
+import '../../widgets/kit_illustration.dart';
+
 enum KitType { twoWheel, metal, fourWheel, smartFactory, smartHome, smartFarm }
+
+/// KitType → 커스텀 일러스트(KitArt) 매핑. feature → widget 방향(정상).
+KitArt kitArtFor(KitType t) => switch (t) {
+      KitType.twoWheel || KitType.metal || KitType.fourWheel => KitArt.car,
+      KitType.smartFactory => KitArt.factory,
+      KitType.smartHome => KitArt.home,
+      KitType.smartFarm => KitArt.farm,
+    };
 
 /// 킷 분류 — 홈에서 RC / 교구 갈래로 나눈다.
 enum KitCategory { rcCar, appliance }

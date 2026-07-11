@@ -1,6 +1,6 @@
 // Author: eduino
-// 인트로 화면 — Eduino AI 로고 (§5.1). 라이트 배경에서 로고를 보여주고 홈으로 자동 전환.
-// 로고 파일이 없으면 텍스트 워드마크로 폴백(생성형 데코 아님, §6.4).
+// 인트로 화면 — 코드로 그린 EDUINO 브랜드 마크가 "그려지며" 등장(드로우온) 후 자동 전환.
+// 사진/로고 파일 없이 CustomPainter(BrandMark)로 브랜드 연출. §6.4 생성형 데코 금지 준수.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +10,7 @@ import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../providers/app_mode_providers.dart';
 import '../../providers/module_providers.dart';
+import '../../widgets/brand_mark.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -53,7 +54,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    // 인트로는 로고가 잘 보이도록 밝은 배경.
+    // 인트로는 브랜드 마크가 잘 보이도록 밝은 배경.
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FC),
       body: Center(
@@ -69,28 +70,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 class _BrandLogo extends StatelessWidget {
   const _BrandLogo();
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 240,
-          child: Image.asset(
-            'assets/brand/eduino_ai_logo.png',
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stack) => const _WordmarkFallback(),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// 로고 파일이 없을 때 쓰는 타이포 폴백. 실제 로고 색(다크 텍스트 + EDUINO 레드) 톤 유지.
-class _WordmarkFallback extends StatelessWidget {
-  const _WordmarkFallback();
-
   static const Color _ink = Color(0xFF2B3440);
 
   @override
@@ -98,31 +77,48 @@ class _WordmarkFallback extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text.rich(
-          TextSpan(
+        const AnimatedBrandMark(size: 132),
+        const SizedBox(height: Gap.lg),
+        // 워드마크는 마크가 그려진 뒤 부드럽게 페이드인.
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: Motion.slow,
+          curve: Curves.easeOut,
+          builder: (context, t, child) => Opacity(
+            opacity: (t * 1.4 - 0.4).clamp(0.0, 1.0),
+            child: child,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              TextSpan(
-                text: 'Eduino',
-                style: AppType.mono(
-                    size: 40, weight: FontWeight.w800, color: _ink),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Eduino',
+                      style: AppType.mono(
+                          size: 38, weight: FontWeight.w800, color: _ink),
+                    ),
+                    TextSpan(
+                      text: ' AI',
+                      style: AppType.mono(
+                          size: 38,
+                          weight: FontWeight.w800,
+                          color: AppColors.accent),
+                    ),
+                  ],
+                ),
               ),
-              TextSpan(
-                text: ' AI',
+              const SizedBox(height: 6),
+              Text(
+                'AIoT & Coding Education',
                 style: AppType.mono(
-                    size: 40,
-                    weight: FontWeight.w800,
-                    color: AppColors.accent),
+                  size: 12,
+                  color: const Color(0xFF9AA3B0),
+                  letterSpacing: 3,
+                ),
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'AIoT & Coding Education',
-          style: AppType.mono(
-            size: 12,
-            color: const Color(0xFF9AA3B0),
-            letterSpacing: 3,
           ),
         ),
       ],

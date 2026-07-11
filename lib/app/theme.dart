@@ -6,20 +6,59 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// 컬러 팔레트 (라이트 + 블루투스 블루) — 흰 배경, 선택/연결은 신뢰감 있는 블루.
+/// 톤: 밝고 친근한 교육형. 코랄 브랜드 + 하늘 블루, 부드러운 그림자와 틴트로 온기.
 abstract class AppColors {
-  static const Color baseBg = Color(0xFFEEF3FA); // 아주 옅은 블루-그레이 배경
+  static const Color baseBg = Color(0xFFF3F7FC); // 아주 옅은 블루-그레이 배경(더 밝게)
   static const Color surface = Color(0xFFFFFFFF); // 카드/표면 = 화이트
   static const Color surfaceHigh = Color(0xFFF3F7FC); // 살짝 눌린 표면
-  static const Color border = Color(0xFFDCE4EF);
+  static const Color border = Color(0xFFE2E9F2); // 더 부드러운 보더
   static const Color accent = Color(0xFFEE4C57); // EDUINO 브랜드 코랄레드(로고) · 강조/정지
+  static const Color accentSoft = Color(0xFFFF7A82); // 코랄 밝은 톤(그라디언트/일러스트)
   static const Color signal = Color(0xFF1C7DF3); // 블루투스 블루 · 선택/연결/주요
   static const Color signalDeep = Color(0xFF0A5FD0); // 블루 그라디언트 하단
+  static const Color signalSoft = Color(0xFF63A4F7); // 블루 밝은 톤
+  static const Color mint = Color(0xFF19C3A6); // 보조 포인트(센서 OK/성공)
+  static const Color sun = Color(0xFFFFC24B); // 따뜻한 노랑(교육형 포인트)
   static const Color textPrimary = Color(0xFF15202E); // 진한 텍스트
   static const Color textMuted = Color(0xFF6B7684);
   static const Color warn = Color(0xFFF59E0B);
 
   /// 블루 선택효과에 쓰는 옅은 배경 틴트.
   static const Color signalTint = Color(0xFFE7F1FE);
+
+  /// 코랄 선택효과에 쓰는 옅은 배경 틴트.
+  static const Color accentTint = Color(0xFFFDECEE);
+}
+
+/// 부드러운 그림자 토큰 — 밝고 친근한 톤의 깊이감(짙은 검정 대신 블루-그레이 확산).
+abstract class Shadows {
+  /// 카드 기본 그림자(살짝 떠 있는 느낌).
+  static const List<BoxShadow> soft = [
+    BoxShadow(color: Color(0x0F1B3A6B), blurRadius: 16, offset: Offset(0, 6)),
+  ];
+
+  /// 눌림/강조된 카드(더 크게 떠오름).
+  static const List<BoxShadow> lift = [
+    BoxShadow(color: Color(0x1A1B3A6B), blurRadius: 24, offset: Offset(0, 10)),
+  ];
+
+  /// 컬러 액센트 아래 은은한 컬러 글로우(코랄/블루 카드용).
+  static List<BoxShadow> glow(Color c) => [
+        BoxShadow(
+            color: c.withValues(alpha: 0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 10)),
+      ];
+}
+
+/// 모션 토큰 — 절제된, 부드러운 이징(§6.4 절제된 모션).
+abstract class Motion {
+  static const Duration fast = Duration(milliseconds: 160);
+  static const Duration base = Duration(milliseconds: 260);
+  static const Duration slow = Duration(milliseconds: 480);
+  static const Duration intro = Duration(milliseconds: 1100);
+  static const Curve emphasized = Curves.easeOutCubic;
+  static const Curve gentle = Curves.easeInOut;
 }
 
 /// 8pt 그리드 간격 토큰 (§6.4 여백과 정밀 그리드)
@@ -45,6 +84,8 @@ abstract class Gap {
 abstract class Radii {
   static const Radius r = Radius.circular(14);
   static const BorderRadius card = BorderRadius.all(Radius.circular(14));
+  static const BorderRadius cardLg =
+      BorderRadius.all(Radius.circular(22)); // 히어로 카드(친근한 라운드)
   static const BorderRadius pill = BorderRadius.all(Radius.circular(999));
   static const BorderRadius chip = BorderRadius.all(Radius.circular(10));
 }

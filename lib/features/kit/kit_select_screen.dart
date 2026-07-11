@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../providers/kit_providers.dart';
+import '../../widgets/kit_illustration.dart';
 import 'kit_profile.dart';
 
 class KitSelectScreen extends ConsumerWidget {
@@ -103,6 +104,7 @@ class _KitCard extends StatelessWidget {
             color: selected ? AppColors.signal : AppColors.border,
             width: selected ? 2 : 1,
           ),
+          boxShadow: selected ? Shadows.lift : Shadows.soft,
         ),
         child: Row(
           children: [
@@ -172,25 +174,21 @@ class _ProductThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    // 커스텀 일러스트를 기본 비주얼로 사용(사진 에셋이 있으면 사진 우선).
+    final illustration = KitIllustration(
+      art: kitArtFor(profile.type),
+      size: _size,
+    );
+    return SizedBox(
       width: _size,
       height: _size,
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: AppColors.baseBg,
-        borderRadius: Radii.chip,
-        border: Border.all(color: AppColors.border),
-      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: Radii.chip,
         child: Image.asset(
           profile.assetImage,
-          fit: BoxFit.contain, // 제품이 잘리지 않고 여백을 유지하도록 contain.
-          // 실사진 파일이 아직 없으면 아이콘 플레이스홀더(생성형 데코 아님, §6.4).
-          errorBuilder: (context, error, stack) => Center(
-            child: Icon(profile.fallbackIcon,
-                size: 40, color: AppColors.textMuted),
-          ),
+          fit: BoxFit.cover,
+          // 실사진 파일이 아직 없으면 코드로 그린 일러스트로 폴백(§6.4 준수).
+          errorBuilder: (context, error, stack) => illustration,
         ),
       ),
     );
