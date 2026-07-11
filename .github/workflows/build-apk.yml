@@ -50,6 +50,10 @@ jobs:
       - name: Analyze (non-blocking, for logs)
         run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
 
+      # 프로토콜 유닛테스트(비차단) — 실패해도 APK 발행은 유지, 로그로 확인.
+      - name: Test (non-blocking, for logs)
+        run: flutter test --reporter expanded || true
+
       - name: Build debug APK
         run: flutter build apk --debug
 
