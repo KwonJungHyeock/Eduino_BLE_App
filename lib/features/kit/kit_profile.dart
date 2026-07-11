@@ -141,7 +141,7 @@ class KitProfile {
           category: KitCategory.appliance,
           name: '스마트 홈 키트',
           tagline: '현관문 서보 · 조명 · LCD',
-          assetImage: 'assets/kits/home.jpg',
+          assetImage: 'assets/kits/smart_home.jpg',
           controls: [
             ControlSpec(kind: ControlKind.servoSlider, label: '현관문 (서보)', icon: Icons.meeting_room, id: 0, min: 0, max: 180),
             ControlSpec(kind: ControlKind.relayToggle, label: '조명', icon: Icons.light, id: 1),
@@ -155,7 +155,7 @@ class KitProfile {
           category: KitCategory.appliance,
           name: '스마트 팜 온실',
           tagline: '환기팬 · 워터펌프 · 조명 · 온습도/토양',
-          assetImage: 'assets/kits/farm.png',
+          assetImage: 'assets/kits/smart_farm.png',
           controls: [
             ControlSpec(kind: ControlKind.relayToggle, label: '환기팬', icon: Icons.air, id: 0),
             ControlSpec(kind: ControlKind.relayToggle, label: '워터펌프', icon: Icons.water_drop, id: 1),
