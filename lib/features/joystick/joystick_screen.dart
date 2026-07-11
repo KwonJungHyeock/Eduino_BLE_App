@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../widgets/neo_joystick.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/speed_cap_slider.dart';
 import '../../widgets/speed_gauge.dart';
 
@@ -48,22 +49,33 @@ class _JoystickScreenState extends ConsumerState<JoystickScreen> {
         padding: const EdgeInsets.all(Gap.md),
         child: Column(
           children: [
-            Expanded(flex: 4, child: _Hud(throttle: _throttle, steer: _steer)),
+            Expanded(
+              flex: 4,
+              child: RiseIn(
+                child: _Hud(throttle: _throttle, steer: _steer),
+              ),
+            ),
             Gap.h12,
             Expanded(
               flex: 5,
-              child: _StickPanel(
-                enabled: connected,
-                onChanged: _onVector,
-                onReleased: _reset,
+              child: RiseIn(
+                delay: const Duration(milliseconds: 70),
+                child: _StickPanel(
+                  enabled: connected,
+                  onChanged: _onVector,
+                  onReleased: _reset,
+                ),
               ),
             ),
             Gap.h12,
             // 속도 상한 슬라이더 — 화면 통틀어 하나만.
-            _Panel(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: Gap.md, vertical: Gap.sm),
-              child: const SpeedCapSlider(),
+            RiseIn(
+              delay: const Duration(milliseconds: 140),
+              child: _Panel(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: Gap.md, vertical: Gap.sm),
+                child: const SpeedCapSlider(),
+              ),
             ),
           ],
         ),

@@ -12,6 +12,7 @@ import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../providers/kit_providers.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/sparkline.dart';
 import '../../widgets/status_bar.dart';
@@ -58,6 +59,11 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                     children: [
                       _KitHeader(kit: kit),
                       Gap.h16,
+                      if (!connected) ...[
+                        DisconnectedBanner(
+                            onTap: () => context.push(Routes.connect)),
+                        Gap.h16,
+                      ],
                       for (final spec in kit.controls) ...[
                         _buildControl(spec, connected),
                         Gap.h12,
@@ -70,21 +76,13 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     );
   }
 
-  Widget _needKit(BuildContext context) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.smart_toy_outlined,
-                size: 44, color: AppColors.textMuted),
-            Gap.h16,
-            Text('먼저 교구를 선택하세요.',
-                style: AppType.mono(size: 13, color: AppColors.textMuted)),
-            Gap.h16,
-            FilledButton(
-                onPressed: () => context.push(Routes.kit),
-                child: const Text('교구 선택')),
-          ],
-        ),
+  Widget _needKit(BuildContext context) => EmptyState(
+        icon: Icons.smart_toy_outlined,
+        accent: AppColors.accent,
+        title: '먼저 내 교구를 선택하세요',
+        message: 'RC카 · 스마트 팩토리 · 홈 · 팜 중에서\n보유한 교구를 고르면 딱 맞는 제어판이 열려요.',
+        actionLabel: '교구 선택',
+        onAction: () => context.push(Routes.kit),
       );
 
   Widget _buildControl(ControlSpec s, bool connected) {

@@ -14,6 +14,7 @@ import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/last_device_providers.dart';
 import '../../providers/module_providers.dart';
+import '../../widgets/success_check.dart';
 import '../../widgets/surface_card.dart';
 
 class ConnectScreen extends ConsumerStatefulWidget {
@@ -72,16 +73,21 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     final module = ref.watch(moduleProvider).valueOrNull ?? BtModule.ble;
     final connected = conn.isConnected;
 
-    // 연결되면 홈으로 복귀(연결하려고 새로 들어온 경우만 — 이미 연결된 채 들어오면 유지).
+    // 연결되면 성공 연출을 잠깐 보여준 뒤 홈으로 복귀(새로 연결한 경우만).
     ref.listen<BtConnectionState>(connectionProvider, (prev, next) {
       if (prev != BtConnectionState.connected &&
           next == BtConnectionState.connected &&
           mounted) {
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go(Routes.home);
-        }
+        HapticFeedback.mediumImpact();
+        // 성공 애니메이션이 보이도록 살짝 지연 후 복귀.
+        Future.delayed(const Duration(milliseconds: 1150), () {
+          if (!mounted) return;
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go(Routes.home);
+          }
+        });
       }
     });
 
@@ -167,8 +173,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle,
-                size: 56, color: AppColors.signal),
+            const SuccessCheck(size: 96),
             Gap.h16,
             Text('연결됨',
                 style: AppType.mono(

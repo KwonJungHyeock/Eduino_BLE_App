@@ -76,6 +76,7 @@ abstract class Gap {
   static const SizedBox h16 = SizedBox(height: md);
   static const SizedBox h24 = SizedBox(height: lg);
   static const SizedBox w8 = SizedBox(width: sm);
+  static const SizedBox w12 = SizedBox(width: 12);
   static const SizedBox w16 = SizedBox(width: md);
   static const SizedBox w24 = SizedBox(width: lg);
 }

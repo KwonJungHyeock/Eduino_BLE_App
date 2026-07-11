@@ -9,6 +9,8 @@ import '../../app/theme.dart';
 import '../../core/protocol/commands.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
+import '../../widgets/direction_dial.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/speed_cap_slider.dart';
 import '../../widgets/surface_card.dart';
 
@@ -48,33 +50,56 @@ class _CommandCluster extends StatelessWidget {
     return '대기';
   }
 
+  double? get _angle {
+    if (command.startsWith('MOV:')) {
+      return DirectionDial.angleForMove(command.substring(4));
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: Gap.md),
       decoration: BoxDecoration(
-        color: const Color(0xFF0E1726),
-        borderRadius: Radii.card,
+        // 다크 계기판 — 밝은 앱 속 유일한 '차량 디스플레이' 인스트루먼트.
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF13203A), Color(0xFF0E1726)],
+        ),
+        borderRadius: Radii.cardLg,
         boxShadow: [
           BoxShadow(
-            color: _digital.withValues(alpha: 0.18),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
+            color: _digital.withValues(alpha: 0.20),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         children: [
-          Text('전송 명령 · COMMAND',
-              style: AppType.mono(
-                  size: 10, color: _digital, letterSpacing: 3)),
-          const SizedBox(height: 6),
-          Text(command,
-              style: AppType.instrument(size: 42, color: _digital)),
-          const SizedBox(height: 2),
-          Text(_friendly,
-              style: AppType.mono(size: 13, color: Colors.white70)),
+          DirectionDial(angle: _angle, size: 72),
+          Gap.w16,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('전송 명령 · COMMAND',
+                    style: AppType.mono(
+                        size: 10, color: _digital, letterSpacing: 3)),
+                const SizedBox(height: 4),
+                Text(command,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppType.instrument(size: 38, color: _digital)),
+                const SizedBox(height: 2),
+                Text(_friendly,
+                    style: AppType.mono(size: 13, color: Colors.white70)),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -124,7 +149,10 @@ class _RotateButtonState extends State<_RotateButton> {
         onPointerDown: (_) => _press(),
         onPointerUp: (_) => _release(),
         onPointerCancel: (_) => _release(),
-        child: Container(
+        child: AnimatedScale(
+          scale: _down ? 0.96 : 1.0,
+          duration: Motion.fast,
+          child: Container(
           height: 60,
           decoration: BoxDecoration(
             color: _down ? AppColors.signal : AppColors.surface,
@@ -133,6 +161,7 @@ class _RotateButtonState extends State<_RotateButton> {
               color: _down ? AppColors.signal : AppColors.border,
               width: _down ? 2 : 1,
             ),
+            boxShadow: _down ? null : Shadows.soft,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -147,6 +176,7 @@ class _RotateButtonState extends State<_RotateButton> {
                     color: _down ? Colors.white : AppColors.textPrimary,
                   )),
             ],
+          ),
           ),
         ),
       ),
@@ -174,7 +204,7 @@ class ControllerScreen extends ConsumerWidget {
         child: Column(
           children: [
             // 자동차 계기판 스타일 명령 표시
-            _CommandCluster(command: lastCmd),
+            RiseIn(child: _CommandCluster(command: lastCmd)),
             Gap.h12,
             Expanded(
               child: Center(
@@ -350,23 +380,28 @@ class _DirButtonState extends State<_DirButton> {
       onPointerDown: (_) => _press(),
       onPointerUp: (_) => _release(),
       onPointerCancel: (_) => _release(),
-      child: Container(
-        width: widget.size,
-        height: widget.size,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: Radii.chip,
-          border: Border.all(
-            color: _down ? accent : AppColors.border,
-            width: _down ? 2 : 1,
+      child: AnimatedScale(
+        scale: _down ? 0.93 : 1.0,
+        duration: Motion.fast,
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: Radii.chip,
+            border: Border.all(
+              color: _down ? accent : AppColors.border,
+              width: _down ? 2 : 1,
+            ),
+            boxShadow: _down ? null : Shadows.soft,
           ),
-        ),
-        child: Icon(
-          _icon,
-          size: widget.size * 0.42,
-          color: _isStop
-              ? (_down ? Colors.white : AppColors.accent)
-              : (_down ? accent : AppColors.textPrimary),
+          child: Icon(
+            _icon,
+            size: widget.size * 0.42,
+            color: _isStop
+                ? (_down ? Colors.white : AppColors.accent)
+                : (_down ? accent : AppColors.textPrimary),
+          ),
         ),
       ),
     );
