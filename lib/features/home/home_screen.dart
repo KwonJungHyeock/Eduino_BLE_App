@@ -15,6 +15,7 @@ import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/brand_mark.dart';
+import '../../widgets/circuit.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/pressable.dart';
 import '../kit/kit_profile.dart';
@@ -36,7 +37,7 @@ class HomeScreen extends ConsumerWidget {
     if (mode == AppMode.lab) {
       // 블루투스 실습 모드: 연결·통신·AT·코드 + LED 제어까지만.
       content.addAll([
-        const _Section('블루투스 실습'),
+        const NodeRailHeader('블루투스 실습', color: AppColors.signal),
         _MenuTile(
           icon: Icons.bluetooth_searching,
           title: '블루투스 연결',
@@ -60,13 +61,6 @@ class HomeScreen extends ConsumerWidget {
         ),
         Gap.h8,
         _MenuTile(
-          icon: Icons.code,
-          title: '명령 ↔ 아두이노 코드',
-          subtitle: '이 동작 = 이 코드 (코딩 교육)',
-          onTap: () => context.push(Routes.learn),
-        ),
-        Gap.h8,
-        _MenuTile(
           icon: Icons.lightbulb_outline,
           title: 'LED 제어',
           subtitle: '보드 13번 핀 켜고 끄기',
@@ -77,7 +71,7 @@ class HomeScreen extends ConsumerWidget {
     } else {
       // 교구 학습 모드: '교구 학습하기' 단일 진입 → 교구 선택 → 제어/학습.
       content.addAll([
-        const _Section('교구 학습'),
+        const NodeRailHeader('교구 학습', color: AppColors.accent),
         _KitHeroButton(kit: kit),
       ]);
     }
@@ -116,10 +110,16 @@ class HomeScreen extends ConsumerWidget {
                       size: 18,
                       weight: FontWeight.w800,
                       color: AppColors.accent)),
+              const Spacer(),
+              CircuitAccent(
+                  color: mode == AppMode.kit
+                      ? AppColors.accent
+                      : AppColors.signal),
             ],
           ),
         ),
-        body: SafeArea(
+        body: BreadboardBackground(
+          child: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(Gap.md),
             children: _stagger([
@@ -129,7 +129,7 @@ class HomeScreen extends ConsumerWidget {
               Gap.h24,
               ...content,
               Gap.h24,
-              const _Section('설정'),
+              const NodeRailHeader('설정'),
               _MenuTile(
                 icon: Icons.settings_bluetooth,
                 title: '블루투스 모듈',
@@ -156,6 +156,7 @@ class HomeScreen extends ConsumerWidget {
                 onTap: () => context.push(Routes.mode),
               ),
             ]),
+          ),
           ),
         ),
       ),
@@ -287,21 +288,6 @@ class _ModeBanner extends StatelessWidget {
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section(this.title);
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Gap.sm),
-      child: Text(title,
-          style: AppType.mono(
-              size: 12, color: AppColors.textMuted, letterSpacing: 2)),
-    );
-  }
-}
-
 class _StatusCard extends ConsumerWidget {
   const _StatusCard({required this.conn, required this.kit});
   final BtConnectionState conn;
@@ -332,8 +318,11 @@ class _StatusCard extends ConsumerWidget {
               color: connected ? AppColors.signal : AppColors.border),
           boxShadow: connected ? Shadows.glow(AppColors.signal) : Shadows.soft,
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Row(
+              children: [
             Container(
               width: 44,
               height: 44,
@@ -392,6 +381,15 @@ class _StatusCard extends ConsumerWidget {
               )
             else
               const Icon(Icons.chevron_right, color: AppColors.textMuted),
+          ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: SignalTrace(
+                connected: connected,
+                rightLabel: module == null ? '모듈' : module.shortName,
+              ),
+            ),
           ],
         ),
       ),
