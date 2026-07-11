@@ -11,7 +11,7 @@ abstract class AppColors {
   static const Color surface = Color(0xFFFFFFFF); // 카드/표면 = 화이트
   static const Color surfaceHigh = Color(0xFFF3F7FC); // 살짝 눌린 표면
   static const Color border = Color(0xFFDCE4EF);
-  static const Color accent = Color(0xFFE53935); // 레드 · 정지/위험
+  static const Color accent = Color(0xFFEE4C57); // EDUINO 브랜드 코랄레드(로고) · 강조/정지
   static const Color signal = Color(0xFF1C7DF3); // 블루투스 블루 · 선택/연결/주요
   static const Color signalDeep = Color(0xFF0A5FD0); // 블루 그라디언트 하단
   static const Color textPrimary = Color(0xFF15202E); // 진한 텍스트

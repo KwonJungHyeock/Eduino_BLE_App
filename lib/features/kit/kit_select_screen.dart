@@ -66,10 +66,11 @@ class KitSelectScreen extends ConsumerWidget {
           HapticFeedback.selectionClick();
           await ref.read(kitProfileProvider.notifier).select(type);
           if (!context.mounted) return;
+          // 선택 즉시 제어판으로(단계 최소화).
           if (context.canPop()) {
-            context.pop();
+            context.pushReplacement(Routes.control);
           } else {
-            context.go(Routes.home);
+            context.go(Routes.control);
           }
         },
       ),

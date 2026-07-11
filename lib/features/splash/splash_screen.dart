@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../providers/app_mode_providers.dart';
 import '../../providers/module_providers.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -32,6 +33,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _advance() async {
+    // 온보딩 순서: 모드 선택 → 모듈 선택 → 홈.
+    final mode = await ref.read(appModeProvider.future);
+    if (!mounted) return;
+    if (mode == null) {
+      context.go(Routes.mode);
+      return;
+    }
     final module = await ref.read(moduleProvider.future);
     if (!mounted) return;
     context.go(module == null ? Routes.module : Routes.home);

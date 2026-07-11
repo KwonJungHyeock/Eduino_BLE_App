@@ -1,6 +1,6 @@
 // Author: eduino
-// 홈 메뉴 (§5.1 재구성). 인트로 다음 진입점. 연결 상태·선택 키트 카드 + 5개 기능 엔트리.
-//   블루투스 연결 / AT 커맨드 / 통신 기초 예제 / 블루투스 컨트롤러 / 에듀이노 교구
+// 홈 — 사용 모드(블루투스 실습 / 교구 학습)에 맞춰 우선순위를 바꿔 보여준다.
+// 뒤로가기 시 종료 확인. 블루투스 실습·교구 제어·설정 구성.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../core/bt/bt_transport.dart';
+import '../../providers/app_mode_providers.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/module_providers.dart';
@@ -21,10 +22,71 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final conn = ref.watch(connectionProvider);
     final kit = ref.watch(kitProfileProvider).valueOrNull;
+    final module = ref.watch(moduleProvider).valueOrNull;
+    final mode = ref.watch(appModeProvider).valueOrNull ?? AppMode.kit;
     final connected = conn.isConnected;
 
+    final labTiles = <Widget>[
+      const _Section('블루투스 실습'),
+      _MenuTile(
+        icon: Icons.bluetooth_searching,
+        title: '블루투스 연결',
+        subtitle: connected ? '연결됨 · 눌러서 관리' : '모듈 스캔·연결',
+        accent: connected ? AppColors.signal : AppColors.textPrimary,
+        onTap: () => context.push(Routes.connect),
+      ),
+      Gap.h8,
+      _MenuTile(
+        icon: Icons.forum_outlined,
+        title: '시리얼 통신 채팅',
+        subtitle: '앱 ↔ PC 시리얼 모니터로 문자 주고받기',
+        onTap: () => context.push(Routes.basics),
+      ),
+      Gap.h8,
+      _MenuTile(
+        icon: Icons.terminal,
+        title: 'AT 커맨드',
+        subtitle: '모듈 설정 명령 실습',
+        onTap: () => context.push(Routes.terminal),
+      ),
+      Gap.h8,
+      _MenuTile(
+        icon: Icons.code,
+        title: '명령 ↔ 아두이노 코드',
+        subtitle: '이 동작 = 이 코드 (코딩 교육)',
+        onTap: () => context.push(Routes.learn),
+      ),
+    ];
+
+    final kitTiles = <Widget>[
+      const _Section('교구 제어'),
+      _MenuTile(
+        icon: Icons.tune,
+        title: '교구 제어판',
+        subtitle: kit == null ? '내 교구를 선택하면 열려요' : '${kit.name} 제어하기',
+        accent: kit == null ? AppColors.textMuted : AppColors.accent,
+        onTap: () => context.push(kit == null ? Routes.kit : Routes.control),
+      ),
+      Gap.h8,
+      _MenuTile(
+        icon: Icons.smart_toy_outlined,
+        title: kit == null ? '내 교구 선택' : '내 교구 바꾸기',
+        subtitle: kit == null ? 'RC카 / 스마트 팩토리·홈·팜' : '현재: ${kit.name}',
+        onTap: () => context.push(Routes.kit),
+      ),
+      Gap.h8,
+      _MenuTile(
+        icon: Icons.emoji_events_outlined,
+        title: '미션 · 챌린지',
+        subtitle: '랩타임 측정 · 개인 베스트',
+        onTap: () => context.push(Routes.missions),
+      ),
+    ];
+
+    final primary = mode == AppMode.kit ? kitTiles : labTiles;
+    final secondary = mode == AppMode.kit ? labTiles : kitTiles;
+
     return PopScope(
-      // 홈(루트)에서 뒤로가기 → 종료 확인. 다른 화면은 정상적으로 pop.
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
@@ -46,105 +108,96 @@ class HomeScreen extends ConsumerWidget {
         if (exit == true) SystemNavigator.pop();
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Text('Eduino',
-                style: AppType.mono(size: 18, weight: FontWeight.w800)),
-            Text(' AI',
-                style: AppType.mono(
-                    size: 18,
-                    weight: FontWeight.w800,
-                    color: AppColors.accent)),
-          ],
+        appBar: AppBar(
+          title: Row(
+            children: [
+              Text('Eduino',
+                  style: AppType.mono(size: 18, weight: FontWeight.w800)),
+              Text(' AI',
+                  style: AppType.mono(
+                      size: 18,
+                      weight: FontWeight.w800,
+                      color: AppColors.accent)),
+            ],
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(Gap.md),
-          children: [
-            _StatusCard(conn: conn, kit: kit),
-            Gap.h24,
-            // ── 블루투스 실습 (모든 교구 공통) ──
-            _Section('블루투스 실습'),
-            _MenuTile(
-              icon: Icons.bluetooth_searching,
-              title: '블루투스 연결',
-              subtitle: connected ? '연결됨 · 눌러서 관리' : '모듈 스캔·연결',
-              accent: connected ? AppColors.signal : AppColors.textPrimary,
-              onTap: () => context.push(Routes.connect),
-            ),
-            Gap.h8,
-            _MenuTile(
-              icon: Icons.forum_outlined,
-              title: '시리얼 통신 채팅',
-              subtitle: '앱 ↔ PC 시리얼 모니터 문자 주고받기',
-              onTap: () => context.push(Routes.basics),
-            ),
-            Gap.h8,
-            _MenuTile(
-              icon: Icons.terminal,
-              title: 'AT 커맨드',
-              subtitle: '모듈 설정 명령 실습',
-              onTap: () => context.push(Routes.terminal),
-            ),
-            Gap.h8,
-            _MenuTile(
-              icon: Icons.code,
-              title: '명령 ↔ 코드',
-              subtitle: '이 동작 = 이 아두이노 코드 (코딩 교육)',
-              onTap: () => context.push(Routes.learn),
-            ),
-            Gap.h24,
-            // ── 교구 제어 (킷 선택 기반) ──
-            _Section('교구 제어'),
-            _MenuTile(
-              icon: Icons.tune,
-              title: '교구 제어판',
-              subtitle: kit == null ? '먼저 교구를 선택하세요' : '내 교구: ${kit.name}',
-              accent: kit == null ? AppColors.textMuted : AppColors.signal,
-              onTap: () =>
-                  context.push(kit == null ? Routes.kit : Routes.control),
-            ),
-            Gap.h8,
-            _MenuTile(
-              icon: Icons.smart_toy_outlined,
-              title: '내 교구 선택',
-              subtitle: kit == null
-                  ? 'RC카 / 스마트 팩토리·홈·팜'
-                  : '선택됨: ${kit.name} · 변경',
-              onTap: () => context.push(Routes.kit),
-            ),
-            Gap.h8,
-            _MenuTile(
-              icon: Icons.emoji_events_outlined,
-              title: '미션 · 챌린지',
-              subtitle: '랩타임 측정 · 개인 베스트',
-              onTap: () => context.push(Routes.missions),
-            ),
-            Gap.h24,
-            // ── 설정 ──
-            _Section('설정'),
-            _MenuTile(
-              icon: Icons.settings_bluetooth,
-              title: '블루투스 모듈',
-              subtitle: ref.watch(moduleProvider).valueOrNull == null
-                  ? 'HM-10 / HC-06 선택'
-                  : '선택됨: ${ref.watch(moduleProvider).valueOrNull!.title} · 변경',
-              onTap: () => context.push(Routes.module),
-            ),
-            if (kit == null || kit.isRc) ...[
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(Gap.md),
+            children: [
+              _StatusCard(conn: conn, kit: kit),
+              Gap.h16,
+              _ModeBanner(mode: mode),
+              Gap.h24,
+              ...primary,
+              Gap.h24,
+              ...secondary,
+              Gap.h24,
+              const _Section('설정'),
+              _MenuTile(
+                icon: Icons.settings_bluetooth,
+                title: '블루투스 모듈',
+                subtitle: module == null
+                    ? 'HM-10 / HC-06 선택'
+                    : '선택됨: ${module.title} · 변경',
+                onTap: () => context.push(Routes.module),
+              ),
+              if (kit == null || kit.isRc) ...[
+                Gap.h8,
+                _MenuTile(
+                  icon: Icons.settings_input_component,
+                  title: '모터 포트 설정',
+                  subtitle: '바퀴 ↔ 쉴드 포트(M1~M4)',
+                  onTap: () => context.push(Routes.motor),
+                ),
+              ],
               Gap.h8,
               _MenuTile(
-                icon: Icons.settings_input_component,
-                title: '모터 포트 설정',
-                subtitle: '바퀴 ↔ 쉴드 포트(M1~M4) 매핑',
-                onTap: () => context.push(Routes.motor),
+                icon: Icons.swap_horiz,
+                title: '사용 모드 변경',
+                subtitle: '현재: ${mode.title}',
+                onTap: () => context.push(Routes.mode),
               ),
             ],
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// 현재 사용 모드 배너(브랜드 톤) — 눌러서 변경.
+class _ModeBanner extends StatelessWidget {
+  const _ModeBanner({required this.mode});
+  final AppMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = mode == AppMode.kit ? AppColors.accent : AppColors.signal;
+    return InkWell(
+      onTap: () => context.push(Routes.mode),
+      borderRadius: Radii.card,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: 12),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.10),
+          borderRadius: Radii.card,
+          border: Border.all(color: accent.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Icon(mode.icon, color: accent, size: 20),
+            Gap.w8,
+            Text('${mode.title} 모드',
+                style: AppType.mono(
+                    size: 13, weight: FontWeight.w700, color: accent)),
+            const Spacer(),
+            Text('변경',
+                style: AppType.mono(size: 12, color: AppColors.textMuted)),
+            const Icon(Icons.chevron_right,
+                size: 18, color: AppColors.textMuted),
+          ],
+        ),
       ),
     );
   }
@@ -183,68 +236,79 @@ class _StatusCard extends ConsumerWidget {
       BtConnectionState.disconnected => (AppColors.textMuted, '미연결'),
     };
 
-    return Container(
-      padding: const EdgeInsets.all(Gap.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: Radii.card,
-        border: Border.all(color: connected ? AppColors.signal : AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.baseBg,
-              borderRadius: Radii.chip,
-              border: Border.all(color: AppColors.border),
+    return InkWell(
+      onTap: () => context.push(Routes.connect),
+      borderRadius: Radii.card,
+      child: Container(
+        padding: const EdgeInsets.all(Gap.md),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: Radii.card,
+          border: Border.all(
+              color: connected ? AppColors.signal : AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.baseBg,
+                borderRadius: Radii.chip,
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Icon(
+                connected
+                    ? Icons.bluetooth_connected
+                    : Icons.bluetooth_disabled,
+                color: color,
+                size: 22,
+              ),
             ),
-            child: Icon(
-              connected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
-              color: color,
-              size: 22,
+            Gap.w16,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(label,
+                          style: AppType.mono(
+                              size: 13,
+                              weight: FontWeight.w700,
+                              color: color)),
+                      Gap.w8,
+                      if (device != null)
+                        Flexible(
+                          child: Text(device.displayName,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppType.mono(
+                                  size: 12, color: AppColors.textMuted)),
+                        ),
+                    ],
+                  ),
+                  Gap.h4,
+                  Text(
+                    '${module == null ? "모듈 미선택" : "모듈: ${module.shortName}"}'
+                    ' · ${kit == null ? "교구 미선택" : kit.name}',
+                    style: AppType.mono(size: 12, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Gap.w16,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(label,
-                        style: AppType.mono(
-                            size: 13, weight: FontWeight.w700, color: color)),
-                    Gap.w8,
-                    if (device != null)
-                      Flexible(
-                        child: Text(device.displayName,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppType.mono(
-                                size: 12, color: AppColors.textMuted)),
-                      ),
-                  ],
-                ),
-                Gap.h4,
-                Text(
-                  '${module == null ? "모듈 미선택" : "모듈: ${module.shortName}"}'
-                  ' · ${kit == null ? "키트 미선택" : kit.name}',
-                  style: AppType.mono(size: 12, color: AppColors.textMuted),
-                ),
-              ],
-            ),
-          ),
-          if (connected)
-            IconButton(
-              tooltip: '연결 해제',
-              icon: const Icon(Icons.link_off, color: AppColors.textMuted),
-              onPressed: () async {
-                HapticFeedback.selectionClick();
-                await ref.read(transportProvider).disconnect();
-              },
-            ),
-        ],
+            if (connected)
+              IconButton(
+                tooltip: '연결 해제',
+                icon: const Icon(Icons.link_off, color: AppColors.textMuted),
+                onPressed: () async {
+                  HapticFeedback.selectionClick();
+                  await ref.read(transportProvider).disconnect();
+                },
+              )
+            else
+              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+          ],
+        ),
       ),
     );
   }
