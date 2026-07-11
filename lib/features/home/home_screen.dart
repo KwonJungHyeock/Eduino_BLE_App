@@ -15,7 +15,9 @@ import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/brand_mark.dart';
+import '../../widgets/kit_illustration.dart';
 import '../../widgets/pressable.dart';
+import '../kit/kit_profile.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -28,65 +30,57 @@ class HomeScreen extends ConsumerWidget {
     final mode = ref.watch(appModeProvider).valueOrNull ?? AppMode.kit;
     final connected = conn.isConnected;
 
-    final labTiles = <Widget>[
-      const _Section('블루투스 실습'),
-      _MenuTile(
-        icon: Icons.bluetooth_searching,
-        title: '블루투스 연결',
-        subtitle: connected ? '연결됨 · 눌러서 관리' : '모듈 스캔·연결',
-        accent: connected ? AppColors.signal : AppColors.textPrimary,
-        onTap: () => context.push(Routes.connect),
-      ),
-      Gap.h8,
-      _MenuTile(
-        icon: Icons.forum_outlined,
-        title: '시리얼 통신 채팅',
-        subtitle: '앱 ↔ PC 시리얼 모니터로 문자 주고받기',
-        onTap: () => context.push(Routes.basics),
-      ),
-      Gap.h8,
-      _MenuTile(
-        icon: Icons.terminal,
-        title: 'AT 커맨드',
-        subtitle: '모듈 설정 명령 실습',
-        onTap: () => context.push(Routes.terminal),
-      ),
-      Gap.h8,
-      _MenuTile(
-        icon: Icons.code,
-        title: '명령 ↔ 아두이노 코드',
-        subtitle: '이 동작 = 이 코드 (코딩 교육)',
-        onTap: () => context.push(Routes.learn),
-      ),
-    ];
+    // 모드별로 완전히 분리 — 현재 모드의 기능만 노출한다.
+    final content = <Widget>[];
 
-    final kitTiles = <Widget>[
-      const _Section('교구 제어'),
-      _MenuTile(
-        icon: Icons.tune,
-        title: '교구 제어판',
-        subtitle: kit == null ? '내 교구를 선택하면 열려요' : '${kit.name} 제어하기',
-        accent: kit == null ? AppColors.textMuted : AppColors.accent,
-        onTap: () => context.push(kit == null ? Routes.kit : Routes.control),
-      ),
-      Gap.h8,
-      _MenuTile(
-        icon: Icons.smart_toy_outlined,
-        title: kit == null ? '내 교구 선택' : '내 교구 바꾸기',
-        subtitle: kit == null ? 'RC카 / 스마트 팩토리·홈·팜' : '현재: ${kit.name}',
-        onTap: () => context.push(Routes.kit),
-      ),
-      Gap.h8,
-      _MenuTile(
-        icon: Icons.emoji_events_outlined,
-        title: '미션 · 챌린지',
-        subtitle: '랩타임 측정 · 개인 베스트',
-        onTap: () => context.push(Routes.missions),
-      ),
-    ];
-
-    final primary = mode == AppMode.kit ? kitTiles : labTiles;
-    final secondary = mode == AppMode.kit ? labTiles : kitTiles;
+    if (mode == AppMode.lab) {
+      // 블루투스 실습 모드: 연결·통신·AT·코드 + LED 제어까지만.
+      content.addAll([
+        const _Section('블루투스 실습'),
+        _MenuTile(
+          icon: Icons.bluetooth_searching,
+          title: '블루투스 연결',
+          subtitle: connected ? '연결됨 · 눌러서 관리' : '모듈 스캔·연결',
+          accent: connected ? AppColors.signal : AppColors.textPrimary,
+          onTap: () => context.push(Routes.connect),
+        ),
+        Gap.h8,
+        _MenuTile(
+          icon: Icons.forum_outlined,
+          title: '시리얼 통신 채팅',
+          subtitle: '앱 ↔ PC 시리얼 모니터로 문자 주고받기',
+          onTap: () => context.push(Routes.basics),
+        ),
+        Gap.h8,
+        _MenuTile(
+          icon: Icons.terminal,
+          title: 'AT 커맨드',
+          subtitle: '모듈 설정 명령 실습',
+          onTap: () => context.push(Routes.terminal),
+        ),
+        Gap.h8,
+        _MenuTile(
+          icon: Icons.code,
+          title: '명령 ↔ 아두이노 코드',
+          subtitle: '이 동작 = 이 코드 (코딩 교육)',
+          onTap: () => context.push(Routes.learn),
+        ),
+        Gap.h8,
+        _MenuTile(
+          icon: Icons.lightbulb_outline,
+          title: 'LED 제어',
+          subtitle: '보드 13번 핀 켜고 끄기',
+          accent: AppColors.signal,
+          onTap: () => context.push(Routes.led),
+        ),
+      ]);
+    } else {
+      // 교구 학습 모드: '교구 학습하기' 단일 진입 → 교구 선택 → 제어/학습.
+      content.addAll([
+        const _Section('교구 학습'),
+        _KitHeroButton(kit: kit),
+      ]);
+    }
 
     return PopScope(
       canPop: false,
@@ -133,9 +127,7 @@ class HomeScreen extends ConsumerWidget {
               Gap.h16,
               _ModeBanner(mode: mode),
               Gap.h24,
-              ...primary,
-              Gap.h24,
-              ...secondary,
+              ...content,
               Gap.h24,
               const _Section('설정'),
               _MenuTile(
@@ -146,7 +138,8 @@ class HomeScreen extends ConsumerWidget {
                     : '선택됨: ${module.title} · 변경',
                 onTap: () => context.push(Routes.module),
               ),
-              if (kit == null || kit.isRc) ...[
+              // 모터 포트 설정은 교구 학습 모드(RC카)에서만 노출.
+              if (mode == AppMode.kit && (kit == null || kit.isRc)) ...[
                 Gap.h8,
                 _MenuTile(
                   icon: Icons.settings_input_component,
@@ -186,6 +179,74 @@ class HomeScreen extends ConsumerWidget {
       step++;
     }
     return out;
+  }
+}
+
+/// 교구 학습 모드의 단일 진입 CTA — 누르면 교구 선택 → 제어/학습.
+class _KitHeroButton extends StatelessWidget {
+  const _KitHeroButton({required this.kit});
+  final KitProfile? kit;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasKit = kit != null;
+    return Pressable(
+      onTap: () => context.push(Routes.kit),
+      child: Container(
+        padding: const EdgeInsets.all(Gap.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.accentSoft, AppColors.accent],
+          ),
+          borderRadius: Radii.cardLg,
+          boxShadow: Shadows.glow(AppColors.accent),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: Radii.card,
+              ),
+              child: hasKit
+                  ? KitIllustration(
+                      art: kitArtFor(kit!.type), size: 60, showTile: false)
+                  : const Icon(Icons.smart_toy_rounded,
+                      color: AppColors.accent, size: 40),
+            ),
+            Gap.w16,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('교구 학습하기',
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white)),
+                  Gap.h4,
+                  Text(
+                    hasKit
+                        ? '현재 교구: ${kit!.name}\n눌러서 교구 선택·제어를 이어가요'
+                        : '내 교구를 선택하고\n제어와 학습을 시작해요',
+                    style: TextStyle(
+                        fontSize: 13,
+                        height: 1.45,
+                        color: Colors.white.withValues(alpha: 0.92)),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+          ],
+        ),
+      ),
+    );
   }
 }
 

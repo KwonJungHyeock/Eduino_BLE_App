@@ -33,11 +33,25 @@ class ModeSelectScreen extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(Gap.md),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                '이 앱으로 하고 싶은 것을 골라주세요. 나중에 설정에서 바꿀 수 있어요.',
-                style: AppType.mono(
-                    size: 13, color: AppColors.textMuted, height: 1.5),
+              const Text(
+                '이 앱으로 하고 싶은 것을\n아래에서 하나만 골라주세요.',
+                style: TextStyle(
+                  fontSize: 17,
+                  height: 1.55,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '나중에 설정에서 언제든 바꿀 수 있어요.',
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: AppColors.textMuted,
+                ),
               ),
               const SizedBox(height: Gap.lg),
               Expanded(
@@ -142,11 +156,14 @@ class _ModeCard extends StatelessWidget {
                 children: [
                   Text(title,
                       style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.w800)),
+                          fontSize: 22, fontWeight: FontWeight.w800)),
                   Gap.h8,
                   Text(subtitle,
-                      style: AppType.mono(
-                          size: 12, color: AppColors.textMuted, height: 1.5)),
+                      style: const TextStyle(
+                          fontSize: 13.5,
+                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted)),
                 ],
               ),
             ),
