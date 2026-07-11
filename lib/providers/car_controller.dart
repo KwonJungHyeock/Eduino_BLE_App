@@ -118,8 +118,11 @@ class CarController {
     _prm[key]!.run(() => _sendFrame(Commands.param(key, value)));
   }
 
-  /// LED ON/OFF.
+  /// LED ON/OFF (기본 핀).
   void ledOnOff(bool on) => _sendFrame(Commands.ledOnOff(on));
+
+  /// LED ON/OFF (커스텀 핀).
+  void led(int pin, bool on) => _sendFrame(Commands.led(pin, on));
 
   /// LED RGB (네오픽셀).
   void ledRgb(int r, int g, int b) => _sendFrame(Commands.ledRgb(r, g, b));

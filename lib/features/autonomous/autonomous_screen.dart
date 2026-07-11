@@ -11,9 +11,7 @@ import '../../app/theme.dart';
 import '../../core/protocol/commands.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
-import '../../providers/kit_providers.dart';
 import '../../widgets/distance_gauge.dart';
-import '../../widgets/line_sensor_indicator.dart';
 import '../../widgets/surface_card.dart';
 
 class AutonomousScreen extends ConsumerStatefulWidget {
@@ -25,7 +23,6 @@ class AutonomousScreen extends ConsumerStatefulWidget {
 
 class _AutonomousScreenState extends ConsumerState<AutonomousScreen> {
   // PRM 튜닝 대상 초기값(펌웨어 스켈레치 기준 §7.3).
-  int _lineSens = 50; // LINE 0-100
   int _obstDist = 20; // DIST cm
   int _autoSpeed = 60; // SPD 0-100
 
@@ -43,12 +40,10 @@ class _AutonomousScreenState extends ConsumerState<AutonomousScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final kit = ref.watch(kitProfileProvider).valueOrNull;
     final tele = ref.watch(telemetryProvider);
     final connected = ref.watch(connectionProvider).isConnected;
 
-    final hasLine = kit?.hasLineSensor ?? true;
-    final hasUltrasonic = kit?.hasUltrasonic ?? true;
+    // 자율주행(초음파 장애물 회피) 전용 — 라인트레이싱은 별도 화면.
     // 앱 의도 모드를 우선(펌웨어가 MOD 응답을 안 보내도 즉시 전환). 응답이 오면 그걸로 동기화.
     final isAuto = _auto || tele.mode == DriveMode.auto;
 
@@ -81,9 +76,9 @@ class _AutonomousScreenState extends ConsumerState<AutonomousScreen> {
                   ),
                   Gap.h8,
                   Text(
-                    '위 "자율주행" 버튼을 누르면 로봇이 스스로 주행합니다.\n'
-                    '① 초음파 거리·라인센서 값을 실시간으로 확인\n'
-                    '② 아래 슬라이더로 민감도·임계거리·속도를 바꾸면\n'
+                    '위 "자율주행" 버튼을 누르면 로봇이 스스로 장애물을 피해 주행합니다.\n'
+                    '① 초음파 거리를 실시간으로 확인\n'
+                    '② 아래 슬라이더로 임계거리·속도를 바꾸면\n'
                     '   코드 재업로드 없이 로봇 행동이 즉시 달라집니다.\n\n'
                     '"값을 바꾸면 → 로봇이 달라진다"를 눈으로 실험해 보세요.',
                     style: AppType.mono(
@@ -100,18 +95,12 @@ class _AutonomousScreenState extends ConsumerState<AutonomousScreen> {
                     color: AppColors.textMuted,
                     letterSpacing: 2)),
             Gap.h8,
-            if (hasUltrasonic)
-              SurfaceCard(
-                child: DistanceGauge(
-                  distanceCm: tele.distanceCm,
-                  thresholdCm: _obstDist,
-                ),
+            SurfaceCard(
+              child: DistanceGauge(
+                distanceCm: tele.distanceCm,
+                thresholdCm: _obstDist,
               ),
-            if (hasUltrasonic && hasLine) Gap.h8,
-            if (hasLine)
-              SurfaceCard(
-                child: LineSensorIndicator(line: tele.line),
-              ),
+            ),
             Gap.h24,
 
             // 실시간 파라미터 튜닝
@@ -124,22 +113,6 @@ class _AutonomousScreenState extends ConsumerState<AutonomousScreen> {
             SurfaceCard(
               child: Column(
                 children: [
-                  if (hasLine) ...[
-                    _ParamSlider(
-                      label: '라인 민감도',
-                      hint: 'LINE',
-                      value: _lineSens,
-                      min: 0,
-                      max: 100,
-                      unit: '',
-                      enabled: connected,
-                      onChanged: (v) {
-                        setState(() => _lineSens = v);
-                        _setParam(PrmKey.line, v);
-                      },
-                    ),
-                    const Divider(height: Gap.lg),
-                  ],
                   _ParamSlider(
                     label: '장애물 임계거리',
                     hint: 'DIST',

@@ -27,15 +27,11 @@ class KitSelectScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(Gap.md),
           children: [
             Text(
-              '보유한 EDUINO 교구를 고르면 딱 맞는 컨트롤 레이아웃과 기능이 열립니다.',
+              '보유한 스마트 교구를 고르면 딱 맞는 제어판과 학습이 열립니다.\n(RC카는 홈의 "블루투스 실습 → RC 주행 컨트롤러"에서 제어해요.)',
               style:
-                  AppType.mono(size: 13, color: AppColors.textMuted, height: 1.5),
+                  AppType.mono(size: 13, color: AppColors.textMuted, height: 1.6),
             ),
             const SizedBox(height: Gap.lg),
-            _catLabel('RC카 제어'),
-            for (final type in KitProfile.rcKits)
-              _kitCard(context, ref, type, current),
-            const SizedBox(height: Gap.sm),
             _catLabel('스마트 교구 제어'),
             for (final type in KitProfile.applianceKits)
               _kitCard(context, ref, type, current),

@@ -19,7 +19,16 @@ class ControllerMenuScreen extends ConsumerWidget {
     final connected = ref.watch(connectionProvider).isConnected;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('블루투스 컨트롤러')),
+      appBar: AppBar(
+        title: const Text('RC 주행 컨트롤러'),
+        actions: [
+          IconButton(
+            tooltip: 'RC카 설정 (휠·핀)',
+            icon: const Icon(Icons.tune),
+            onPressed: () => context.push(Routes.rcConfig),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(Gap.md),
@@ -52,13 +61,6 @@ class ControllerMenuScreen extends ConsumerWidget {
             ),
             Gap.h8,
             HomeMenuTile(
-              icon: Icons.lightbulb_outline,
-              title: 'LED 제어',
-              subtitle: '보드 13번 핀 ON/OFF',
-              onTap: () => context.push(Routes.led),
-            ),
-            Gap.h8,
-            HomeMenuTile(
               icon: Icons.screen_rotation_outlined,
               title: '기울기(틸트) 제어',
               subtitle: '기기를 기울여 조향·주행',
@@ -70,19 +72,6 @@ class ControllerMenuScreen extends ConsumerWidget {
               title: '음성 제어',
               subtitle: '말로 명령 (전진·정지·좌/우 …)',
               onTap: () => context.push(Routes.voice),
-            ),
-            Gap.h24,
-            Text('개발 예정',
-                style: AppType.mono(
-                    size: 12, color: AppColors.textMuted, letterSpacing: 2)),
-            Gap.h8,
-            HomeMenuTile(
-              icon: Icons.auto_mode_outlined,
-              title: '자율주행 · 실험',
-              subtitle: '모드 전환 · 센서 텔레메트리 · 실시간 튜닝',
-              enabled: false,
-              trailingBadge: '개발 예정',
-              onTap: () {},
             ),
           ],
         ),

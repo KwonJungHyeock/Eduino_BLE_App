@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/autonomous/autonomous_screen.dart';
+import '../features/autonomous/line_trace_screen.dart';
 import '../features/basics/serial_chat_screen.dart';
 import '../features/connect/connect_screen.dart';
 import '../features/control/control_panel_screen.dart';
@@ -18,6 +19,7 @@ import '../features/led/led_screen.dart';
 import '../features/missions/missions_screen.dart';
 import '../features/mode/mode_select_screen.dart';
 import '../features/motor/motor_config_screen.dart';
+import '../features/motor/rc_config_screen.dart';
 import '../features/tilt/tilt_screen.dart';
 import '../features/voice/voice_screen.dart';
 import '../features/kit/kit_select_screen.dart';
@@ -35,6 +37,7 @@ abstract class Routes {
   static const kit = '/kit';
   static const control = '/control';
   static const motor = '/motor';
+  static const rcConfig = '/rc-config';
   static const terminal = '/terminal';
   static const basics = '/basics';
   static const controller = '/controller';
@@ -42,6 +45,7 @@ abstract class Routes {
   static const dpad = '/controller/dpad';
   static const auto = '/controller/auto';
   static const led = '/controller/led';
+  static const line = '/controller/line';
   static const tilt = '/controller/tilt';
   static const voice = '/controller/voice';
   static const missions = '/missions';
@@ -86,6 +90,10 @@ class GoRouterHolder {
           builder: (context, state) => const MotorConfigScreen(),
         ),
         GoRoute(
+          path: Routes.rcConfig,
+          builder: (context, state) => const RcConfigScreen(),
+        ),
+        GoRoute(
           path: Routes.terminal,
           builder: (context, state) =>
               const ModeScaffold(title: 'AT 커맨드', child: TerminalScreen()),
@@ -118,6 +126,11 @@ class GoRouterHolder {
           path: Routes.led,
           builder: (context, state) =>
               const ModeScaffold(title: 'LED 제어', child: LedScreen()),
+        ),
+        GoRoute(
+          path: Routes.line,
+          builder: (context, state) =>
+              const ModeScaffold(title: '라인트레이싱', child: LineTraceScreen()),
         ),
         GoRoute(
           path: Routes.tilt,

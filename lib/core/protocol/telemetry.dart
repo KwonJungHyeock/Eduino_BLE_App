@@ -85,9 +85,12 @@ abstract class TelemetryDecoder {
         if (l == null || cc == null || r == null) return UnknownEvent(trimmed);
         return LineSensorEvent(l, cc, r);
       case 'MOD':
-        final m = arg.trim().toUpperCase() == 'AUTO'
+        final u = arg.trim().toUpperCase();
+        final m = u == 'AUTO'
             ? DriveMode.auto
-            : DriveMode.manual;
+            : u == 'LINE'
+                ? DriveMode.line
+                : DriveMode.manual;
         return ModeEvent(m);
       case 'BAT':
         final v = int.tryParse(arg.trim());

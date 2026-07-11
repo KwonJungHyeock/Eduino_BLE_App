@@ -10,10 +10,12 @@ class LineSensorIndicator extends StatelessWidget {
     super.key,
     required this.line, // (l,c,r) null = 수신 없음
     this.analogMax = 1023, // 아날로그면 이 값 기준 정규화. 0/1 이면 그대로.
+    this.count = 3, // 센서 개수: 2(2휠)면 중앙(C) 숨김.
   });
 
   final ({int l, int c, int r})? line;
   final int analogMax;
+  final int count;
 
   double _intensity(int raw) {
     if (raw <= 1) return raw.toDouble(); // 디지털 0/1
@@ -33,7 +35,7 @@ class LineSensorIndicator extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _cell('L', l == null ? null : _intensity(l.l)),
-            _cell('C', l == null ? null : _intensity(l.c)),
+            if (count >= 3) _cell('C', l == null ? null : _intensity(l.c)),
             _cell('R', l == null ? null : _intensity(l.r)),
           ],
         ),

@@ -63,9 +63,32 @@ class HomeScreen extends ConsumerWidget {
         _MenuTile(
           icon: Icons.lightbulb_outline,
           title: 'LED 제어',
-          subtitle: '보드 13번 핀 켜고 끄기',
+          subtitle: '핀 선택 후 ON/OFF (기본 D13)',
           accent: AppColors.signal,
           onTap: () => context.push(Routes.led),
+        ),
+        Gap.h24,
+        const NodeRailHeader('RC카 컨트롤', color: AppColors.signal),
+        _MenuTile(
+          icon: Icons.sports_esports,
+          title: 'RC 주행 컨트롤러',
+          subtitle: '조이스틱·방향·기울기·음성 · 2·4휠 (설정에서 휠·핀)',
+          accent: AppColors.signal,
+          onTap: () => context.push(Routes.controller),
+        ),
+        Gap.h8,
+        _MenuTile(
+          icon: Icons.sensors,
+          title: '자율주행 (초음파)',
+          subtitle: '초음파 1개로 장애물 회피 · 실시간 튜닝',
+          onTap: () => context.push(Routes.auto),
+        ),
+        Gap.h8,
+        _MenuTile(
+          icon: Icons.route,
+          title: '라인트레이싱',
+          subtitle: '라인센서로 선 따라 주행 (2휠 2개·4휠 3개)',
+          onTap: () => context.push(Routes.line),
         ),
       ]);
     } else {
@@ -138,16 +161,6 @@ class HomeScreen extends ConsumerWidget {
                     : '선택됨: ${module.title} · 변경',
                 onTap: () => context.push(Routes.module),
               ),
-              // 모터 포트 설정은 교구 학습 모드(RC카)에서만 노출.
-              if (mode == AppMode.kit && (kit == null || kit.isRc)) ...[
-                Gap.h8,
-                _MenuTile(
-                  icon: Icons.settings_input_component,
-                  title: '모터 포트 설정',
-                  subtitle: '바퀴 ↔ 쉴드 포트(M1~M4)',
-                  onTap: () => context.push(Routes.motor),
-                ),
-              ],
               Gap.h8,
               _MenuTile(
                 icon: Icons.swap_horiz,

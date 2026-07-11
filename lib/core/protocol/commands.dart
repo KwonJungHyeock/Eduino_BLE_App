@@ -32,11 +32,20 @@ extension MoveDirCode on MoveDir {
   }
 }
 
-/// 주행 모드 (§4.2 MOD).
-enum DriveMode { manual, auto }
+/// 주행 모드 (§4.2 MOD). auto=초음파 장애물 회피, line=라인트레이싱.
+enum DriveMode { manual, auto, line }
 
 extension DriveModeCode on DriveMode {
-  String get code => this == DriveMode.auto ? 'AUTO' : 'MANUAL';
+  String get code {
+    switch (this) {
+      case DriveMode.auto:
+        return 'AUTO';
+      case DriveMode.line:
+        return 'LINE';
+      case DriveMode.manual:
+        return 'MANUAL';
+    }
+  }
 }
 
 /// PRM 튜닝 키 (§4.2). LINE=라인민감도0-100 / DIST=장애물 임계cm / SPD=자율속도0-100.
@@ -70,8 +79,11 @@ abstract class Commands {
   /// 즉시 정지(안전).
   static String stop() => 'STP:';
 
-  /// LED ON/OFF.
+  /// LED ON/OFF (기본 핀). 하위호환용.
   static String ledOnOff(bool on) => 'LED:${on ? 1 : 0}';
+
+  /// LED ON/OFF (커스텀 핀) — LED:<pin>,<0/1>. 펌웨어가 핀 번호를 받아 digitalWrite.
+  static String led(int pin, bool on) => 'LED:${_clamp(pin, 0, 60)},${on ? 1 : 0}';
 
   /// LED RGB (네오픽셀).
   static String ledRgb(int r, int g, int b) =>

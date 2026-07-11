@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
+import '../../providers/rc_config_providers.dart';
 
 class LedScreen extends ConsumerStatefulWidget {
   const LedScreen({super.key});
@@ -22,12 +23,14 @@ class _LedScreenState extends ConsumerState<LedScreen> {
   void _set(bool v) {
     HapticFeedback.mediumImpact();
     setState(() => _on = v);
-    ref.read(carControllerProvider).ledOnOff(v);
+    final pin = ref.read(rcConfigProvider).valueOrNull?.ledPin ?? 13;
+    ref.read(carControllerProvider).led(pin, v);
   }
 
   @override
   Widget build(BuildContext context) {
     final connected = ref.watch(connectionProvider).isConnected;
+    final pin = ref.watch(rcConfigProvider).valueOrNull?.ledPin ?? 13;
 
     return SafeArea(
       child: Padding(
@@ -76,8 +79,15 @@ class _LedScreenState extends ConsumerState<LedScreen> {
             ),
             Gap.h8,
             Center(
-              child: Text('보드 13번 핀 (digitalWrite)',
+              child: Text('보드 D$pin 핀 (digitalWrite)',
                   style: AppType.mono(size: 12, color: AppColors.textMuted)),
+            ),
+            Gap.h16,
+            // 출력 핀 선택(커스텀). 기본 13.
+            _PinSelector(
+              pin: pin,
+              onChanged: (p) =>
+                  ref.read(rcConfigProvider.notifier).setLedPin(p),
             ),
             const Spacer(),
             // 큰 토글 버튼
@@ -94,6 +104,56 @@ class _LedScreenState extends ConsumerState<LedScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 출력 핀 선택 — 디지털 D2~D13 중에서. 실습에서 핀을 바꿔가며 확인.
+class _PinSelector extends StatelessWidget {
+  const _PinSelector({required this.pin, required this.onChanged});
+  final int pin;
+  final ValueChanged<int> onChanged;
+
+  static const List<int> _pins = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: Radii.card,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.settings_input_component,
+              size: 20, color: AppColors.textMuted),
+          Gap.w12,
+          const Expanded(
+            child: Text('출력 핀',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          ),
+          DropdownButton<int>(
+            value: pin,
+            underline: const SizedBox.shrink(),
+            borderRadius: Radii.card,
+            items: [
+              for (final p in _pins)
+                DropdownMenuItem(
+                  value: p,
+                  child: Text('D$p', style: AppType.mono(size: 14)),
+                ),
+            ],
+            onChanged: (v) {
+              if (v != null) {
+                HapticFeedback.selectionClick();
+                onChanged(v);
+              }
+            },
+          ),
+        ],
       ),
     );
   }
