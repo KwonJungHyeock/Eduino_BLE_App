@@ -12,6 +12,8 @@ import '../features/connect/connect_screen.dart';
 import '../features/control/control_panel_screen.dart';
 import '../features/controller/controller_menu_screen.dart';
 import '../features/controller/controller_screen.dart';
+import '../features/help/help_screen.dart';
+import '../features/help/privacy_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/joystick/joystick_screen.dart';
 import '../features/learn/learn_screen.dart';
@@ -50,6 +52,8 @@ abstract class Routes {
   static const voice = '/controller/voice';
   static const missions = '/missions';
   static const learn = '/learn';
+  static const help = '/help';
+  static const privacy = '/privacy';
 }
 
 class GoRouterHolder {
@@ -151,6 +155,14 @@ class GoRouterHolder {
           path: Routes.learn,
           builder: (context, state) =>
               const ModeScaffold(title: '명령 ↔ 코드', child: LearnScreen()),
+        ),
+        GoRoute(
+          path: Routes.help,
+          builder: (context, state) => const HelpScreen(),
+        ),
+        GoRoute(
+          path: Routes.privacy,
+          builder: (context, state) => const PrivacyScreen(),
         ),
       ],
     );
