@@ -63,7 +63,10 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       await ref.read(transportProvider).connect(device);
       await ref.read(lastDeviceProvider.notifier).save(device); // 재연결용 기억
     } catch (e) {
-      if (mounted) setState(() => _error = '연결 실패: $e');
+      if (mounted) {
+        setState(() =>
+            _error = '연결에 실패했어요. RC카/교구 전원과 거리(1~2m)를 확인하고 다시 시도하세요.');
+      }
     }
   }
 
@@ -102,6 +105,11 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               icon: const Icon(Icons.tune, size: 18),
               label: Text(kit.name, style: AppType.mono(size: 12)),
             ),
+          IconButton(
+            tooltip: '연결 도움말',
+            icon: const Icon(Icons.help_outline),
+            onPressed: () => context.push(Routes.help),
+          ),
         ],
       ),
       body: SafeArea(
@@ -290,7 +298,7 @@ class _DeviceList extends ConsumerWidget {
       loading: () => _hint('스캔 중…', spinner: true),
       error: (e, _) => _hint('스캔 오류: $e'),
       data: (devices) {
-        if (devices.isEmpty) return _hint('검색된 기기가 없습니다. 스캔 중…', spinner: true);
+        if (devices.isEmpty) return _scanningEmpty();
         return ListView.separated(
           itemCount: devices.length,
           separatorBuilder: (_, __) => Gap.h8,
@@ -306,6 +314,71 @@ class _DeviceList extends ConsumerWidget {
       },
     );
   }
+
+  Widget _scanningEmpty() => Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppColors.signal),
+              ),
+              Gap.h16,
+              Text('주변 기기를 찾는 중이에요…',
+                  style:
+                      AppType.mono(size: 13, color: AppColors.textMuted)),
+              Gap.h24,
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: Gap.lg),
+                padding: const EdgeInsets.all(Gap.md),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: Radii.card,
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('기기가 안 보이나요?',
+                        style: AppType.mono(
+                            size: 12,
+                            weight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
+                    Gap.h8,
+                    _tip('RC카/교구의 전원이 켜져 있는지 확인하세요.'),
+                    _tip('HM-10은 연결 전 파란 LED가 깜빡여요.'),
+                    _tip('휴대폰과 1~2m 이내로 가까이 두세요.'),
+                    _tip('"다시 스캔"을 눌러 목록을 새로고침하세요.'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _tip(String text) => Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(Icons.check_circle_outline,
+                  size: 15, color: AppColors.signal),
+            ),
+            Gap.w8,
+            Expanded(
+              child: Text(text,
+                  style: AppType.mono(
+                      size: 12, color: AppColors.textMuted, height: 1.4)),
+            ),
+          ],
+        ),
+      );
 
   Widget _hint(String text, {bool spinner = false}) => Center(
         child: Column(
