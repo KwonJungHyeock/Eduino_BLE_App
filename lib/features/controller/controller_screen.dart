@@ -352,6 +352,29 @@ class _DirButtonState extends State<_DirButton> {
     }
   }
 
+  String get _semLabel {
+    switch (widget.dir) {
+      case MoveDir.f:
+        return '전진';
+      case MoveDir.b:
+        return '후진';
+      case MoveDir.l:
+        return '좌회전';
+      case MoveDir.r:
+        return '우회전';
+      case MoveDir.fl:
+        return '왼쪽 앞으로';
+      case MoveDir.fr:
+        return '오른쪽 앞으로';
+      case MoveDir.bl:
+        return '왼쪽 뒤로';
+      case MoveDir.br:
+        return '오른쪽 뒤로';
+      case MoveDir.s:
+        return '정지';
+    }
+  }
+
   void _press() {
     if (!widget.enabled) return;
     setState(() => _down = true);
@@ -376,7 +399,11 @@ class _DirButtonState extends State<_DirButton> {
     final bg = _down
         ? accent.withValues(alpha: _isStop ? 0.9 : 0.22)
         : (_isStop ? AppColors.accent.withValues(alpha: 0.12) : AppColors.surface);
-    return Listener(
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      label: _semLabel,
+      child: Listener(
       onPointerDown: (_) => _press(),
       onPointerUp: (_) => _release(),
       onPointerCancel: (_) => _release(),
@@ -404,6 +431,6 @@ class _DirButtonState extends State<_DirButton> {
           ),
         ),
       ),
-    );
+    ));
   }
 }

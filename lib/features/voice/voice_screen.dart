@@ -180,7 +180,11 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
             ],
             const Spacer(),
             Center(
-              child: GestureDetector(
+              child: Semantics(
+                button: true,
+                enabled: connected,
+                label: _listening ? '음성 듣기 중지' : '음성 명령 듣기',
+                child: GestureDetector(
                 onTap: connected
                     ? (_listening ? _stopListening : _listen)
                     : null,
@@ -202,6 +206,7 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
                   child: Icon(_listening ? Icons.stop : Icons.mic,
                       color: Colors.white, size: 44),
                 ),
+              ),
               ),
             ),
             Gap.h16,

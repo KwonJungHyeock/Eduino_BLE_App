@@ -235,11 +235,14 @@ class _StickPanel extends StatelessWidget {
                     (c.maxWidth < c.maxHeight ? c.maxWidth : c.maxHeight)
                         .clamp(150.0, 300.0)
                         .toDouble();
-                return NeoJoystick(
-                  size: size,
-                  enabled: enabled,
-                  onChanged: onChanged,
-                  onReleased: onReleased,
+                return Semantics(
+                  label: '주행 조이스틱',
+                  child: NeoJoystick(
+                    size: size,
+                    enabled: enabled,
+                    onChanged: onChanged,
+                    onReleased: onReleased,
+                  ),
                 );
               }),
             ),

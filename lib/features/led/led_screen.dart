@@ -171,7 +171,11 @@ class _BigToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: on ? 'LED 끄기' : 'LED 켜기',
+      child: Opacity(
       opacity: enabled ? 1 : 0.5,
       child: InkWell(
         onTap: enabled ? onTap : null,
@@ -205,6 +209,6 @@ class _BigToggle extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }
