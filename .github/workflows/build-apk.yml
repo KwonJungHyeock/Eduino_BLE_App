@@ -47,6 +47,13 @@ jobs:
       - name: Patch HC-06 SPP plugin for AGP 8 (namespace)
         run: python3 tool/patch_spp_plugin.py
 
+      # 브랜드 런처 아이콘·네이티브 스플래시 생성(pubspec 설정 기반).
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons
+
+      - name: Generate native splash
+        run: dart run flutter_native_splash:create
+
       - name: Analyze (non-blocking, for logs)
         run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
 
