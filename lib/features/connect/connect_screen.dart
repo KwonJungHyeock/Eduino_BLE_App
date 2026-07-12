@@ -15,6 +15,7 @@ import '../../providers/kit_providers.dart';
 import '../../providers/last_device_providers.dart';
 import '../../providers/connection_manager.dart';
 import '../../providers/module_providers.dart';
+import '../../widgets/dialogs.dart';
 import '../../widgets/success_check.dart';
 import '../../widgets/surface_card.dart';
 
@@ -202,6 +203,14 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Gap.h8,
             OutlinedButton(
               onPressed: () async {
+                final ok = await confirmAction(
+                  context,
+                  title: '연결 해제',
+                  message: '블루투스 연결을 해제할까요?\nRC카/교구가 정지합니다.',
+                  confirmLabel: '해제',
+                  danger: true,
+                );
+                if (!ok || !context.mounted) return;
                 await ref.read(connectionManagerProvider).userDisconnect();
               },
               child: const Text('연결 해제'),

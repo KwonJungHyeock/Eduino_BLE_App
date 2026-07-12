@@ -17,6 +17,7 @@ import '../../providers/kit_providers.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/brand_mark.dart';
 import '../../widgets/circuit.dart';
+import '../../widgets/dialogs.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/pressable.dart';
 import '../kit/kit_profile.dart';
@@ -408,6 +409,14 @@ class _StatusCard extends ConsumerWidget {
                 tooltip: '연결 해제',
                 icon: const Icon(Icons.link_off, color: AppColors.textMuted),
                 onPressed: () async {
+                  final ok = await confirmAction(
+                    context,
+                    title: '연결 해제',
+                    message: '블루투스 연결을 해제할까요?\nRC카/교구가 정지합니다.',
+                    confirmLabel: '해제',
+                    danger: true,
+                  );
+                  if (!ok || !context.mounted) return;
                   HapticFeedback.selectionClick();
                   await ref.read(connectionManagerProvider).userDisconnect();
                 },

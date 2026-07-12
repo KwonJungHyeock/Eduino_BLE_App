@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'circuit.dart';
 import 'status_bar.dart';
 
 class ModeScaffold extends StatelessWidget {
@@ -22,12 +23,23 @@ class ModeScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title), actions: actions),
-      body: Column(
-        children: [
-          if (showStatusBar) const StatusBar(),
-          Expanded(child: child),
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          ...?actions,
+          const Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: CircuitAccent(width: 48)),
+          ),
         ],
+      ),
+      body: BreadboardBackground(
+        child: Column(
+          children: [
+            if (showStatusBar) const StatusBar(),
+            Expanded(child: child),
+          ],
+        ),
       ),
     );
   }

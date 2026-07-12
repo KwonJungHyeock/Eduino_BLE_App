@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
+import '../../widgets/circuit.dart';
 import '../home/home_screen.dart' show HomeMenuTile;
 
 class ControllerMenuScreen extends ConsumerWidget {
@@ -42,9 +43,7 @@ class ControllerMenuScreen extends ConsumerWidget {
                       size: 12, color: AppColors.warn, height: 1.5),
                 ),
               ),
-            Text('주행 제어',
-                style: AppType.mono(
-                    size: 12, color: AppColors.textMuted, letterSpacing: 2)),
+            const NodeRailHeader('주행 제어', color: AppColors.signal),
             Gap.h8,
             HomeMenuTile(
               icon: Icons.gamepad_outlined,
