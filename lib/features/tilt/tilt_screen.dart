@@ -78,6 +78,35 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
     });
   }
 
+  Widget _preset(String label, double value) {
+    final active = (_sensitivity - value).abs() < 0.05;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => _sensitivity = value);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.signal.withValues(alpha: 0.14)
+                : AppColors.baseBg,
+            borderRadius: Radii.chip,
+            border: Border.all(
+                color: active ? AppColors.signal : AppColors.border),
+          ),
+          child: Text(label,
+              style: AppType.mono(
+                  size: 12,
+                  weight: FontWeight.w700,
+                  color: active ? AppColors.signal : AppColors.textMuted)),
+        ),
+      ),
+    );
+  }
+
   String get _sensGuide {
     if (_sensitivity < 0.8) return '부드럽게 · 살짝 기울여도 천천히 (초보용)';
     if (_sensitivity < 1.4) return '보통 · 균형잡힌 반응';
@@ -158,6 +187,16 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
                             style: AppType.mono(
                                 size: 12, color: AppColors.textMuted)),
                       ),
+                    ],
+                  ),
+                  Gap.h12,
+                  Row(
+                    children: [
+                      _preset('낮음', 0.6),
+                      Gap.w8,
+                      _preset('보통', 1.0),
+                      Gap.w8,
+                      _preset('높음', 1.6),
                     ],
                   ),
                 ],

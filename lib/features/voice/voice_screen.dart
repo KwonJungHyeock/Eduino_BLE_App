@@ -154,6 +154,30 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
                   ),
               ],
             ),
+            if (!_available) ...[
+              Gap.h16,
+              Container(
+                padding: const EdgeInsets.all(Gap.md),
+                decoration: BoxDecoration(
+                  color: AppColors.warn.withValues(alpha: 0.10),
+                  borderRadius: Radii.card,
+                  border: Border.all(color: AppColors.warn.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.mic_off_outlined, color: AppColors.warn),
+                    Gap.w12,
+                    Expanded(
+                      child: Text(
+                        '이 기기에서 음성 인식을 사용할 수 없어요. 마이크 권한과 한국어(음성) 지원을 확인해 주세요.',
+                        style: AppType.mono(
+                            size: 12, color: AppColors.textPrimary, height: 1.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const Spacer(),
             Center(
               child: GestureDetector(

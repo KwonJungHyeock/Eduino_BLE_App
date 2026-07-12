@@ -24,8 +24,10 @@ class _JoystickScreenState extends ConsumerState<JoystickScreen> {
   int _steer = 0;
 
   void _onVector(Offset v) {
-    final throttle = (v.dy * 100).round().clamp(-100, 100).toInt();
-    final steer = (v.dx * 100).round().clamp(-100, 100).toInt();
+    // 중앙 근처 미세 입력 무시(드리프트 방지) 데드존.
+    double dz(double x) => x.abs() < 0.06 ? 0.0 : x;
+    final throttle = (dz(v.dy) * 100).round().clamp(-100, 100).toInt();
+    final steer = (dz(v.dx) * 100).round().clamp(-100, 100).toInt();
     if (throttle != _throttle || steer != _steer) {
       setState(() {
         _throttle = throttle;
