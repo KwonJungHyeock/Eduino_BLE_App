@@ -48,19 +48,22 @@ dev_dependencies:
   flutter_native_splash: ^2.4.1
 
 # 런처 아이콘 — 코랄 브랜드 마크. 적응형(안드로이드) 배경=코랄, 전경=흰 룬.
+# CI 는 android 플랫폼만 생성(flutter create --platforms=android) → ios 는 false.
+# iOS 빌드 시엔 로컬에서 ios:true 로 다시 생성한다.
 flutter_launcher_icons:
   android: true
-  ios: true
+  ios: false
   image_path: "assets/brand/app_icon.png"
   min_sdk_android: 21
   adaptive_icon_background: "#EE4C57"
   adaptive_icon_foreground: "assets/brand/app_icon_fg.png"
-  remove_alpha_ios: true
 
 # 네이티브 스플래시 — 밝은 배경 + 브랜드 마크. 앱 시작 순간 흰 화면 깜빡임 제거.
 flutter_native_splash:
   color: "#F6F8FC"
   image: "assets/brand/app_icon.png"
+  ios: false
+  web: false
   android_12:
     color: "#F6F8FC"
     image: "assets/brand/app_icon.png"

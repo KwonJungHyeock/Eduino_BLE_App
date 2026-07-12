@@ -48,11 +48,12 @@ jobs:
         run: python3 tool/patch_spp_plugin.py
 
       # 브랜드 런처 아이콘·네이티브 스플래시 생성(pubspec 설정 기반).
+      # 비차단(|| true) — 아이콘 생성이 실패해도 APK 빌드/발행은 유지한다.
       - name: Generate launcher icons
-        run: dart run flutter_launcher_icons
+        run: dart run flutter_launcher_icons || true
 
       - name: Generate native splash
-        run: dart run flutter_native_splash:create
+        run: dart run flutter_native_splash:create || true
 
       - name: Analyze (non-blocking, for logs)
         run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
