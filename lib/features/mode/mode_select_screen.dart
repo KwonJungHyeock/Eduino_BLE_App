@@ -146,6 +146,11 @@ class _ModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = mode == AppMode.kit ? AppColors.accent : AppColors.signal;
+    // 화이트 일변도 완화 — 카드에 은은한 톤 배경, 선택 시 좀 더 진하게.
+    final tint = Color.alphaBlend(
+      accent.withValues(alpha: selected ? 0.12 : 0.06),
+      AppColors.surface,
+    );
     return Pressable(
       onTap: onTap,
       haptic: false, // _pick 에서 이미 햅틱 처리.
@@ -155,10 +160,10 @@ class _ModeCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(Gap.lg),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: tint,
           borderRadius: Radii.cardLg,
           border: Border.all(
-            color: selected ? accent : AppColors.border,
+            color: selected ? accent : accent.withValues(alpha: 0.18),
             width: selected ? 2.5 : 1,
           ),
           boxShadow: selected ? Shadows.glow(accent) : Shadows.soft,
@@ -169,10 +174,17 @@ class _ModeCard extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.12),
+                color: accent,
                 borderRadius: Radii.card,
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.30),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: accent, size: 32),
+              child: Icon(icon, color: Colors.white, size: 32),
             ),
             Gap.w16,
             Expanded(

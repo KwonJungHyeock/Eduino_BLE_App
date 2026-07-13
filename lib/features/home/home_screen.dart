@@ -349,16 +349,26 @@ class _StatusCard extends ConsumerWidget {
       label = '재연결 중…';
     }
 
+    // 상태색을 카드 배경에도 은은히 반영(연결=파랑, 대기/재연결=노랑 톤).
+    final tintBase = connected
+        ? AppColors.signal
+        : (color == AppColors.warn ? AppColors.warn : AppColors.signal);
+    final cardTint = Color.alphaBlend(
+      tintBase.withValues(alpha: connected ? 0.08 : 0.05),
+      AppColors.surface,
+    );
     return InkWell(
       onTap: () => context.push(Routes.connect),
       borderRadius: Radii.card,
       child: Container(
         padding: const EdgeInsets.all(Gap.md),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: cardTint,
           borderRadius: Radii.card,
           border: Border.all(
-              color: connected ? AppColors.signal : AppColors.border),
+              color: connected
+                  ? AppColors.signal
+                  : tintBase.withValues(alpha: 0.16)),
           boxShadow: connected ? Shadows.glow(AppColors.signal) : Shadows.soft,
         ),
         child: Column(
@@ -370,15 +380,25 @@ class _StatusCard extends ConsumerWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.baseBg,
+                color: connected
+                    ? AppColors.signal
+                    : tintBase.withValues(alpha: 0.14),
                 borderRadius: Radii.chip,
-                border: Border.all(color: AppColors.border),
+                boxShadow: connected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.signal.withValues(alpha: 0.30),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
               ),
               child: Icon(
                 connected
                     ? Icons.bluetooth_connected
                     : Icons.bluetooth_disabled,
-                color: color,
+                color: connected ? Colors.white : color,
                 size: 22,
               ),
             ),
