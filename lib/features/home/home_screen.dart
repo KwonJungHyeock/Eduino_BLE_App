@@ -45,7 +45,7 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.bluetooth_searching,
           title: '블루투스 연결',
           subtitle: connected ? '연결됨 · 눌러서 관리' : '모듈 스캔·연결',
-          accent: connected ? AppColors.signal : AppColors.textPrimary,
+          accent: AppColors.signal,
           onTap: () => context.push(Routes.connect),
         ),
         Gap.h8,
@@ -53,6 +53,7 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.forum_outlined,
           title: '시리얼 통신 채팅',
           subtitle: '앱 ↔ PC 시리얼 모니터로 문자 주고받기',
+          accent: AppColors.mint,
           onTap: () => context.push(Routes.basics),
         ),
         Gap.h8,
@@ -60,6 +61,7 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.terminal,
           title: 'AT 커맨드',
           subtitle: '모듈 설정 명령 실습',
+          accent: AppColors.signalDeep,
           onTap: () => context.push(Routes.terminal),
         ),
         Gap.h8,
@@ -67,7 +69,7 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.lightbulb_outline,
           title: 'LED 제어',
           subtitle: '핀 선택 후 ON/OFF (기본 D13)',
-          accent: AppColors.signal,
+          accent: AppColors.sun,
           onTap: () => context.push(Routes.led),
         ),
         Gap.h24,
@@ -84,6 +86,7 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.sensors,
           title: '자율주행 (초음파)',
           subtitle: '초음파 1개로 장애물 회피 · 실시간 튜닝',
+          accent: AppColors.signalDeep,
           onTap: () => context.push(Routes.auto),
         ),
         Gap.h8,
@@ -91,6 +94,7 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.route,
           title: '라인트레이싱',
           subtitle: '라인센서로 선 따라 주행 (2휠 2개·4휠 3개)',
+          accent: AppColors.mint,
           onTap: () => context.push(Routes.line),
         ),
       ]);
@@ -162,6 +166,7 @@ class HomeScreen extends ConsumerWidget {
                 subtitle: module == null
                     ? 'HM-10 / HC-06 선택'
                     : '선택됨: ${module.title} · 변경',
+                accent: AppColors.signalDeep,
                 onTap: () => context.push(Routes.module),
               ),
               Gap.h8,
@@ -169,6 +174,7 @@ class HomeScreen extends ConsumerWidget {
                 icon: Icons.swap_horiz,
                 title: '사용 모드 변경',
                 subtitle: '현재: ${mode.title}',
+                accent: AppColors.accent,
                 onTap: () => context.push(Routes.mode),
               ),
               Gap.h8,
@@ -176,6 +182,7 @@ class HomeScreen extends ConsumerWidget {
                 icon: Icons.help_outline,
                 title: '도움말 & FAQ',
                 subtitle: '연결·조작 문제 해결 · 배선 안내',
+                accent: AppColors.mint,
                 onTap: () => context.push(Routes.help),
               ),
               Gap.h8,
@@ -183,6 +190,7 @@ class HomeScreen extends ConsumerWidget {
                 icon: Icons.privacy_tip_outlined,
                 title: '개인정보처리방침',
                 subtitle: '데이터 미수집 · 오프라인 동작',
+                accent: AppColors.mint,
                 onTap: () => context.push(Routes.privacy),
               ),
             ]),
@@ -469,21 +477,29 @@ class _MenuTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            // 카드에 아주 옅은 컬러 틴트(화이트 일변도 완화).
+            color: Color.alphaBlend(
+                accent.withValues(alpha: 0.07), AppColors.surface),
             borderRadius: Radii.cardLg,
             boxShadow: Shadows.soft,
           ),
           child: Row(
             children: [
-              // 컬러 틴트 아이콘 — 딱딱한 회색 박스 대신 부드러운 브랜드 컬러.
+              // 솔리드 컬러 아이콘 칩 — 생기 있게, 기능마다 다른 색.
               Container(
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
+                  color: accent,
                   borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                        color: accent.withValues(alpha: 0.30),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4)),
+                  ],
                 ),
-                child: Icon(icon, color: accent, size: 24),
+                child: Icon(icon, color: Colors.white, size: 24),
               ),
               Gap.w16,
               Expanded(
