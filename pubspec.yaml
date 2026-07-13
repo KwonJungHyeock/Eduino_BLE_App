@@ -38,14 +38,17 @@ dependencies:
   # 계기용 모노 폰트 (수치·터미널) — JetBrains Mono (§6.2)
   google_fonts: ^6.2.1
 
+  # 네이티브 스플래시 — preserve/remove 런타임 API 를 main() 에서 호출하므로
+  # dev 가 아닌 일반 의존성으로 둔다(콜드스타트 흰 화면 제거).
+  flutter_native_splash: ^2.4.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
 
-  # 런처 아이콘·네이티브 스플래시 생성(브랜드 마크 기반) — CI 에서 생성 단계 실행.
+  # 런처 아이콘 생성기(빌드 타임 CLI 전용, 런타임 import 없음).
   flutter_launcher_icons: ^0.14.1
-  flutter_native_splash: ^2.4.1
 
 # 런처 아이콘 — 코랄 브랜드 마크. 적응형(안드로이드) 배경=코랄, 전경=흰 룬.
 # CI 는 android 플랫폼만 생성(flutter create --platforms=android) → ios 는 false.

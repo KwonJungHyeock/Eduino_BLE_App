@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/router.dart';
@@ -12,7 +13,10 @@ import 'providers/car_controller.dart';
 import 'providers/connection_manager.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  // 네이티브 스플래시를 첫 프레임까지 유지 → 콜드스타트 흰 화면 제거.
+  // 인트로(SplashScreen)가 준비되면 remove() 로 자연스럽게 인계한다.
+  FlutterNativeSplash.preserve(widgetsBinding: binding);
   runApp(const ProviderScope(child: EduinoApp()));
 }
 

@@ -148,7 +148,7 @@ class _ModeCard extends StatelessWidget {
     final accent = mode == AppMode.kit ? AppColors.accent : AppColors.signal;
     // 화이트 일변도 완화 — 카드에 은은한 톤 배경, 선택 시 좀 더 진하게.
     final tint = Color.alphaBlend(
-      accent.withValues(alpha: selected ? 0.12 : 0.06),
+      accent.withValues(alpha: selected ? 0.16 : 0.10),
       AppColors.surface,
     );
     return Pressable(

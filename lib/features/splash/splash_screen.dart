@@ -3,6 +3,7 @@
 // 사진/로고 파일 없이 CustomPainter(BrandMark)로 브랜드 연출. §6.4 생성형 데코 금지 준수.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -25,16 +26,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late final AnimationController _fade = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 700),
+    reverseDuration: const Duration(milliseconds: 320),
   )..forward();
 
   @override
   void initState() {
     super.initState();
+    // 첫 프레임이 그려지면 네이티브 스플래시 제거 → 흰 화면 없이 인트로로 인계.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+    });
     // 로고 노출 후, 모듈 선택 여부에 따라 라우팅.
-    Future.delayed(const Duration(milliseconds: 1900), _advance);
+    Future.delayed(const Duration(milliseconds: 2000), _advance);
   }
 
   Future<void> _advance() async {
+    if (!mounted) return;
+    // 인트로를 부드럽게 페이드아웃한 뒤 다음 화면으로(끊김 방지).
+    await _fade.reverse();
+    if (!mounted) return;
     // 온보딩 순서: (최초)튜토리얼 → 모드 선택 → 모듈 선택 → 홈.
     final seenTutorial = await ref.read(tutorialSeenProvider.future);
     if (!mounted) return;

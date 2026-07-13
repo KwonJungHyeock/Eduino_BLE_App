@@ -58,6 +58,18 @@ abstract class Routes {
   static const privacy = '/privacy';
 }
 
+// 온보딩 화면 전환용 크로스페이드 페이지(인트로→튜토리얼 등 끊김 없이 인계).
+CustomTransitionPage<void> _fadePage(Widget child) => CustomTransitionPage<void>(
+      child: child,
+      transitionDuration: const Duration(milliseconds: 420),
+      reverseTransitionDuration: const Duration(milliseconds: 240),
+      transitionsBuilder: (context, animation, secondary, child) =>
+          FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: child,
+      ),
+    );
+
 class GoRouterHolder {
   GoRouterHolder() {
     router = GoRouter(
@@ -67,21 +79,23 @@ class GoRouterHolder {
           path: Routes.intro,
           builder: (context, state) => const SplashScreen(),
         ),
+        // 온보딩 체인은 인트로에서 부드럽게 크로스페이드로 인계(끊김 방지).
         GoRoute(
           path: Routes.tutorial,
-          builder: (context, state) => const TutorialScreen(),
+          pageBuilder: (context, state) => _fadePage(const TutorialScreen()),
         ),
         GoRoute(
           path: Routes.mode,
-          builder: (context, state) => const ModeSelectScreen(),
+          pageBuilder: (context, state) => _fadePage(const ModeSelectScreen()),
         ),
         GoRoute(
           path: Routes.module,
-          builder: (context, state) => const ModuleSelectScreen(),
+          pageBuilder: (context, state) =>
+              _fadePage(const ModuleSelectScreen()),
         ),
         GoRoute(
           path: Routes.home,
-          builder: (context, state) => const HomeScreen(),
+          pageBuilder: (context, state) => _fadePage(const HomeScreen()),
         ),
         GoRoute(
           path: Routes.connect,
