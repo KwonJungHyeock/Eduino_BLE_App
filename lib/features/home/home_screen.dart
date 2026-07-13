@@ -1,6 +1,6 @@
 // Author: eduino
 // 홈 — 사용 모드(블루투스 실습 / 교구 학습)에 맞춰 우선순위를 바꿔 보여준다.
-// 뒤로가기 시 종료 확인. 블루투스 실습·교구 제어·설정 구성.
+// 뒤로가기 2번으로 종료(스낵바 안내). 블루투스 실습·교구 제어·설정 구성.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +18,7 @@ import '../../providers/module_providers.dart';
 import '../../widgets/brand_mark.dart';
 import '../../widgets/circuit.dart';
 import '../../widgets/dialogs.dart';
+import '../../widgets/double_back_exit.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/responsive.dart';
@@ -106,27 +107,7 @@ class HomeScreen extends ConsumerWidget {
       ]);
     }
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        final exit = await showDialog<bool>(
-          context: context,
-          builder: (c) => AlertDialog(
-            title: const Text('앱 종료'),
-            content: const Text('앱을 종료하시겠습니까?'),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(c, false),
-                  child: const Text('취소')),
-              FilledButton(
-                  onPressed: () => Navigator.pop(c, true),
-                  child: const Text('종료')),
-            ],
-          ),
-        );
-        if (exit == true) SystemNavigator.pop();
-      },
+    return DoubleBackToExit(
       child: Scaffold(
         appBar: AppBar(
           title: Row(

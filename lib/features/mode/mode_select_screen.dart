@@ -34,7 +34,7 @@ class ModeSelectScreen extends ConsumerWidget {
         child: LayoutBuilder(
           builder: (context, c) {
             final wide = c.maxWidth >= Breakpoints.tablet;
-            final contentW = c.maxWidth < 820 ? c.maxWidth : 820.0;
+            final contentW = c.maxWidth < 640 ? c.maxWidth : 640.0;
             final kitCard = RiseIn(
               child: _ModeCard(
                 mode: AppMode.kit,
@@ -56,53 +56,57 @@ class ModeSelectScreen extends ConsumerWidget {
                 onTap: () => _pick(context, ref, AppMode.lab),
               ),
             );
+            // 카드는 내용에 맞는 자연스러운 크기(화면을 꽉 채우지 않음) → 완성도.
+            // 세로 여백이 남으면 가운데 정렬, 부족하면 스크롤.
             return Center(
-              child: SizedBox(
-                width: contentW,
-                height: c.maxHeight,
-                child: Padding(
-                  padding: const EdgeInsets.all(Gap.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        '이 앱으로 하고 싶은 것을\n아래에서 하나만 골라주세요.',
-                        style: TextStyle(
-                          fontSize: 17,
-                          height: 1.55,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+              child: SingleChildScrollView(
+                child: SizedBox(
+                  width: contentW,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: Gap.lg, vertical: 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          '이 앱으로 하고 싶은 것을\n아래에서 하나만 골라주세요.',
+                          style: TextStyle(
+                            fontSize: 20,
+                            height: 1.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        '나중에 설정에서 언제든 바꿀 수 있어요.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.5,
-                          color: AppColors.textMuted,
+                        const SizedBox(height: 8),
+                        const Text(
+                          '나중에 설정에서 언제든 바꿀 수 있어요.',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            height: 1.5,
+                            color: AppColors.textMuted,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: Gap.lg),
-                      // 넓은 화면: 두 카드를 좌우로. 좁은 화면: 위아래로.
-                      Expanded(
-                        child: wide
-                            ? Row(
-                                children: [
-                                  Expanded(child: kitCard),
-                                  Gap.w16,
-                                  Expanded(child: labCard),
-                                ],
-                              )
-                            : Column(
-                                children: [
-                                  Expanded(child: kitCard),
-                                  Gap.h16,
-                                  Expanded(child: labCard),
-                                ],
-                              ),
-                      ),
-                    ],
+                        const SizedBox(height: Gap.lg),
+                        // 넓은 화면: 두 카드를 좌우로(높이 맞춤). 좁은 화면: 위아래로.
+                        if (wide)
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(child: kitCard),
+                                Gap.w16,
+                                Expanded(child: labCard),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          kitCard,
+                          Gap.h16,
+                          labCard,
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -164,49 +168,52 @@ class _ModeCard extends StatelessWidget {
           borderRadius: Radii.cardLg,
           border: Border.all(
             color: selected ? accent : accent.withValues(alpha: 0.18),
-            width: selected ? 2.5 : 1,
+            width: selected ? 2 : 1,
           ),
           boxShadow: selected ? Shadows.glow(accent) : Shadows.soft,
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: accent,
-                borderRadius: Radii.card,
-                boxShadow: [
-                  BoxShadow(
-                    color: accent.withValues(alpha: 0.30),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+            Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: Radii.card,
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.30),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Icon(icon, color: Colors.white, size: 32),
+                  child: Icon(icon, color: Colors.white, size: 27),
+                ),
+                const Spacer(),
+                AnimatedScale(
+                  scale: selected ? 1 : 0,
+                  duration: Motion.fast,
+                  curve: Motion.emphasized,
+                  child: Icon(Icons.check_circle, color: accent, size: 24),
+                ),
+              ],
             ),
-            Gap.w16,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.w800)),
-                  Gap.h8,
-                  Text(subtitle,
-                      style: const TextStyle(
-                          fontSize: 13.5,
-                          height: 1.5,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textMuted)),
-                ],
-              ),
-            ),
-            Icon(selected ? Icons.check_circle : Icons.chevron_right,
-                color: selected ? accent : AppColors.textMuted),
+            const SizedBox(height: 16),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 19, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            Text(subtitle,
+                style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted)),
           ],
         ),
       ),
