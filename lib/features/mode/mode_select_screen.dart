@@ -11,6 +11,7 @@ import '../../app/theme.dart';
 import '../../providers/app_mode_providers.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/responsive.dart';
 
 class ModeSelectScreen extends ConsumerWidget {
   const ModeSelectScreen({super.key});
@@ -30,58 +31,83 @@ class ModeSelectScreen extends ConsumerWidget {
             : null,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(Gap.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                '이 앱으로 하고 싶은 것을\n아래에서 하나만 골라주세요.',
-                style: TextStyle(
-                  fontSize: 17,
-                  height: 1.55,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final wide = c.maxWidth >= Breakpoints.tablet;
+            final contentW = c.maxWidth < 820 ? c.maxWidth : 820.0;
+            final kitCard = RiseIn(
+              child: _ModeCard(
+                mode: AppMode.kit,
+                title: '교구 학습',
+                subtitle: 'RC카 · 스마트 팩토리 · 홈 · 팜을\n앱으로 제어하고 체험',
+                icon: Icons.smart_toy_outlined,
+                selected: current == AppMode.kit,
+                onTap: () => _pick(context, ref, AppMode.kit),
               ),
-              const SizedBox(height: 6),
-              const Text(
-                '나중에 설정에서 언제든 바꿀 수 있어요.',
-                style: TextStyle(
-                  fontSize: 13,
-                  height: 1.5,
-                  color: AppColors.textMuted,
-                ),
+            );
+            final labCard = RiseIn(
+              delay: const Duration(milliseconds: 90),
+              child: _ModeCard(
+                mode: AppMode.lab,
+                title: '블루투스 실습',
+                subtitle: '연결·시리얼 통신·AT 커맨드로\n통신 원리를 직접 학습',
+                icon: Icons.bluetooth,
+                selected: current == AppMode.lab,
+                onTap: () => _pick(context, ref, AppMode.lab),
               ),
-              const SizedBox(height: Gap.lg),
-              Expanded(
-                child: RiseIn(
-                  child: _ModeCard(
-                    mode: AppMode.kit,
-                    title: '교구 학습',
-                    subtitle: 'RC카 · 스마트 팩토리 · 홈 · 팜을\n앱으로 제어하고 체험',
-                    icon: Icons.smart_toy_outlined,
-                    selected: current == AppMode.kit,
-                    onTap: () => _pick(context, ref, AppMode.kit),
+            );
+            return Center(
+              child: SizedBox(
+                width: contentW,
+                height: c.maxHeight,
+                child: Padding(
+                  padding: const EdgeInsets.all(Gap.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        '이 앱으로 하고 싶은 것을\n아래에서 하나만 골라주세요.',
+                        style: TextStyle(
+                          fontSize: 17,
+                          height: 1.55,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        '나중에 설정에서 언제든 바꿀 수 있어요.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.5,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: Gap.lg),
+                      // 넓은 화면: 두 카드를 좌우로. 좁은 화면: 위아래로.
+                      Expanded(
+                        child: wide
+                            ? Row(
+                                children: [
+                                  Expanded(child: kitCard),
+                                  Gap.w16,
+                                  Expanded(child: labCard),
+                                ],
+                              )
+                            : Column(
+                                children: [
+                                  Expanded(child: kitCard),
+                                  Gap.h16,
+                                  Expanded(child: labCard),
+                                ],
+                              ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              Gap.h16,
-              Expanded(
-                child: RiseIn(
-                  delay: const Duration(milliseconds: 90),
-                  child: _ModeCard(
-                    mode: AppMode.lab,
-                    title: '블루투스 실습',
-                    subtitle: '연결·시리얼 통신·AT 커맨드로\n통신 원리를 직접 학습',
-                    icon: Icons.bluetooth,
-                    selected: current == AppMode.lab,
-                    onTap: () => _pick(context, ref, AppMode.lab),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

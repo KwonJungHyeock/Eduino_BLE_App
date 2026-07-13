@@ -14,6 +14,7 @@ import '../../providers/car_controller.dart';
 import '../../providers/kit_providers.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/kit_illustration.dart';
+import '../../widgets/responsive.dart';
 import '../../widgets/sparkline.dart';
 import '../../widgets/status_bar.dart';
 import '../../widgets/surface_card.dart';
@@ -55,7 +56,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
             child: kit == null
                 ? _needKit(context)
                 : ListView(
-                    padding: const EdgeInsets.all(Gap.md),
+                    padding: pagePadding(context),
                     children: [
                       _KitHeader(kit: kit),
                       Gap.h16,

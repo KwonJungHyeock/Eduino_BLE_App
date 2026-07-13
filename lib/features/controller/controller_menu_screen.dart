@@ -10,6 +10,7 @@ import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
 import '../../widgets/circuit.dart';
+import '../../widgets/responsive.dart';
 import '../home/home_screen.dart' show HomeMenuTile;
 
 class ControllerMenuScreen extends ConsumerWidget {
@@ -32,7 +33,7 @@ class ControllerMenuScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(Gap.md),
+          padding: pagePadding(context),
           children: [
             if (!connected)
               Padding(

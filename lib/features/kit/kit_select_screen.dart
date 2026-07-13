@@ -11,6 +11,7 @@ import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../providers/kit_providers.dart';
 import '../../widgets/kit_illustration.dart';
+import '../../widgets/responsive.dart';
 import 'kit_profile.dart';
 
 class KitSelectScreen extends ConsumerWidget {
@@ -24,7 +25,7 @@ class KitSelectScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('에듀이노 교구')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(Gap.md),
+          padding: pagePadding(context),
           children: [
             Text(
               '보유한 스마트 교구를 고르면 딱 맞는 제어판과 학습이 열립니다.\n(RC카는 홈의 "블루투스 실습 → RC 주행 컨트롤러"에서 제어해요.)',

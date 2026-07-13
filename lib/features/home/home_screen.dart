@@ -20,6 +20,7 @@ import '../../widgets/circuit.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/responsive.dart';
 import '../kit/kit_profile.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -146,7 +147,7 @@ class HomeScreen extends ConsumerWidget {
         body: BreadboardBackground(
           child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.all(Gap.md),
+            padding: pagePadding(context),
             children: _stagger([
               _StatusCard(conn: conn, kit: kit),
               Gap.h16,
@@ -445,7 +446,7 @@ class _MenuTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.accent = AppColors.textPrimary,
+    this.accent = AppColors.signal,
     this.enabled = true,
     this.trailingBadge,
   });
@@ -464,27 +465,25 @@ class _MenuTile extends StatelessWidget {
       opacity: enabled ? 1 : 0.5,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: Radii.card,
+        borderRadius: Radii.cardLg,
         child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: Gap.md, vertical: Gap.md - 2),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: Radii.card,
-            border: Border.all(color: AppColors.border),
+            borderRadius: Radii.cardLg,
             boxShadow: Shadows.soft,
           ),
           child: Row(
             children: [
+              // 컬러 틴트 아이콘 — 딱딱한 회색 박스 대신 부드러운 브랜드 컬러.
               Container(
-                width: 40,
-                height: 40,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.baseBg,
-                  borderRadius: Radii.chip,
-                  border: Border.all(color: AppColors.border),
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                child: Icon(icon, color: accent, size: 20),
+                child: Icon(icon, color: accent, size: 24),
               ),
               Gap.w16,
               Expanded(
@@ -497,7 +496,9 @@ class _MenuTile extends StatelessWidget {
                     Gap.h4,
                     Text(subtitle,
                         style: AppType.mono(
-                            size: 12, color: AppColors.textMuted)),
+                            size: 12,
+                            color: AppColors.textMuted,
+                            height: 1.3)),
                   ],
                 ),
               ),
@@ -515,7 +516,8 @@ class _MenuTile extends StatelessWidget {
                           size: 10, color: AppColors.textMuted)),
                 )
               else
-                const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                Icon(Icons.chevron_right,
+                    color: AppColors.textMuted.withValues(alpha: 0.5)),
             ],
           ),
         ),
@@ -532,7 +534,7 @@ class HomeMenuTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.accent = AppColors.textPrimary,
+    this.accent = AppColors.signal,
     this.enabled = true,
     this.trailingBadge,
   });
