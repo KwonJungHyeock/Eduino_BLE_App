@@ -22,45 +22,47 @@ class StatusBar extends ConsumerWidget {
     final module = ref.watch(moduleProvider).valueOrNull ?? BtModule.ble;
     final connected = conn == BtConnectionState.connected;
 
+    // 통일 상태 토큰(지시서 0.1): 미연결=회색 / 스캔·대기=노랑 / 연결됨=민트.
     final (color, label) = switch (conn) {
-      BtConnectionState.connected => (AppColors.signal, '연결됨'),
+      BtConnectionState.connected => (AppColors.mint, '연결됨'),
       BtConnectionState.connecting => (AppColors.warn, '연결 중'),
       BtConnectionState.scanning => (AppColors.warn, '스캔 중'),
       BtConnectionState.disconnecting => (AppColors.warn, '해제 중'),
-      BtConnectionState.disconnected => (AppColors.textMuted, '미연결'),
+      BtConnectionState.disconnected => (AppColors.chipGrayIcon, '미연결'),
     };
+    final bg = connected
+        ? AppColors.tintOf(AppColors.mint)
+        : color == AppColors.warn
+            ? AppColors.warn.withValues(alpha: 0.10)
+            : AppColors.chipGray;
 
     return Material(
-      color: connected ? AppColors.surface : AppColors.warn.withValues(alpha: 0.10),
+      color: bg,
       child: InkWell(
         // 상태바 탭 → 연결 화면(끊겼을 때 바로 재연결). 편의성(B2).
         onTap: () => context.push(Routes.connect),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: 10),
           decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AppColors.border)),
+            border: Border(bottom: BorderSide(color: AppColors.cardBorder)),
           ),
           child: Row(
             children: [
               _Dot(color: color, pulse: connected),
               Gap.w8,
-              Text(label, style: AppType.mono(size: 12, color: color)),
-              Gap.w8,
-              Container(width: 1, height: 14, color: AppColors.border),
-              Gap.w8,
-              _Chip(text: module.title),
-              Gap.w8,
-              Flexible(
-                child: Text(
-                  connected ? (device?.displayName ?? '') : '탭하여 연결',
-                  overflow: TextOverflow.ellipsis,
+              Text(label,
                   style: AppType.mono(
-                    size: 12,
-                    color: connected ? AppColors.textPrimary : AppColors.warn,
-                    weight: connected ? FontWeight.w500 : FontWeight.w700,
-                  ),
-                ),
-              ),
+                      size: 12, weight: FontWeight.w700, color: color)),
+              if (connected) ...[
+                Gap.w8,
+                Text('· ${device?.displayName ?? module.title}',
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        AppType.mono(size: 12, color: AppColors.listTitle)),
+              ] else ...[
+                Gap.w8,
+                _Chip(text: module.title),
+              ],
               const Spacer(),
               if (connected && tele.distanceCm != null) ...[
                 _metric(Icons.straighten, '${tele.distanceCm}cm'),
@@ -71,9 +73,15 @@ class StatusBar extends ConsumerWidget {
                   Icons.battery_full,
                   tele.batteryPercent != null ? '${tele.batteryPercent}%' : '--',
                 )
-              else
+              else ...[
+                Text('탭하여 연결',
+                    style: AppType.mono(
+                        size: 12,
+                        weight: FontWeight.w600,
+                        color: AppColors.listDesc)),
                 const Icon(Icons.chevron_right,
-                    size: 18, color: AppColors.warn),
+                    size: 18, color: AppColors.chevron),
+              ],
             ],
           ),
         ),
@@ -143,12 +151,11 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.baseBg,
+        color: AppColors.chipGray,
         borderRadius: Radii.chip,
-        border: Border.all(color: AppColors.border),
       ),
       child: Text(text,
-          style: AppType.mono(size: 11, color: AppColors.textMuted, letterSpacing: 0.5)),
+          style: AppType.mono(size: 11, color: AppColors.listDesc, letterSpacing: 0.5)),
     );
   }
 }

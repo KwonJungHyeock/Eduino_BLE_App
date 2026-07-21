@@ -19,11 +19,15 @@ class LedScreen extends ConsumerStatefulWidget {
 
 class _LedScreenState extends ConsumerState<LedScreen> {
   bool _on = false;
+  String? _lastSent; // 마지막 전송 프레임(보이는 통신).
 
   void _set(bool v) {
     HapticFeedback.mediumImpact();
-    setState(() => _on = v);
     final pin = ref.read(rcConfigProvider).valueOrNull?.ledPin ?? 13;
+    setState(() {
+      _on = v;
+      _lastSent = 'LED:$pin,${v ? 1 : 0}';
+    });
     ref.read(carControllerProvider).led(pin, v);
   }
 
@@ -89,6 +93,22 @@ class _LedScreenState extends ConsumerState<LedScreen> {
               onChanged: (p) =>
                   ref.read(rcConfigProvider.notifier).setLedPin(p),
             ),
+            Gap.h12,
+            // 실제 전송 payload(보이는 통신) — digitalWrite 개념과 연결.
+            Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.chipGray,
+                  borderRadius: Radii.pill,
+                ),
+                child: Text(
+                  _lastSent == null ? '전송 → LED:$pin,0/1' : '전송 → $_lastSent',
+                  style: AppType.mono(size: 12, color: AppColors.listDesc),
+                ),
+              ),
+            ),
             const Spacer(),
             // 큰 토글 버튼
             _BigToggle(
@@ -120,20 +140,23 @@ class _PinSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: Radii.card,
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
         children: [
           const Icon(Icons.settings_input_component,
-              size: 20, color: AppColors.textMuted),
+              size: 20, color: AppColors.chipGrayIcon),
           Gap.w12,
           const Expanded(
             child: Text('출력 핀',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.listTitle)),
           ),
           DropdownButton<int>(
             value: pin,
@@ -171,44 +194,45 @@ class _BigToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 미연결=회색 비활성 / 연결·OFF="켜기"(블루) / 연결·ON="끄기"(코랄).
+    final Color bg =
+        !enabled ? AppColors.chipGray : (on ? AppColors.accent : AppColors.signal);
+    final Color fg = !enabled ? AppColors.chipGrayIcon : Colors.white;
     return Semantics(
       button: true,
       enabled: enabled,
       label: on ? 'LED 끄기' : 'LED 켜기',
-      child: Opacity(
-      opacity: enabled ? 1 : 0.5,
       child: InkWell(
         onTap: enabled ? onTap : null,
         borderRadius: Radii.pill,
         child: Container(
           height: 64,
           decoration: BoxDecoration(
-            color: on ? AppColors.accent : AppColors.signal,
+            color: bg,
             borderRadius: Radii.pill,
-            boxShadow: [
-              BoxShadow(
-                color: (on ? AppColors.accent : AppColors.signal)
-                    .withValues(alpha: 0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: (on ? AppColors.accent : AppColors.signal)
+                          .withValues(alpha: 0.32),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(on ? Icons.power_settings_new : Icons.power_settings_new,
-                  color: Colors.white, size: 24),
+              Icon(Icons.power_settings_new, color: fg, size: 24),
               Gap.w8,
               Text(on ? '끄기' : '켜기',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800)),
+                  style: TextStyle(
+                      color: fg, fontSize: 18, fontWeight: FontWeight.w800)),
             ],
           ),
         ),
       ),
-    ));
+    );
   }
 }

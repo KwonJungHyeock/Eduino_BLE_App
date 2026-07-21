@@ -125,13 +125,23 @@ class GoRouterHolder {
         ),
         GoRoute(
           path: Routes.terminal,
-          builder: (context, state) =>
-              const ModeScaffold(title: 'AT 커맨드', child: TerminalScreen()),
+          builder: (context, state) => const ModeScaffold(
+            title: 'AT 커맨드',
+            help: 'AT 명령으로 블루투스 모듈을 설정·확인합니다. 명령을 보내면 모듈이 응답을 돌려줘요.\n'
+                '· HC-06: 연결 전(AT 모드)에서 응답\n· HM-10(BLE): 연결 중에 응답\n'
+                '빠른 명령 칩을 눌러 예시를 보낼 수 있어요.',
+            child: TerminalScreen(),
+          ),
         ),
         GoRoute(
           path: Routes.basics,
-          builder: (context, state) =>
-              const ModeScaffold(title: '시리얼 통신 채팅', child: SerialChatScreen()),
+          builder: (context, state) => const ModeScaffold(
+            title: '시리얼 통신 채팅',
+            help: '앱에서 보낸 글자가 블루투스 → 아두이노 → PC 시리얼 모니터로 전달되고, '
+                '반대로 아두이노가 보낸 글자가 앱에 표시됩니다. 통신이 눈에 보이는 실습이에요.\n'
+                '빠른 문장 칩은 + 로 추가, 길게 눌러 삭제할 수 있어요.',
+            child: SerialChatScreen(),
+          ),
         ),
         GoRoute(
           path: Routes.controller,
@@ -154,8 +164,13 @@ class GoRouterHolder {
         ),
         GoRoute(
           path: Routes.led,
-          builder: (context, state) =>
-              const ModeScaffold(title: 'LED 제어', child: LedScreen()),
+          builder: (context, state) => const ModeScaffold(
+            title: 'LED 제어',
+            help: '선택한 핀에 digitalWrite(HIGH/LOW)를 보내 LED를 켜고 끕니다. '
+                '버튼을 누르면 실제 전송되는 값(예: 13,1)이 아래에 표시돼요.\n'
+                '출력 핀은 D2~D13 중에서 바꿀 수 있습니다.',
+            child: LedScreen(),
+          ),
         ),
         GoRoute(
           path: Routes.line,

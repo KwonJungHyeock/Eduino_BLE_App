@@ -163,13 +163,27 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           ),
         ),
       ),
-      floatingActionButton: (_permsReady && !connected)
-          ? FloatingActionButton.extended(
-              backgroundColor: AppColors.surface,
-              onPressed: () => ref.invalidate(scanResultsProvider),
-              icon: const Icon(Icons.refresh, color: AppColors.signal),
-              label: Text('다시 스캔',
-                  style: AppType.mono(size: 13, color: AppColors.signal)),
+      bottomNavigationBar: (_permsReady && !connected)
+          ? SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                child: SizedBox(
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: () => ref.invalidate(scanResultsProvider),
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('다시 스캔',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w700)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.signal,
+                      side: const BorderSide(color: AppColors.cardBorder),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+              ),
             )
           : null,
     );
@@ -357,7 +371,7 @@ class _DeviceList extends ConsumerWidget {
                             weight: FontWeight.w700,
                             color: AppColors.textPrimary)),
                     Gap.h8,
-                    _tip('RC카/교구의 전원이 켜져 있는지 확인하세요.'),
+                    _tip('사용하는 모듈/기기의 전원이 켜져 있는지 확인하세요.'),
                     _tip('HM-10은 연결 전 파란 LED가 깜빡여요.'),
                     _tip('휴대폰과 1~2m 이내로 가까이 두세요.'),
                     _tip('"다시 스캔"을 눌러 목록을 새로고침하세요.'),
@@ -421,47 +435,134 @@ class _DeviceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final known = device.isKnownModule;
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: Radii.card,
-        child: SurfaceCard(
-          padding: const EdgeInsets.symmetric(
-              horizontal: Gap.md, vertical: Gap.sm + 2),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.cardBorder),
+          ),
           child: Row(
             children: [
-              Icon(
-                device.isKnownModule
-                    ? Icons.bluetooth_connected
-                    : Icons.bluetooth,
-                color: device.isKnownModule
-                    ? AppColors.signal
-                    : AppColors.textMuted,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.tintOf(AppColors.signal),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.bluetooth,
+                    color: AppColors.signal, size: 20),
               ),
-              Gap.w16,
+              Gap.w12,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(device.displayName,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(device.id,
-                        style: AppType.mono(
-                            size: 11, color: AppColors.textMuted)),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(device.displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.listTitle)),
+                        ),
+                        if (known) ...[
+                          Gap.w8,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.tintOf(AppColors.signal),
+                              borderRadius: Radii.pill,
+                            ),
+                            child: Text('추천 모듈',
+                                style: AppType.mono(
+                                    size: 9,
+                                    weight: FontWeight.w800,
+                                    color: AppColors.signal)),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        if (device.rssi != null) ...[
+                          _SignalBars(rssi: device.rssi!),
+                          const SizedBox(width: 6),
+                          Text('${device.rssi} dBm',
+                              style: AppType.mono(
+                                  size: 11, color: AppColors.listDesc)),
+                          Gap.w8,
+                        ],
+                        Flexible(
+                          child: Text(device.id,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppType.mono(
+                                  size: 11, color: AppColors.listDesc)),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              if (device.rssi != null)
-                Text('${device.rssi} dBm',
-                    style:
-                        AppType.mono(size: 11, color: AppColors.textMuted)),
               Gap.w8,
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.signal,
+                  borderRadius: Radii.pill,
+                ),
+                child: const Text('연결',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 신호세기 막대(초보자 가독성) — RSSI 를 1~4칸으로.
+class _SignalBars extends StatelessWidget {
+  const _SignalBars({required this.rssi});
+  final int rssi;
+
+  @override
+  Widget build(BuildContext context) {
+    final level = ((rssi + 100) / 12).clamp(1, 4).floor();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (var i = 0; i < 4; i++) ...[
+          Container(
+            width: 3,
+            height: 5.0 + i * 2.5,
+            decoration: BoxDecoration(
+              color: i < level ? AppColors.signal : AppColors.cardBorder,
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+          if (i < 3) const SizedBox(width: 2),
+        ],
+      ],
     );
   }
 }
@@ -473,20 +574,22 @@ class _ConnStateChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, text) = switch (state) {
-      BtConnectionState.connected => (AppColors.signal, '연결됨'),
+      BtConnectionState.connected => (AppColors.mint, '연결됨'),
       BtConnectionState.connecting => (AppColors.warn, '연결 중'),
-      BtConnectionState.scanning => (AppColors.warn, '스캔'),
-      BtConnectionState.disconnecting => (AppColors.warn, '해제'),
-      BtConnectionState.disconnected => (AppColors.textMuted, '대기'),
+      BtConnectionState.scanning => (AppColors.warn, '스캔 중'),
+      BtConnectionState.disconnecting => (AppColors.warn, '해제 중'),
+      BtConnectionState.disconnected => (AppColors.chipGrayIcon, '연결 대기'),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.baseBg,
+        color: color.withValues(alpha: 0.12),
         borderRadius: Radii.pill,
-        border: Border.all(color: color),
       ),
-      child: Text(text, style: AppType.mono(size: 11, color: color)),
+      child: Text(text,
+          maxLines: 1,
+          softWrap: false,
+          style: AppType.mono(size: 11, weight: FontWeight.w700, color: color)),
     );
   }
 }
