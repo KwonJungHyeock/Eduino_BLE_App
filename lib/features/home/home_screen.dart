@@ -39,22 +39,23 @@ class HomeScreen extends ConsumerWidget {
     final content = <Widget>[];
 
     if (mode == AppMode.lab) {
-      // 블루투스 실습 모드: 연결·통신·AT·코드 + LED 제어까지만.
+      // 통신 실습만(연결·시리얼·AT·LED). RC 주행은 교구 학습 모드로 이동.
+      final accent = AppMode.lab.color;
       content.addAll([
-        const NodeRailHeader('블루투스 실습', color: AppColors.signal),
+        const NodeRailHeader('통신 실습', count: 4),
         _MenuTile(
           icon: Icons.bluetooth_searching,
           title: '블루투스 연결',
           subtitle: connected ? '연결됨 · 눌러서 관리' : '모듈 스캔·연결',
-          accent: AppColors.signal,
+          accent: accent,
           onTap: () => context.push(Routes.connect),
         ),
         Gap.h8,
         _MenuTile(
           icon: Icons.forum_outlined,
           title: '시리얼 통신 채팅',
-          subtitle: '앱 ↔ PC 시리얼 모니터로 문자 주고받기',
-          accent: AppColors.mint,
+          subtitle: 'PC 시리얼 모니터와 문자 주고받기',
+          accent: accent,
           onTap: () => context.push(Routes.basics),
         ),
         Gap.h8,
@@ -62,48 +63,49 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.terminal,
           title: 'AT 커맨드',
           subtitle: '모듈 설정 명령 실습',
-          accent: AppColors.signalDeep,
+          accent: accent,
           onTap: () => context.push(Routes.terminal),
         ),
         Gap.h8,
         _MenuTile(
           icon: Icons.lightbulb_outline,
           title: 'LED 제어',
-          subtitle: '핀 선택 후 ON/OFF (기본 D13)',
-          accent: AppColors.sun,
+          subtitle: '핀 선택 후 ON/OFF',
+          accent: accent,
           onTap: () => context.push(Routes.led),
         ),
-        Gap.h24,
-        const NodeRailHeader('RC카 컨트롤', color: AppColors.signal),
+      ]);
+    } else {
+      // 교구 학습 모드: 교구 학습하기 + RC 주행(실습 모드에서 이동).
+      final accent = AppMode.kit.color;
+      content.addAll([
+        const NodeRailHeader('교구 학습'),
+        _KitHeroButton(kit: kit),
+        const SizedBox(height: 22),
+        const NodeRailHeader('RC 주행', count: 3),
         _MenuTile(
-          icon: Icons.sports_esports,
+          icon: Icons.sports_esports_outlined,
           title: 'RC 주행 컨트롤러',
-          subtitle: '조이스틱·방향·기울기·음성 · 2·4휠 (설정에서 휠·핀)',
-          accent: AppColors.signal,
+          subtitle: '조이스틱·방향·음성',
+          accent: accent,
           onTap: () => context.push(Routes.controller),
         ),
         Gap.h8,
         _MenuTile(
           icon: Icons.sensors,
           title: '자율주행 (초음파)',
-          subtitle: '초음파 1개로 장애물 회피 · 실시간 튜닝',
-          accent: AppColors.signalDeep,
+          subtitle: '초음파로 장애물 회피',
+          accent: accent,
           onTap: () => context.push(Routes.auto),
         ),
         Gap.h8,
         _MenuTile(
-          icon: Icons.route,
+          icon: Icons.route_outlined,
           title: '라인트레이싱',
-          subtitle: '라인센서로 선 따라 주행 (2휠 2개·4휠 3개)',
-          accent: AppColors.mint,
+          subtitle: '라인센서로 선 따라 주행',
+          accent: accent,
           onTap: () => context.push(Routes.line),
         ),
-      ]);
-    } else {
-      // 교구 학습 모드: '교구 학습하기' 단일 진입 → 교구 선택 → 제어/학습.
-      content.addAll([
-        const NodeRailHeader('교구 학습', color: AppColors.accent),
-        _KitHeroButton(kit: kit),
       ]);
     }
 
@@ -129,25 +131,25 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ),
-        body: BreadboardBackground(
-          child: SafeArea(
+        backgroundColor: AppColors.pageBg,
+        body: SafeArea(
           child: ListView(
             padding: pagePadding(context),
             children: _stagger([
               _StatusCard(conn: conn, kit: kit),
               Gap.h16,
               _ModeBanner(mode: mode),
-              Gap.h24,
+              const SizedBox(height: 22),
               ...content,
-              Gap.h24,
+              const SizedBox(height: 22),
               const NodeRailHeader('설정'),
               _MenuTile(
                 icon: Icons.settings_bluetooth,
                 title: '블루투스 모듈',
                 subtitle: module == null
                     ? 'HM-10 / HC-06 선택'
-                    : '선택됨: ${module.title} · 변경',
-                accent: AppColors.signalDeep,
+                    : '선택됨: ${module.title}',
+                utility: true,
                 onTap: () => context.push(Routes.module),
               ),
               Gap.h8,
@@ -155,7 +157,7 @@ class HomeScreen extends ConsumerWidget {
                 icon: Icons.swap_horiz,
                 title: '사용 모드 변경',
                 subtitle: '현재: ${mode.title}',
-                accent: AppColors.accent,
+                utility: true,
                 onTap: () => context.push(Routes.mode),
               ),
               Gap.h8,
@@ -163,7 +165,7 @@ class HomeScreen extends ConsumerWidget {
                 icon: Icons.help_outline,
                 title: '도움말 & FAQ',
                 subtitle: '연결·조작 문제 해결 · 배선 안내',
-                accent: AppColors.mint,
+                utility: true,
                 onTap: () => context.push(Routes.help),
               ),
               Gap.h8,
@@ -171,11 +173,10 @@ class HomeScreen extends ConsumerWidget {
                 icon: Icons.privacy_tip_outlined,
                 title: '개인정보처리방침',
                 subtitle: '데이터 미수집 · 오프라인 동작',
-                accent: AppColors.mint,
+                utility: true,
                 onTap: () => context.push(Routes.privacy),
               ),
             ]),
-          ),
           ),
         ),
       ),
@@ -278,30 +279,21 @@ class _ModeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = mode.color; // 모드 색 토큰 공유(교구=코랄/실습=블루)
-    return InkWell(
-      onTap: () => context.push(Routes.mode),
-      borderRadius: Radii.card,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: 12),
-        decoration: BoxDecoration(
-          color: accent.withValues(alpha: 0.10),
-          borderRadius: Radii.card,
-          border: Border.all(color: accent.withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          children: [
-            Icon(mode.icon, color: accent, size: 20),
-            Gap.w8,
-            Text('${mode.title} 모드',
-                style: AppType.mono(
-                    size: 13, weight: FontWeight.w700, color: accent)),
-            const Spacer(),
-            Text('변경',
-                style: AppType.mono(size: 12, color: AppColors.textMuted)),
-            const Icon(Icons.chevron_right,
-                size: 18, color: AppColors.textMuted),
-          ],
-        ),
+    // 상태 표시만 — 모드 변경은 설정에서(중복 제거, 지시서 E).
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: AppColors.tintOf(accent),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(mode.icon, color: accent, size: 18),
+          Gap.w8,
+          Text('${mode.title} 모드',
+              style: AppType.mono(
+                  size: 13, weight: FontWeight.w700, color: accent)),
+        ],
       ),
     );
   }
@@ -319,38 +311,30 @@ class _StatusCard extends ConsumerWidget {
     final reconnecting = ref.watch(reconnectingProvider);
     final connected = conn.isConnected;
     var (color, label) = switch (conn) {
-      BtConnectionState.connected => (AppColors.signal, '연결됨'),
+      BtConnectionState.connected => (AppColors.mint, '연결됨'),
       BtConnectionState.connecting => (AppColors.warn, '연결 중'),
       BtConnectionState.scanning => (AppColors.warn, '스캔 중'),
       BtConnectionState.disconnecting => (AppColors.warn, '해제 중'),
-      BtConnectionState.disconnected => (AppColors.textMuted, '미연결'),
+      BtConnectionState.disconnected => (AppColors.chipGrayIcon, '미연결'),
     };
     if (reconnecting && !connected) {
       color = AppColors.warn;
       label = '재연결 중…';
     }
 
-    // 상태색을 카드 배경에도 은은히 반영(연결=파랑, 대기/재연결=노랑 톤).
-    final tintBase = connected
-        ? AppColors.signal
-        : (color == AppColors.warn ? AppColors.warn : AppColors.signal);
-    final cardTint = Color.alphaBlend(
-      tintBase.withValues(alpha: connected ? 0.08 : 0.05),
-      AppColors.surface,
-    );
+    // 연결=민트 톤, 미연결=회색. 카드는 리스트 행과 동일 토큰(radius 16·보더).
     return InkWell(
       onTap: () => context.push(Routes.connect),
-      borderRadius: Radii.card,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(Gap.md),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: cardTint,
-          borderRadius: Radii.card,
+          color: connected ? AppColors.tintOf(AppColors.mint) : AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
               color: connected
-                  ? AppColors.signal
-                  : tintBase.withValues(alpha: 0.16)),
-          boxShadow: connected ? Shadows.glow(AppColors.signal) : Shadows.soft,
+                  ? AppColors.mint.withValues(alpha: 0.40)
+                  : AppColors.cardBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -358,32 +342,21 @@ class _StatusCard extends ConsumerWidget {
             Row(
               children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: connected
-                    ? AppColors.signal
-                    : tintBase.withValues(alpha: 0.14),
-                borderRadius: Radii.chip,
-                boxShadow: connected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.signal.withValues(alpha: 0.30),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
+                color: connected ? AppColors.mint : AppColors.chipGray,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 connected
                     ? Icons.bluetooth_connected
                     : Icons.bluetooth_disabled,
-                color: connected ? Colors.white : color,
+                color: connected ? Colors.white : AppColors.chipGrayIcon,
                 size: 22,
               ),
             ),
-            Gap.w16,
+            Gap.w12,
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,7 +405,7 @@ class _StatusCard extends ConsumerWidget {
                 },
               )
             else
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              const Icon(Icons.chevron_right, color: AppColors.chevron),
           ],
             ),
             Padding(
@@ -440,6 +413,7 @@ class _StatusCard extends ConsumerWidget {
               child: SignalTrace(
                 connected: connected,
                 rightLabel: module == null ? '모듈' : module.shortName,
+                color: AppColors.mint,
               ),
             ),
           ],
@@ -449,6 +423,7 @@ class _StatusCard extends ConsumerWidget {
   }
 }
 
+/// 통일된 리스트 행(지시서 B/C). 기능 행=모드 tint+accent 칩 / 설정 행=회색 칩.
 class _MenuTile extends StatelessWidget {
   const _MenuTile({
     required this.icon,
@@ -456,6 +431,7 @@ class _MenuTile extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.accent = AppColors.signal,
+    this.utility = false,
     this.enabled = true,
     this.trailingBadge,
   });
@@ -465,76 +441,77 @@ class _MenuTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
   final Color accent;
+  final bool utility; // 설정/유틸 행 = 회색 칩
   final bool enabled;
   final String? trailingBadge;
 
   @override
   Widget build(BuildContext context) {
+    final chipBg = utility ? AppColors.chipGray : AppColors.tintOf(accent);
+    final chipIcon = utility ? AppColors.chipGrayIcon : accent;
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: Radii.cardLg,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
           decoration: BoxDecoration(
-            // 카드에 아주 옅은 컬러 틴트(화이트 일변도 완화).
-            color: Color.alphaBlend(
-                accent.withValues(alpha: 0.07), AppColors.surface),
-            borderRadius: Radii.cardLg,
-            boxShadow: Shadows.soft,
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.cardBorder),
           ),
           child: Row(
             children: [
-              // 솔리드 컬러 아이콘 칩 — 생기 있게, 기능마다 다른 색.
+              // 아이콘 칩 40×40 · r12 · 통일.
               Container(
-                width: 48,
-                height: 48,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: accent,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                        color: accent.withValues(alpha: 0.30),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4)),
-                  ],
+                  color: chipBg,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: Colors.white, size: 24),
+                child: Icon(icon, color: chipIcon, size: 22),
               ),
-              Gap.w16,
+              Gap.w12,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700)),
-                    Gap.h4,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.listTitle)),
+                    const SizedBox(height: 2),
                     Text(subtitle,
-                        style: AppType.mono(
-                            size: 12,
-                            color: AppColors.textMuted,
-                            height: 1.3)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            height: 1.3,
+                            color: AppColors.listDesc)),
                   ],
                 ),
               ),
-              if (trailingBadge != null)
+              if (trailingBadge != null) ...[
+                Gap.w8,
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.baseBg,
+                    color: AppColors.chipGray,
                     borderRadius: Radii.chip,
-                    border: Border.all(color: AppColors.border),
                   ),
                   child: Text(trailingBadge!,
-                      style: AppType.mono(
-                          size: 10, color: AppColors.textMuted)),
-                )
-              else
-                Icon(Icons.chevron_right,
-                    color: AppColors.textMuted.withValues(alpha: 0.5)),
+                      style: AppType.mono(size: 10, color: AppColors.listDesc)),
+                ),
+              ] else
+                const Icon(Icons.chevron_right, color: AppColors.chevron),
             ],
           ),
         ),
@@ -552,6 +529,7 @@ class HomeMenuTile extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.accent = AppColors.signal,
+    this.utility = false,
     this.enabled = true,
     this.trailingBadge,
   });
@@ -561,6 +539,7 @@ class HomeMenuTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
   final Color accent;
+  final bool utility;
   final bool enabled;
   final String? trailingBadge;
 
@@ -572,6 +551,7 @@ class HomeMenuTile extends StatelessWidget {
       subtitle: subtitle,
       onTap: onTap,
       accent: accent,
+      utility: utility,
       enabled: enabled,
       trailingBadge: trailingBadge,
     );

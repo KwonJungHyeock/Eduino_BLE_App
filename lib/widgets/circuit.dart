@@ -11,75 +11,40 @@ import 'package:flutter/material.dart';
 
 import '../app/theme.dart';
 
-/// 섹션 헤더 — 노드 + 라벨 + 점선 레일.
+/// 섹션 헤더 — 라벨 + 얇은 divider + (옵션)개수. 라디오 점 없음(지시서 D).
 class NodeRailHeader extends StatelessWidget {
-  const NodeRailHeader(this.label, {super.key, this.color = AppColors.textMuted});
+  const NodeRailHeader(this.label,
+      {super.key, this.color = AppColors.listDesc, this.count});
   final String label;
   final Color color;
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: Gap.sm, bottom: 2),
+      padding: const EdgeInsets.only(top: Gap.sm, bottom: 10),
       child: Row(
         children: [
-          // 솔더 노드(링 + 코어).
-          Container(
-            width: 16,
-            height: 16,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: color.withValues(alpha: 0.30), width: 1.5),
-            ),
-            child: Center(
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              ),
-            ),
-          ),
-          Gap.w8,
           Text(label,
               style: AppType.mono(
                   size: 11,
-                  weight: FontWeight.w700,
+                  weight: FontWeight.w800,
                   color: color,
-                  letterSpacing: 2)),
-          Gap.w8,
-          Expanded(
-            child: CustomPaint(
-              painter: _DashRailPainter(AppColors.border),
-              size: const Size(double.infinity, 2),
-            ),
-          ),
+                  letterSpacing: 1.5)),
+          if (count != null) ...[
+            Gap.w8,
+            Text('$count',
+                style: AppType.mono(
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: AppColors.chevron)),
+          ],
+          Gap.w12,
+          Expanded(child: Container(height: 1, color: AppColors.cardBorder)),
         ],
       ),
     );
   }
-}
-
-class _DashRailPainter extends CustomPainter {
-  _DashRailPainter(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = color
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
-    const dash = 6.0, gap = 5.0;
-    final y = size.height / 2;
-    var x = 0.0;
-    while (x < size.width) {
-      canvas.drawLine(Offset(x, y), Offset(math.min(x + dash, size.width), y), p);
-      x += dash + gap;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashRailPainter old) => old.color != color;
 }
 
 /// 연결 상태 신호선 — 연결 시 신호점이 APP→모듈로 흐른다. 미연결 시 끊긴 회색선.
@@ -89,10 +54,12 @@ class SignalTrace extends StatefulWidget {
     required this.connected,
     this.leftLabel = 'APP',
     this.rightLabel = '모듈',
+    this.color = AppColors.signal,
   });
   final bool connected;
   final String leftLabel;
   final String rightLabel;
+  final Color color;
 
   @override
   State<SignalTrace> createState() => _SignalTraceState();
@@ -129,7 +96,7 @@ class _SignalTraceState extends State<SignalTrace>
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.connected ? AppColors.signal : AppColors.textMuted;
+    final color = widget.connected ? widget.color : AppColors.textMuted;
     return Row(
       children: [
         Text(widget.leftLabel,
@@ -145,7 +112,9 @@ class _SignalTraceState extends State<SignalTrace>
               animation: _c,
               builder: (context, _) => CustomPaint(
                 painter: _WirePainter(
-                    connected: widget.connected, progress: _c.value),
+                    connected: widget.connected,
+                    progress: _c.value,
+                    color: widget.color),
               ),
             ),
           ),
@@ -168,9 +137,13 @@ class _SignalTraceState extends State<SignalTrace>
 }
 
 class _WirePainter extends CustomPainter {
-  _WirePainter({required this.connected, required this.progress});
+  _WirePainter(
+      {required this.connected,
+      required this.progress,
+      this.color = AppColors.signal});
   final bool connected;
   final double progress;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -178,9 +151,7 @@ class _WirePainter extends CustomPainter {
     final base = Paint()
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round
-      ..color = connected
-          ? AppColors.signal.withValues(alpha: 0.5)
-          : AppColors.border;
+      ..color = connected ? color.withValues(alpha: 0.5) : AppColors.border;
     const dash = 6.0, gap = 5.0;
     var x = 0.0;
     while (x < size.width) {
@@ -195,10 +166,10 @@ class _WirePainter extends CustomPainter {
         Offset(px, y),
         5,
         Paint()
-          ..color = AppColors.signal.withValues(alpha: 0.35)
+          ..color = color.withValues(alpha: 0.35)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
       );
-      canvas.drawCircle(Offset(px, y), 3, Paint()..color = AppColors.signal);
+      canvas.drawCircle(Offset(px, y), 3, Paint()..color = color);
     } else {
       // 끊김 마커(경고 링 + ✕).
       final c = Offset(size.width / 2, y);

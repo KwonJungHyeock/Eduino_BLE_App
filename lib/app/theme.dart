@@ -28,6 +28,20 @@ abstract class AppColors {
 
   /// 코랄 선택효과에 쓰는 옅은 배경 틴트.
   static const Color accentTint = Color(0xFFFDECEE);
+
+  // ── 리스트/홈 디자인 토큰(지시서 확정 — 전역 공유) ──
+  static const Color listTitle = Color(0xFF1A1D21); // 행 제목
+  static const Color listDesc = Color(0xFF8A9099); // 행 설명
+  static const Color cardBorder = Color(0xFFECEEF1); // 카드 보더
+  static const Color pageBg = Color(0xFFF6F8FA); // 페이지 배경
+  static const Color chipGray = Color(0xFFF0F2F5); // 설정칩 배경(유틸)
+  static const Color chipGrayIcon = Color(0xFF9AA1A9); // 설정칩 아이콘
+  static const Color chevron = Color(0xFFC3C8CE); // 우측 chevron
+  static const Color labTint = Color(0xFFEAF2FE); // 실습 모드 tint
+
+  /// accent 로 옅은 tint 계산(칩 배경 등). 실습=블루→#EAF2FE 근사.
+  static Color tintOf(Color accent) =>
+      Color.alphaBlend(accent.withValues(alpha: 0.11), surface);
 }
 
 /// 부드러운 그림자 토큰 — 밝고 친근한 톤의 깊이감(짙은 검정 대신 블루-그레이 확산).
