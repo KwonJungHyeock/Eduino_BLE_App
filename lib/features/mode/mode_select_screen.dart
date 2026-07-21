@@ -1,5 +1,6 @@
 // Author: eduino
-// 사용 모드 선택 — 온보딩 1단계. 무엇을 할지 먼저 고르고(실습/교구), 다음에 모듈을 고른다.
+// 사용 모드 선택 — 온보딩 1단계. 카드 탭=선택, 하단 고정 버튼=확정·진행(명시적).
+// 모드 색 토큰(교구=코랄 / 실습=블루)은 AppMode.color 로 통일해 홈 배너 등 전역과 공유.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,12 +14,21 @@ import '../../providers/module_providers.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/responsive.dart';
 
-class ModeSelectScreen extends ConsumerWidget {
+class ModeSelectScreen extends ConsumerStatefulWidget {
   const ModeSelectScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ModeSelectScreen> createState() => _ModeSelectScreenState();
+}
+
+class _ModeSelectScreenState extends ConsumerState<ModeSelectScreen> {
+  AppMode? _selected;
+
+  @override
+  Widget build(BuildContext context) {
     final current = ref.watch(appModeProvider).valueOrNull;
+    // 기본 선택 = 교구 학습(주력 제품군). 이미 고른 모드가 있으면 그것을 초기 선택.
+    _selected ??= current ?? AppMode.kit;
     final canPop = current != null && context.canPop();
 
     return Scaffold(
@@ -35,79 +45,71 @@ class ModeSelectScreen extends ConsumerWidget {
           builder: (context, c) {
             final wide = c.maxWidth >= Breakpoints.tablet;
             final contentW = c.maxWidth < 640 ? c.maxWidth : 640.0;
-            final kitCard = RiseIn(
-              child: _ModeCard(
-                mode: AppMode.kit,
-                title: '교구 학습',
-                subtitle: 'RC카 · 스마트 팩토리 · 홈 · 팜을\n앱으로 제어하고 체험',
-                icon: Icons.smart_toy_outlined,
-                selected: current == AppMode.kit,
-                onTap: () => _pick(context, ref, AppMode.kit),
-              ),
+
+            final kitCard = _ModeCard(
+              accent: AppMode.kit.color,
+              icon: Icons.smart_toy_outlined,
+              title: AppMode.kit.title, // 교구 학습
+              desc: 'RC카·스마트 팩토리·홈·팜을\n앱으로 제어·체험',
+              selected: _selected == AppMode.kit,
+              onTap: () => _select(AppMode.kit),
             );
-            final labCard = RiseIn(
-              delay: const Duration(milliseconds: 90),
-              child: _ModeCard(
-                mode: AppMode.lab,
-                title: '블루투스 실습',
-                subtitle: '연결·시리얼 통신·AT 커맨드로\n통신 원리를 직접 학습',
-                icon: Icons.bluetooth,
-                selected: current == AppMode.lab,
-                onTap: () => _pick(context, ref, AppMode.lab),
-              ),
+            final labCard = _ModeCard(
+              accent: AppMode.lab.color,
+              icon: Icons.bluetooth,
+              title: AppMode.lab.title, // 블루투스 실습
+              desc: '연결·시리얼·AT 커맨드로\n통신 원리 학습',
+              selected: _selected == AppMode.lab,
+              onTap: () => _select(AppMode.lab),
             );
-            // 카드는 내용에 맞는 자연스러운 크기(화면을 꽉 채우지 않음) → 완성도.
-            // 세로 여백이 남으면 가운데 정렬, 부족하면 스크롤.
+
             return Center(
-              child: SingleChildScrollView(
-                child: SizedBox(
-                  width: contentW,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: Gap.lg, vertical: 28),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          '이 앱으로 하고 싶은 것을\n아래에서 하나만 골라주세요.',
-                          style: TextStyle(
-                            fontSize: 20,
-                            height: 1.5,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '나중에 설정에서 언제든 바꿀 수 있어요.',
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            height: 1.5,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: Gap.lg),
-                        // 넓은 화면: 두 카드를 좌우로(높이 맞춤). 좁은 화면: 위아래로.
-                        if (wide)
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(child: kitCard),
-                                Gap.w16,
-                                Expanded(child: labCard),
-                              ],
+              child: SizedBox(
+                width: contentW,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding:
+                            const EdgeInsets.fromLTRB(Gap.lg, 18, Gap.lg, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // 헤더는 화면 타이틀로만, 여기선 보조 안내 한 줄만(중복 제거).
+                            const Text(
+                              '나중에 설정에서 언제든 바꿀 수 있어요.',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  height: 1.5,
+                                  color: AppColors.textMuted),
                             ),
-                          )
-                        else ...[
-                          kitCard,
-                          Gap.h16,
-                          labCard,
-                        ],
-                      ],
+                            const SizedBox(height: Gap.lg),
+                            if (wide)
+                              IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(child: kitCard),
+                                    Gap.w16,
+                                    Expanded(child: labCard),
+                                  ],
+                                ),
+                              )
+                            else ...[
+                              kitCard,
+                              Gap.h16,
+                              labCard,
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    _StartBar(
+                      accent: _selected!.color,
+                      enabled: _selected != null,
+                      onTap: _confirm,
+                    ),
+                  ],
                 ),
               ),
             );
@@ -117,10 +119,19 @@ class ModeSelectScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _pick(BuildContext context, WidgetRef ref, AppMode m) async {
+  void _select(AppMode m) {
+    if (_selected == m) return;
+    HapticFeedback.selectionClick();
+    setState(() => _selected = m);
+  }
+
+  Future<void> _confirm() async {
+    final m = _selected;
+    if (m == null) return;
     HapticFeedback.selectionClick();
     await ref.read(appModeProvider.notifier).select(m);
     if (!context.mounted) return;
+    // 설정에서 진입한 경우 pop(모드 변경 반영), 온보딩이면 다음 단계로.
     final hasModule = ref.read(moduleProvider).valueOrNull != null;
     if (context.canPop()) {
       context.pop();
@@ -130,47 +141,48 @@ class ModeSelectScreen extends ConsumerWidget {
   }
 }
 
+/// 공통 모드 카드 — {accent, icon, title, desc, selected}. 교구/실습이 동일 컴포넌트.
 class _ModeCard extends StatelessWidget {
   const _ModeCard({
-    required this.mode,
-    required this.title,
-    required this.subtitle,
+    required this.accent,
     required this.icon,
+    required this.title,
+    required this.desc,
     required this.selected,
     required this.onTap,
   });
 
-  final AppMode mode;
-  final String title;
-  final String subtitle;
+  final Color accent;
   final IconData icon;
+  final String title;
+  final String desc;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final accent = mode == AppMode.kit ? AppColors.accent : AppColors.signal;
-    // 화이트 일변도 완화 — 카드에 은은한 톤 배경, 선택 시 좀 더 진하게.
     final tint = Color.alphaBlend(
-      accent.withValues(alpha: selected ? 0.16 : 0.10),
+      accent.withValues(alpha: selected ? 0.14 : 0.08),
       AppColors.surface,
     );
     return Pressable(
       onTap: onTap,
-      haptic: false, // _pick 에서 이미 햅틱 처리.
+      haptic: false, // _select 에서 처리.
       child: AnimatedContainer(
         duration: Motion.base,
         curve: Motion.emphasized,
-        width: double.infinity,
+        // 두 카드 높이 균형(내용 달라도 최소 높이 통일).
+        constraints: const BoxConstraints(minHeight: 152),
         padding: const EdgeInsets.all(Gap.lg),
         decoration: BoxDecoration(
           color: tint,
           borderRadius: Radii.cardLg,
           border: Border.all(
-            color: selected ? accent : accent.withValues(alpha: 0.18),
+            color: selected ? accent : accent.withValues(alpha: 0.16),
             width: selected ? 2 : 1,
           ),
-          boxShadow: selected ? Shadows.glow(accent) : Shadows.soft,
+          // 선택 시 elevation 강조(입체감).
+          boxShadow: selected ? Shadows.lift : Shadows.soft,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,18 +215,56 @@ class _ModeCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(title,
                 style: const TextStyle(
                     fontSize: 19, fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
-            Text(subtitle,
+            Text(desc,
                 style: const TextStyle(
                     fontSize: 13,
                     height: 1.5,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textMuted)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 하단 고정 확정 버튼 — 선택한 모드 색으로 "이 모드로 시작".
+class _StartBar extends StatelessWidget {
+  const _StartBar({
+    required this.accent,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final Color accent;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(Gap.lg, 8, Gap.lg, 14),
+      child: SizedBox(
+        height: 54,
+        width: double.infinity,
+        child: FilledButton(
+          onPressed: enabled ? onTap : null,
+          style: FilledButton.styleFrom(
+            backgroundColor: accent,
+            disabledBackgroundColor: AppColors.border,
+            foregroundColor: Colors.white,
+            elevation: enabled ? 2 : 0,
+            shadowColor: accent.withValues(alpha: 0.4),
+            shape: RoundedRectangleBorder(borderRadius: Radii.card),
+            textStyle:
+                const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+          child: const Text('이 모드로 시작'),
         ),
       ),
     );

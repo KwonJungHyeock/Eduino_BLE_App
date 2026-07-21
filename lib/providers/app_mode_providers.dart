@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../app/theme.dart';
+
 enum AppMode { lab, kit }
 
 const String _modePrefKey = 'eduino.appmode';
@@ -34,8 +36,11 @@ final appModeProvider =
 extension AppModeInfo on AppMode {
   String get title => this == AppMode.lab ? '블루투스 실습' : '교구 학습';
   String get desc => this == AppMode.lab
-      ? '연결·통신 원리를 직접 실습'
-      : 'RC카·스마트 교구를 앱으로 제어';
+      ? '연결·시리얼·AT 커맨드로 통신 원리 학습'
+      : 'RC카·스마트 팩토리·홈·팜을 앱으로 제어·체험';
   IconData get icon =>
       this == AppMode.lab ? Icons.bluetooth : Icons.smart_toy_outlined;
+
+  /// 모드 색 토큰 — 교구 학습=코랄, 블루투스 실습=블루. 앱 전역(모드 배너 등)에서 동일 사용.
+  Color get color => this == AppMode.lab ? AppColors.signal : AppColors.accent;
 }

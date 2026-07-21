@@ -277,7 +277,7 @@ class _ModeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = mode == AppMode.kit ? AppColors.accent : AppColors.signal;
+    final accent = mode.color; // 모드 색 토큰 공유(교구=코랄/실습=블루)
     return InkWell(
       onTap: () => context.push(Routes.mode),
       borderRadius: Radii.card,
