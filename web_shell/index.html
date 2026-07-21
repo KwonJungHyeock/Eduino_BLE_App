@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EDUINO · 스마트폰 미리보기</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",Roboto,sans-serif;
+    background:
+      radial-gradient(circle at 18% 15%, #E9F1FC, transparent 55%),
+      radial-gradient(circle at 85% 88%, #FDEDEF, transparent 50%),
+      #EDF2F8;
+    -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100%; overflow:hidden;
+  }
+  .bar{
+    position:fixed; top:0; left:0; right:0; height:54px; z-index:10;
+    display:flex; align-items:center; gap:14px; padding:0 18px;
+  }
+  .brand{font-weight:800; color:#15202E; font-size:16px; letter-spacing:-.2px}
+  .brand span{color:#EE4C57}
+  .seg{display:flex; gap:4px; background:#fff; border:1px solid #E2E9F2; border-radius:999px; padding:4px; box-shadow:0 4px 14px rgba(27,58,107,.07)}
+  .seg button{border:0; background:transparent; font:inherit; font-size:12.5px; font-weight:700; color:#6B7684; padding:6px 13px; border-radius:999px; cursor:pointer; transition:.15s}
+  .seg button.on{background:#1C7DF3; color:#fff}
+  .reload{margin-left:auto; border:1px solid #E2E9F2; background:#fff; color:#6B7684; font:inherit; font-weight:700; font-size:12.5px; padding:7px 14px; border-radius:999px; cursor:pointer; box-shadow:0 4px 14px rgba(27,58,107,.07)}
+  .stage{display:flex; align-items:center; justify-content:center; flex:1; width:100%; transform-origin:center center}
+  .phone{
+    position:relative; background:#0E1726; border-radius:48px; padding:14px;
+    box-shadow:0 34px 80px rgba(15,30,55,.38), inset 0 0 0 2px #26334A;
+  }
+  .phone::before{
+    content:""; position:absolute; top:21px; left:50%; transform:translateX(-50%);
+    width:118px; height:6px; border-radius:6px; background:#26334A; z-index:3;
+  }
+  .screen{position:relative; border-radius:36px; overflow:hidden; background:#F3F7FC}
+  iframe{border:0; display:block; width:100%; height:100%; background:#F3F7FC}
+  .caption{position:fixed; bottom:14px; left:0; right:0; text-align:center; color:#6B7684; font-size:12.5px; padding:0 16px}
+  @media (max-width:680px){
+    .bar,.caption{display:none}
+    body{overflow:auto}
+    .phone{padding:0; border-radius:0; box-shadow:none}
+    .phone::before{display:none}
+    .screen{border-radius:0; width:100vw!important; height:100vh!important}
+    .stage{transform:none!important}
+  }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <div class="brand">Eduino<span> AI</span> · 미리보기</div>
+    <div class="seg" id="seg">
+      <button data-w="390" data-h="844" class="on">폰</button>
+      <button data-w="430" data-h="932">큰 폰</button>
+      <button data-w="834" data-h="1112">태블릿</button>
+    </div>
+    <button class="reload" id="reload">↻ 처음부터</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="phone" id="phone">
+      <div class="screen" id="screen">
+        <iframe id="frame" src="app/" title="EDUINO app"
+          allow="accelerometer; gyroscope; magnetometer; microphone"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div class="caption">실제 스마트폰 규격으로 렌더링됩니다 · 상단에서 기기 크기를 바꿀 수 있어요 (블루투스 연결만 웹에서 미동작)</div>
+
+  <script>
+    var W = 390, H = 844;
+    var screenEl = document.getElementById('screen');
+    var stage = document.getElementById('stage');
+    var frame = document.getElementById('frame');
+
+    function apply() {
+      var small = window.matchMedia('(max-width:680px)').matches;
+      if (small) { stage.style.transform = 'none'; return; }
+      screenEl.style.width = W + 'px';
+      screenEl.style.height = H + 'px';
+      var avail = window.innerHeight - 120;   // 상/하단 여백
+      var frameH = H + 28;                     // .phone 상하 패딩
+      var s = Math.min(1, avail / frameH);
+      stage.style.transform = 'scale(' + s + ')';
+    }
+
+    document.getElementById('seg').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      Array.prototype.forEach.call(this.children, function (c) { c.classList.remove('on'); });
+      b.classList.add('on');
+      W = +b.dataset.w; H = +b.dataset.h; apply();
+    });
+    document.getElementById('reload').addEventListener('click', function () {
+      frame.src = 'app/';
+    });
+    window.addEventListener('resize', apply);
+    apply();
+  </script>
+</body>
+</html>

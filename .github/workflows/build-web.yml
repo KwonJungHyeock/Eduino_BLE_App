@@ -37,13 +37,14 @@ jobs:
         run: flutter pub get
 
       - name: Build web (release)
-        run: flutter build web --release --base-href /
+        run: flutter build web --release --base-href /app/
 
-      - name: Assemble webdist
+      - name: Assemble webdist (앱은 /app, 루트는 폰 프레임 래퍼)
         run: |
           rm -rf webdist
-          mkdir -p webdist
-          cp -r build/web/. webdist/
+          mkdir -p webdist/app
+          cp -r build/web/. webdist/app/
+          cp web_shell/index.html webdist/index.html
 
       - name: Commit webdist to branch
         run: |
