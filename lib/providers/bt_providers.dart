@@ -1,13 +1,10 @@
 // Author: eduino
 // 통신·텔레메트리·터미널 전역 상태 (Riverpod). 화면은 이 provider 들로만 통신을 만난다.
 
-import 'dart:io' show Platform;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/bt/ble_transport.dart';
 import '../core/bt/bt_transport.dart';
-import '../core/bt/spp_transport.dart';
+import '../core/bt/transport_factory.dart';
 import '../core/protocol/commands.dart';
 import '../core/protocol/telemetry.dart';
 import 'module_providers.dart';
@@ -25,9 +22,7 @@ export '../core/bt/bt_transport.dart'
 /// 모듈을 바꾸면 provider 가 재생성되며 이전 전송은 dispose 된다(연결은 끊김).
 final transportProvider = Provider<BtTransport>((ref) {
   final module = ref.watch(moduleProvider).valueOrNull ?? BtModule.ble;
-  final BtTransport t = (module == BtModule.spp && Platform.isAndroid)
-      ? SppTransport()
-      : BleTransport();
+  final BtTransport t = createTransport(module);
   ref.onDispose(t.dispose);
   return t;
 });

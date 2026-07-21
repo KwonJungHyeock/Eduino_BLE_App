@@ -1,0 +1,58 @@
+# Author: eduino
+# Flutter 웹 빌드 → 정적 산출물(webdist/)을 브랜치에 커밋. Vercel 이 이 폴더를 서빙한다.
+# 웹은 실제 블루투스 대신 스텁 전송을 사용(화면·기능 흐름 확인용).
+
+name: Build Web
+
+on:
+  push:
+    branches:
+      - claude/new-session-jnm6sg
+    paths-ignore:
+      - 'webdist/**'
+  workflow_dispatch:
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: claude/new-session-jnm6sg
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.29.0
+          cache: true
+
+      - name: Generate web platform files
+        run: flutter create . --platforms=web --project-name eduino_rc --org kr.eduino
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Build web (release)
+        run: flutter build web --release --base-href /
+
+      - name: Assemble webdist
+        run: |
+          rm -rf webdist
+          mkdir -p webdist
+          cp -r build/web/. webdist/
+
+      - name: Commit webdist to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f webdist
+          if git diff --cached --quiet; then
+            echo "웹 산출물 변경 없음 — 스킵"
+            exit 0
+          fi
+          git commit -m "chore(web): 웹 빌드 산출물 갱신 [skip ci]"
+          git push origin HEAD:claude/new-session-jnm6sg

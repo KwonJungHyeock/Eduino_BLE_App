@@ -2,8 +2,7 @@
 // 통신 모듈 선택 — 시작 시 HM-10(BLE) / HC-06(Classic SPP) 중 사용하는 모듈을 고른다.
 // 선택에 따라 스캔 방식과 AT 예제 등이 맞춰진다.
 
-import 'dart:io' show Platform;
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +20,9 @@ class ModuleSelectScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(moduleProvider).valueOrNull;
     final canPop = current != null && context.canPop();
+    // HC-06(클래식 SPP)은 안드로이드 전용. 웹/iOS 에서는 비활성.
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
     return Scaffold(
       appBar: AppBar(
@@ -58,11 +60,11 @@ class ModuleSelectScreen extends ConsumerWidget {
               icon: Icons.settings_bluetooth,
               title: 'HC-06',
               badge: 'Classic SPP',
-              desc: Platform.isAndroid
+              desc: isAndroid
                   ? '클래식 블루투스(SPP). 안드로이드 전용. RX/TX 를 아두이노에 연결하는 시리얼 모듈.'
-                  : 'iOS 에서는 지원되지 않습니다(클래식 SPP 제한). 안드로이드에서 사용하세요.',
+                  : '이 플랫폼에서는 지원되지 않습니다(클래식 SPP 제한). 안드로이드에서 사용하세요.',
               selected: current == BtModule.spp,
-              enabled: Platform.isAndroid,
+              enabled: isAndroid,
               onTap: () => _pick(context, ref, BtModule.spp),
             ),
             Gap.h24,
