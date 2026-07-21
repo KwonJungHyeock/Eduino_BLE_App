@@ -76,18 +76,29 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           ),
         ),
         Expanded(
-          child: log.isEmpty
-              ? Center(
-                  child: Text('송수신 로그가 여기에 표시됩니다.',
-                      style: AppType.mono(
-                          size: 12, color: AppColors.textMuted)),
-                )
-              : ListView.builder(
-                  controller: _scroll,
-                  padding: const EdgeInsets.all(Gap.md),
-                  itemCount: log.length,
-                  itemBuilder: (context, i) => _LogRow(entry: log[i]),
-                ),
+          child: Container(
+            color: const Color(0xFFEDF1F6),
+            child: log.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.terminal,
+                            size: 40, color: AppColors.chevron),
+                        const SizedBox(height: 12),
+                        const Text('송수신 로그가 여기에 표시됩니다.',
+                            style: TextStyle(
+                                fontSize: 13, color: AppColors.listDesc)),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scroll,
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+                    itemCount: log.length,
+                    itemBuilder: (context, i) => _LogRow(entry: log[i]),
+                  ),
+          ),
         ),
         // AT 예제 버튼
         SizedBox(
@@ -134,18 +145,65 @@ class _LogRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (color, prefix) = switch (entry.dir) {
-      LogDir.out => (AppColors.textMuted, '→ '),
-      LogDir.incoming => (AppColors.signal, '← '),
-      LogDir.system => (AppColors.warn, '· '),
-    };
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Text(
-        '$prefix${entry.text}',
-        style: AppType.mono(size: 13, color: color, height: 1.3),
+    // 시스템 로그(연결 상태 등)는 가운데 옅은 안내 칩.
+    if (entry.dir == LogDir.system) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(entry.text,
+                style: const TextStyle(fontSize: 11, color: AppColors.listDesc)),
+          ),
+        ),
+      );
+    }
+    final mine = entry.dir == LogDir.out; // 송신=오른쪽 파랑, 수신=왼쪽 흰
+    final bubble = ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.70,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+        decoration: BoxDecoration(
+          color: mine ? AppColors.signal : AppColors.surface,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(mine ? 18 : 6),
+            bottomRight: Radius.circular(mine ? 6 : 18),
+          ),
+          border: mine ? null : Border.all(color: AppColors.cardBorder),
+        ),
+        // AT/시리얼 명령은 데이터 → 모노 유지.
+        child: Text(entry.text,
+            style: AppType.mono(
+                size: 13.5,
+                height: 1.3,
+                color: mine ? Colors.white : AppColors.listTitle)),
       ),
     );
+    final time = Text(_hhmm(entry.atMillis),
+        style: const TextStyle(fontSize: 10, color: AppColors.listDesc));
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment:
+            mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: mine ? [time, Gap.w8, bubble] : [bubble, Gap.w8, time],
+      ),
+    );
+  }
+
+  static String _hhmm(int ms) {
+    final d = DateTime.fromMillisecondsSinceEpoch(ms);
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.hour)}:${two(d.minute)}';
   }
 }
 
@@ -176,17 +234,17 @@ class _InputBar extends StatelessWidget {
                   isDense: true,
                   hintText: 'RAW 명령 입력 (예: AT+NAME?)',
                   hintStyle:
-                      AppType.mono(size: 13, color: AppColors.textMuted),
+                      AppType.mono(size: 13, color: AppColors.listDesc),
                   filled: true,
-                  fillColor: AppColors.baseBg,
+                  fillColor: const Color(0xFFF0F2F5),
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: Gap.md, vertical: 12),
+                      horizontal: 16, vertical: 12),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: Radii.chip,
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: Radii.chip,
+                    borderRadius: BorderRadius.circular(24),
                     borderSide: const BorderSide(color: AppColors.signal),
                   ),
                 ),
@@ -197,9 +255,10 @@ class _InputBar extends StatelessWidget {
               onPressed: onSend,
               style: FilledButton.styleFrom(
                 minimumSize: const Size(52, 48),
-                backgroundColor: AppColors.surfaceHigh,
+                shape: const CircleBorder(),
+                padding: EdgeInsets.zero,
               ),
-              child: const Icon(Icons.send, size: 18, color: AppColors.signal),
+              child: const Icon(Icons.send, size: 18),
             ),
           ],
         ),

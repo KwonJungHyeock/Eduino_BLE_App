@@ -97,19 +97,31 @@ class _SerialChatScreenState extends ConsumerState<SerialChatScreen> {
           ),
         ),
         Expanded(
-          child: chat.isEmpty
-              ? Center(
-                  child: Text(
-                    connected ? '메시지를 입력해 보세요.' : '연결 후 채팅할 수 있어요.',
-                    style: AppType.mono(size: 13, color: AppColors.textMuted),
+          child: Container(
+            color: const Color(0xFFEDF1F6), // 채팅 배경(말풍선이 뜨게)
+            child: chat.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.forum_outlined,
+                            size: 40, color: AppColors.chevron),
+                        const SizedBox(height: 12),
+                        Text(
+                          connected ? '메시지를 입력해 보세요.' : '연결 후 채팅할 수 있어요.',
+                          style: const TextStyle(
+                              fontSize: 13.5, color: AppColors.listDesc),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scroll,
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+                    itemCount: chat.length,
+                    itemBuilder: (context, i) => _Bubble(entry: chat[i]),
                   ),
-                )
-              : ListView.builder(
-                  controller: _scroll,
-                  padding: const EdgeInsets.all(Gap.md),
-                  itemCount: chat.length,
-                  itemBuilder: (context, i) => _Bubble(entry: chat[i]),
-                ),
+          ),
         ),
         // 자주 쓰는 문장 프리셋
         if (connected)
@@ -146,54 +158,45 @@ class _Bubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mine = entry.dir == LogDir.out;
-    return Align(
-      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+    final bubble = ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.70,
+      ),
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.72,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
         decoration: BoxDecoration(
           color: mine ? AppColors.signal : AppColors.surface,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(mine ? 16 : 4),
-            bottomRight: Radius.circular(mine ? 4 : 16),
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(mine ? 18 : 6),
+            bottomRight: Radius.circular(mine ? 6 : 18),
           ),
-          border: mine ? null : Border.all(color: AppColors.border),
+          border: mine ? null : Border.all(color: AppColors.cardBorder),
         ),
-        child: Column(
-          crossAxisAlignment:
-              mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            Text(
-              mine ? '앱 → 아두이노' : '수신',
-              style: AppType.mono(
-                size: 9,
-                letterSpacing: 0.5,
-                color: mine ? Colors.white70 : AppColors.textMuted,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              entry.text,
-              style: AppType.mono(
-                size: 14,
-                color: mine ? Colors.white : AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              _hhmm(entry.atMillis),
-              style: AppType.mono(
-                size: 9,
-                color: mine ? Colors.white70 : AppColors.textMuted,
-              ),
-            ),
-          ],
+        child: Text(
+          entry.text,
+          style: TextStyle(
+            fontSize: 14.5,
+            height: 1.35,
+            color: mine ? Colors.white : AppColors.listTitle,
+          ),
         ),
+      ),
+    );
+    final time = Text(
+      _hhmm(entry.atMillis),
+      style: const TextStyle(fontSize: 10, color: AppColors.listDesc),
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment:
+            mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: mine
+            ? [time, Gap.w8, bubble]
+            : [bubble, Gap.w8, time],
       ),
     );
   }
@@ -201,7 +204,7 @@ class _Bubble extends StatelessWidget {
   static String _hhmm(int ms) {
     final d = DateTime.fromMillisecondsSinceEpoch(ms);
     String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
+    return '${two(d.hour)}:${two(d.minute)}';
   }
 }
 
@@ -231,24 +234,24 @@ class _InputBar extends StatelessWidget {
               child: TextField(
                 controller: controller,
                 enabled: enabled,
-                style: AppType.mono(size: 14),
+                style: const TextStyle(fontSize: 14.5),
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onSend(),
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: enabled ? '메시지 입력…' : '연결 후 입력 가능',
-                  hintStyle:
-                      AppType.mono(size: 13, color: AppColors.textMuted),
+                  hintStyle: const TextStyle(
+                      fontSize: 14, color: AppColors.listDesc),
                   filled: true,
-                  fillColor: AppColors.surfaceHigh,
+                  fillColor: const Color(0xFFF0F2F5),
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: Gap.md, vertical: 12),
+                      horizontal: 16, vertical: 12),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: Radii.chip,
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: Radii.chip,
+                    borderRadius: BorderRadius.circular(24),
                     borderSide: const BorderSide(color: AppColors.signal),
                   ),
                 ),

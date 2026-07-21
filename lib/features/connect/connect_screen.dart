@@ -142,7 +142,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                                   ? '연결되어 있습니다.'
                                   : module == BtModule.spp
                                       ? '설정에서 페어링(PIN 1234) 후 목록에서 선택'
-                                      : '전원이 켜진 RC카를 근처에 두세요.',
+                                      : '전원을 켠 뒤 사용하는 블루투스 모듈을 가까이 두세요.',
                               style: AppType.mono(
                                   size: 12, color: AppColors.textMuted)),
                         ],
