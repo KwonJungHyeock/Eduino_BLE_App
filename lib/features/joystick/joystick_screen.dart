@@ -1,16 +1,18 @@
 // Author: eduino
-// 조이스틱(게임패드) 모드 — 아날로그 스틱 + HUD(속도 게이지·니트로 조향 게이지·전송값) + 속도상한 슬라이더 1개.
+// 조이스틱 — 스틱 위치를 7개 단일 문자 명령(g/b/l/r/q/w/s)으로 매핑.
+// 중앙 데드존=s. 아날로그 throttle/속도상한 없음(확장 펌웨어 트랙으로 분리). 표시="전송 → g".
+
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../core/protocol/commands.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../widgets/neo_joystick.dart';
 import '../../widgets/pressable.dart';
-import '../../widgets/speed_cap_slider.dart';
-import '../../widgets/speed_gauge.dart';
 
 class JoystickScreen extends ConsumerStatefulWidget {
   const JoystickScreen({super.key});
@@ -20,27 +22,30 @@ class JoystickScreen extends ConsumerStatefulWidget {
 }
 
 class _JoystickScreenState extends ConsumerState<JoystickScreen> {
-  int _throttle = 0;
-  int _steer = 0;
+  DriveCmd _cmd = DriveCmd.stop;
 
-  void _onVector(Offset v) {
-    // 중앙 근처 미세 입력 무시(드리프트 방지) 데드존.
-    double dz(double x) => x.abs() < 0.06 ? 0.0 : x;
-    final throttle = (dz(v.dy) * 100).round().clamp(-100, 100).toInt();
-    final steer = (dz(v.dx) * 100).round().clamp(-100, 100).toInt();
-    if (throttle != _throttle || steer != _steer) {
-      setState(() {
-        _throttle = throttle;
-        _steer = steer;
-      });
-    }
-    ref.read(carControllerProvider).drive(throttle, steer);
+  /// 스틱 벡터(위=+dy, 오른쪽=+dx) → 8방위 → 7개 명령. 중앙=정지.
+  DriveCmd _cmdFor(Offset v) {
+    if (v.distance < 0.30) return DriveCmd.stop; // 데드존
+    final deg = math.atan2(v.dy, v.dx) * 180 / math.pi; // 0=오른쪽, 90=위
+    if (deg >= 67.5 && deg < 112.5) return DriveCmd.forward; // 위
+    if (deg >= 22.5 && deg < 67.5) return DriveCmd.rotRight; // 우상 = 우회전
+    if (deg >= -22.5 && deg < 22.5) return DriveCmd.right; // 오른쪽
+    if (deg >= 112.5 && deg < 157.5) return DriveCmd.rotLeft; // 좌상 = 좌회전
+    if (deg >= 157.5 || deg < -157.5) return DriveCmd.left; // 왼쪽
+    return DriveCmd.back; // 아래쪽 반원 = 후진
   }
 
-  void _reset() => setState(() {
-        _throttle = 0;
-        _steer = 0;
-      });
+  void _onVector(Offset v) {
+    final cmd = _cmdFor(v);
+    if (cmd != _cmd) setState(() => _cmd = cmd);
+    ref.read(carControllerProvider).driveCmd(cmd);
+  }
+
+  void _release() {
+    setState(() => _cmd = DriveCmd.stop);
+    ref.read(carControllerProvider).driveStop();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,33 +56,50 @@ class _JoystickScreenState extends ConsumerState<JoystickScreen> {
         padding: const EdgeInsets.all(Gap.md),
         child: Column(
           children: [
+            RiseIn(child: _CmdReadout(cmd: _cmd)),
+            Gap.h16,
             Expanded(
-              flex: 4,
-              child: RiseIn(
-                child: _Hud(throttle: _throttle, steer: _steer),
-              ),
-            ),
-            Gap.h12,
-            Expanded(
-              flex: 5,
               child: RiseIn(
                 delay: const Duration(milliseconds: 70),
-                child: _StickPanel(
-                  enabled: connected,
-                  onChanged: _onVector,
-                  onReleased: _reset,
+                child: _Panel(
+                  child: Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('DRIVE STICK',
+                            style: AppType.mono(
+                                size: 10,
+                                color: AppColors.textMuted,
+                                letterSpacing: 2)),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: LayoutBuilder(builder: (context, c) {
+                            final size = (c.maxWidth < c.maxHeight
+                                    ? c.maxWidth
+                                    : c.maxHeight)
+                                .clamp(160.0, 320.0)
+                                .toDouble();
+                            return NeoJoystick(
+                              size: size,
+                              enabled: connected,
+                              color: AppColors.accent, // RC 모드 코랄
+                              onChanged: _onVector,
+                              onReleased: _release,
+                            );
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             Gap.h12,
-            // 속도 상한 슬라이더 — 화면 통틀어 하나만.
-            RiseIn(
-              delay: const Duration(milliseconds: 140),
-              child: _Panel(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: Gap.md, vertical: Gap.sm),
-                child: const SpeedCapSlider(),
-              ),
+            Text(
+              '스틱을 기울인 방향으로 명령이 전송돼요. 놓으면 자동 정지(s).',
+              textAlign: TextAlign.center,
+              style: AppType.mono(size: 11, color: AppColors.textMuted),
             ),
           ],
         ),
@@ -86,165 +108,75 @@ class _JoystickScreenState extends ConsumerState<JoystickScreen> {
   }
 }
 
-class _Hud extends StatelessWidget {
-  const _Hud({required this.throttle, required this.steer});
-  final int throttle;
-  final int steer;
+/// 전송 명령 표시 — "전송 → g" + 한글 라벨 + 방향 글리프. 코랄.
+class _CmdReadout extends StatelessWidget {
+  const _CmdReadout({required this.cmd});
+  final DriveCmd cmd;
+
+  IconData get _icon => switch (cmd) {
+        DriveCmd.forward => Icons.keyboard_arrow_up,
+        DriveCmd.back => Icons.keyboard_arrow_down,
+        DriveCmd.left => Icons.keyboard_arrow_left,
+        DriveCmd.right => Icons.keyboard_arrow_right,
+        DriveCmd.rotLeft => Icons.rotate_left,
+        DriveCmd.rotRight => Icons.rotate_right,
+        DriveCmd.stop => Icons.stop,
+      };
 
   @override
   Widget build(BuildContext context) {
-    return _Panel(
-      child: Column(
+    final isStop = cmd == DriveCmd.stop;
+    final accent = AppColors.accent;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: 16),
+      decoration: BoxDecoration(
+        color: AppColors.tintOf(accent),
+        borderRadius: Radii.cardLg,
+        border: Border.all(color: accent.withValues(alpha: 0.18)),
+      ),
+      child: Row(
         children: [
-          Expanded(
-            child: Center(
-              child: SpeedGauge(
-                value: throttle.abs().toDouble(),
-                reverse: throttle < 0,
-                label: throttle < 0 ? 'REVERSE' : 'THROTTLE',
-                size: 180,
-              ),
-            ),
-          ),
-          _NitroSteer(steer: steer),
-          Gap.h8,
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: AppColors.signalTint,
-              borderRadius: Radii.pill,
+              color: isStop ? AppColors.chipGray : accent,
+              borderRadius: Radii.card,
             ),
-            child: Text(
-              'DRV: $throttle, $steer',
-              style: AppType.mono(
-                  size: 13,
-                  weight: FontWeight.w700,
-                  color: AppColors.signalDeep),
-            ),
+            child: Icon(_icon,
+                color: isStop ? AppColors.chipGrayIcon : Colors.white, size: 30),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 니트로 스타일 조향 게이지 — 중앙에서 좌/우로 초록→노랑→빨강 칸이 차오른다.
-class _NitroSteer extends StatelessWidget {
-  const _NitroSteer({required this.steer});
-  final int steer; // -100..100
-
-  static const int _seg = 8;
-
-  static Color _segColor(int dist) {
-    final t = ((dist - 1) / (_seg - 1)).clamp(0.0, 1.0);
-    // 초록 → 노랑 → 빨강
-    if (t < 0.5) {
-      return Color.lerp(
-          const Color(0xFF2FBF4F), const Color(0xFFF5C518), t * 2)!;
-    }
-    return Color.lerp(
-        const Color(0xFFF5C518), AppColors.accent, (t - 0.5) * 2)!;
-  }
-
-  Widget _cell(bool active, int dist) {
-    final c = _segColor(dist);
-    return Expanded(
-      child: Container(
-        height: 16,
-        margin: const EdgeInsets.symmetric(horizontal: 1.5),
-        decoration: BoxDecoration(
-          color: active ? c : AppColors.border.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(3),
-          boxShadow: active
-              ? [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 6)]
-              : null,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final activeCount = (steer.abs() / 100 * _seg).round();
-    return Column(
-      children: [
-        Row(
-          children: [
-            Text('◀ L',
-                style: AppType.mono(size: 10, color: AppColors.textMuted)),
-            const Spacer(),
-            Text('STEER',
-                style: AppType.mono(
-                    size: 10, color: AppColors.textMuted, letterSpacing: 2)),
-            const Spacer(),
-            Text('R ▶',
-                style: AppType.mono(size: 10, color: AppColors.textMuted)),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            // 왼쪽: 바깥(dist=_seg) → 중앙(dist=1)
-            for (var p = 0; p < _seg; p++)
-              _cell(steer < 0 && (_seg - p) <= activeCount, _seg - p),
-            // 중앙 피벗
-            Container(
-              width: 3,
-              height: 20,
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              decoration: BoxDecoration(
-                color: AppColors.textMuted,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // 오른쪽: 중앙(dist=1) → 바깥(dist=_seg)
-            for (var p = 0; p < _seg; p++)
-              _cell(steer > 0 && (p + 1) <= activeCount, p + 1),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _StickPanel extends StatelessWidget {
-  const _StickPanel({
-    required this.enabled,
-    required this.onChanged,
-    required this.onReleased,
-  });
-  final bool enabled;
-  final void Function(Offset) onChanged;
-  final VoidCallback onReleased;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Panel(
-      child: Column(
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text('DRIVE STICK',
-                style: AppType.mono(
-                    size: 10, color: AppColors.textMuted, letterSpacing: 2)),
-          ),
+          Gap.w16,
           Expanded(
-            child: Center(
-              child: LayoutBuilder(builder: (context, c) {
-                final size =
-                    (c.maxWidth < c.maxHeight ? c.maxWidth : c.maxHeight)
-                        .clamp(150.0, 300.0)
-                        .toDouble();
-                return Semantics(
-                  label: '주행 조이스틱',
-                  child: NeoJoystick(
-                    size: size,
-                    enabled: enabled,
-                    onChanged: onChanged,
-                    onReleased: onReleased,
-                  ),
-                );
-              }),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('전송 명령 · COMMAND',
+                    style: AppType.mono(
+                        size: 10, color: AppColors.listDesc, letterSpacing: 2)),
+                const SizedBox(height: 3),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text('전송 → ',
+                        style: AppType.mono(
+                            size: 15, color: AppColors.listTitle)),
+                    Text(cmd.code,
+                        style: AppType.mono(
+                            size: 28,
+                            weight: FontWeight.w800,
+                            color: isStop ? AppColors.listDesc : accent)),
+                    Gap.w12,
+                    Text(cmd.label,
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.listTitle)),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -254,26 +186,20 @@ class _StickPanel extends StatelessWidget {
 }
 
 class _Panel extends StatelessWidget {
-  const _Panel(
-      {required this.child, this.padding = const EdgeInsets.all(Gap.md)});
+  const _Panel({required this.child});
   final Widget child;
-  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: padding,
+      padding: const EdgeInsets.all(Gap.md),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: Radii.card,
-        border: Border.all(color: AppColors.border),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x0F1B3A6B), blurRadius: 16, offset: Offset(0, 6)),
-        ],
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: Shadows.soft,
       ),
       child: child,
     );
   }
 }
-

@@ -65,6 +65,7 @@ class CarController {
     } else {
       _stopHeartbeat();
       _cancelThrottlers();
+      _lastCmd = null; // 재연결 시 첫 명령이 항상 전송되도록 초기화(안전).
     }
   }
 
@@ -89,7 +90,33 @@ class CarController {
     }
   }
 
-  // ---- 명령 API (화면이 호출) ----------------------------------------------
+  // ---- 기본 RC 단일 문자 명령 (조이스틱/방향/틸트/음성 공통) -----------------
+
+  DriveCmd? _lastCmd;
+
+  /// 단일 문자 주행 명령(g/b/l/r/q/w/s). 같은 명령 반복은 억제(스로틀링) —
+  /// 래치형 펌웨어(다음 명령까지 유지)라 매 프레임 재전송하지 않는다.
+  void driveCmd(DriveCmd cmd) {
+    if (cmd == _lastCmd) return;
+    _lastCmd = cmd;
+    _sendChar(cmd.code);
+  }
+
+  /// 안전 정지 — 손 떼기/중립/화면 이탈 시. 중복 억제와 무관하게 무조건 s 전송.
+  void driveStop() {
+    _cancelThrottlers();
+    _lastCmd = DriveCmd.stop;
+    _sendChar('s');
+  }
+
+  /// 단일 문자 전송(개행 없음) + 보이는 통신 로그.
+  void _sendChar(String ch) {
+    if (!_connected) return;
+    _ref.read(transportProvider).send(utf8.encode(ch));
+    _ref.read(terminalProvider.notifier).logOutgoing(ch);
+  }
+
+  // ---- 확장 펌웨어 트랙 (속도/아날로그/자율/라인 — 라인 프로토콜) -------------
 
   /// 조이스틱/드라이브: throttle/steer -100..100. 스로틀링됨.
   void drive(int throttle, int steer) {

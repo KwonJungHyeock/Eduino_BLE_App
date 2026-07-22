@@ -16,9 +16,13 @@ class NeoJoystick extends StatefulWidget {
     required this.onChanged,
     this.onReleased,
     this.enabled = true,
+    this.color = AppColors.signal,
   });
 
   final double size;
+
+  /// 노브·벡터선·글로우 색(모드 accent). 기본 블루, RC=코랄.
+  final Color color;
 
   /// 드래그 중 정규화 벡터. y 는 위가 +(전진) 되도록 부호 반전되어 전달됨.
   final void Function(Offset vector) onChanged;
@@ -114,6 +118,7 @@ class _NeoJoystickState extends State<NeoJoystick>
             radius: _radius,
             knobRadius: _knobRadius,
             active: _dragging,
+            color: widget.color,
           ),
         ),
       ),
@@ -127,12 +132,14 @@ class _JoystickPainter extends CustomPainter {
     required this.radius,
     required this.knobRadius,
     required this.active,
+    required this.color,
   });
 
   final Offset knob;
   final double radius;
   final double knobRadius;
   final bool active;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -182,7 +189,7 @@ class _JoystickPainter extends CustomPainter {
         center,
         knobCenter,
         Paint()
-          ..color = AppColors.signal.withValues(alpha: 0.35)
+          ..color = color.withValues(alpha: 0.35)
           ..strokeWidth = 3
           ..strokeCap = StrokeCap.round,
       );
@@ -194,7 +201,7 @@ class _JoystickPainter extends CustomPainter {
         knobCenter,
         knobRadius + 8,
         Paint()
-          ..color = AppColors.signal.withValues(alpha: 0.18)
+          ..color = color.withValues(alpha: 0.18)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
       );
     }
@@ -203,7 +210,7 @@ class _JoystickPainter extends CustomPainter {
     canvas.drawCircle(
       knobCenter,
       knobRadius,
-      Paint()..color = active ? AppColors.signal : AppColors.surfaceHigh,
+      Paint()..color = active ? color : AppColors.surfaceHigh,
     );
     canvas.drawCircle(
       knobCenter,
@@ -211,7 +218,7 @@ class _JoystickPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
-        ..color = active ? AppColors.signal : AppColors.border,
+        ..color = active ? color : AppColors.border,
     );
     // 노브 중앙 도트
     canvas.drawCircle(
@@ -223,5 +230,5 @@ class _JoystickPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_JoystickPainter old) =>
-      old.knob != knob || old.active != active;
+      old.knob != knob || old.active != active || old.color != color;
 }

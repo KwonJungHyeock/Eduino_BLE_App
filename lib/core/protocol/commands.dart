@@ -4,7 +4,35 @@
 
 import 'dart:convert';
 
-/// 방향 버튼 8방향 + 정지 (§4.2 MOV).
+/// 기본 RC 펌웨어 단일 문자 주행 명령 — g/b/l/r/q/w/s (앱인벤터 예제 규격).
+/// 속도/아날로그/자율/라인은 "확장 펌웨어" 트랙(아래 라인 프로토콜)으로 분리 보관.
+enum DriveCmd { forward, back, left, right, rotLeft, rotRight, stop }
+
+extension DriveCmdInfo on DriveCmd {
+  /// 실제 전송 문자(단일).
+  String get code => switch (this) {
+        DriveCmd.forward => 'g',
+        DriveCmd.back => 'b',
+        DriveCmd.left => 'l',
+        DriveCmd.right => 'r',
+        DriveCmd.rotLeft => 'q',
+        DriveCmd.rotRight => 'w',
+        DriveCmd.stop => 's',
+      };
+
+  /// 사람이 읽는 라벨.
+  String get label => switch (this) {
+        DriveCmd.forward => '전진',
+        DriveCmd.back => '후진',
+        DriveCmd.left => '왼쪽',
+        DriveCmd.right => '오른쪽',
+        DriveCmd.rotLeft => '좌회전',
+        DriveCmd.rotRight => '우회전',
+        DriveCmd.stop => '정지',
+      };
+}
+
+/// 방향 버튼 8방향 + 정지 (§4.2 MOV) — 확장 펌웨어(라인 프로토콜) 트랙.
 enum MoveDir { f, b, l, r, fl, fr, bl, br, s }
 
 extension MoveDirCode on MoveDir {

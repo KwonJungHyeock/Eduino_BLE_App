@@ -158,13 +158,13 @@ class GoRouterHolder {
         ),
         GoRoute(
           path: Routes.joystick,
-          builder: (context, state) =>
-              const ModeScaffold(title: '조이스틱', child: JoystickScreen()),
+          builder: (context, state) => const ModeScaffold(
+              title: '조이스틱', rc: true, child: JoystickScreen()),
         ),
         GoRoute(
           path: Routes.dpad,
-          builder: (context, state) =>
-              const ModeScaffold(title: '방향 버튼', child: ControllerScreen()),
+          builder: (context, state) => const ModeScaffold(
+              title: '방향 버튼', rc: true, child: ControllerScreen()),
         ),
         GoRoute(
           path: Routes.auto,
@@ -188,13 +188,13 @@ class GoRouterHolder {
         ),
         GoRoute(
           path: Routes.tilt,
-          builder: (context, state) =>
-              const ModeScaffold(title: '기울기 제어', child: TiltScreen()),
+          builder: (context, state) => const ModeScaffold(
+              title: '기울기 제어', rc: true, child: TiltScreen()),
         ),
         GoRoute(
           path: Routes.voice,
-          builder: (context, state) =>
-              const ModeScaffold(title: '음성 제어', child: VoiceScreen()),
+          builder: (context, state) => const ModeScaffold(
+              title: '음성 제어', rc: true, child: VoiceScreen()),
         ),
         GoRoute(
           path: Routes.missions,

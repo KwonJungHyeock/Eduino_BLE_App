@@ -45,11 +45,11 @@ class RcSelectScreen extends ConsumerWidget {
                     selected: current?.type == type,
                     accent: AppColors.accent, // 교구 모드 코랄.
                     wheelBadge: true,
-                    tags: [
-                      const KitTag('주행'),
-                      if (p.hasUltrasonic) const KitTag('초음파 자율'),
-                      KitTag(p.hasLineSensor ? 'IR 라인' : '라인 옵션',
-                          muted: !p.hasLineSensor),
+                    // 3종 모두 동일한 4방식 주행(단일 문자). 자율/라인은 확장 트랙.
+                    tags: const [
+                      KitTag('조이스틱'),
+                      KitTag('방향·기울기'),
+                      KitTag('음성'),
                     ],
                     onTap: () async {
                       HapticFeedback.selectionClick();

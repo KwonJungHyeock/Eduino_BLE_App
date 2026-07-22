@@ -1,7 +1,9 @@
 // Author: eduino
-// 기울기(틸트) 제어 (§5.4): 가속도계 → x=조향, y=throttle. 수평=정지 캘리브레이션, 데드존.
+// 기울기(틸트) — 기울기 방향을 7개 단일 문자 명령(g/b/l/r/q/w/s)으로 매핑. 중립=s.
+// 수평=정지 캘리브레이션 유지. 민감도 슬라이더·칩. THR/STR 수치 제거, "전송 → g" 표시.
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../app/theme.dart';
+import '../../core/protocol/commands.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../widgets/surface_card.dart';
@@ -24,13 +27,26 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
   StreamSubscription<AccelerometerEvent>? _sub;
   bool _active = false;
   double _sensitivity = 1.0;
-  double _baseX = 0, _baseY = 3.5; // 캘리브레이션 기준(세로로 든 기본 자세)
-  int _throttle = 0, _steer = 0;
+  double _baseX = 0, _baseY = 3.5;
+  Offset _vec = Offset.zero; // 시각화용 (dx=steer, dy=throttle 위=+)
+  DriveCmd _cmd = DriveCmd.stop;
 
   @override
   void dispose() {
     _sub?.cancel();
     super.dispose();
+  }
+
+  /// 기울기 벡터 → 8방위 → 7개 명령. 중립(데드존)=s.
+  DriveCmd _cmdFor(Offset v) {
+    if (v.distance < 0.30) return DriveCmd.stop;
+    final deg = math.atan2(v.dy, v.dx) * 180 / math.pi;
+    if (deg >= 67.5 && deg < 112.5) return DriveCmd.forward;
+    if (deg >= 22.5 && deg < 67.5) return DriveCmd.rotRight;
+    if (deg >= -22.5 && deg < 22.5) return DriveCmd.right;
+    if (deg >= 112.5 && deg < 157.5) return DriveCmd.rotLeft;
+    if (deg >= 157.5 || deg < -157.5) return DriveCmd.left;
+    return DriveCmd.back;
   }
 
   void _toggle(bool v) {
@@ -41,36 +57,36 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
     } else {
       _sub?.cancel();
       _sub = null;
-      ref.read(carControllerProvider).stop();
+      ref.read(carControllerProvider).driveStop();
       setState(() {
-        _throttle = 0;
-        _steer = 0;
+        _vec = Offset.zero;
+        _cmd = DriveCmd.stop;
       });
     }
   }
 
   void _onEvent(AccelerometerEvent e) {
-    const dead = 0.15; // 데드존(수평 근처 무시)
+    const dead = 0.15;
     double norm(double v) {
       final n = (v / 6.0).clamp(-1.0, 1.0) * _sensitivity;
       return n.abs() < dead ? 0.0 : n.clamp(-1.0, 1.0);
     }
 
-    final steer = (norm(e.x - _baseX) * 100).round().clamp(-100, 100).toInt();
-    final throttle =
-        (norm(-(e.y - _baseY)) * 100).round().clamp(-100, 100).toInt();
-    if (steer != _steer || throttle != _throttle) {
+    final steer = norm(e.x - _baseX);
+    final throttle = norm(-(e.y - _baseY));
+    final vec = Offset(steer, throttle);
+    final cmd = _cmdFor(vec);
+    if (vec != _vec || cmd != _cmd) {
       setState(() {
-        _steer = steer;
-        _throttle = throttle;
+        _vec = vec;
+        _cmd = cmd;
       });
     }
-    ref.read(carControllerProvider).drive(throttle, steer);
+    ref.read(carControllerProvider).driveCmd(cmd);
   }
 
   Future<void> _calibrate() async {
     HapticFeedback.selectionClick();
-    // 현재 자세를 "수평(정지)" 기준으로 잡는다.
     final e = await accelerometerEventStream().first;
     setState(() {
       _baseX = e.x;
@@ -91,17 +107,17 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: active
-                ? AppColors.signal.withValues(alpha: 0.14)
+                ? AppColors.tintOf(AppColors.accent)
                 : AppColors.baseBg,
             borderRadius: Radii.chip,
             border: Border.all(
-                color: active ? AppColors.signal : AppColors.border),
+                color: active ? AppColors.accent : AppColors.border),
           ),
           child: Text(label,
               style: AppType.mono(
                   size: 12,
                   weight: FontWeight.w700,
-                  color: active ? AppColors.signal : AppColors.textMuted)),
+                  color: active ? AppColors.accent : AppColors.textMuted)),
         ),
       ),
     );
@@ -132,13 +148,9 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
             SurfaceCard(
               child: Column(
                 children: [
-                  _Level(throttle: _throttle, steer: _steer),
-                  Gap.h16,
-                  Text('THR ${_throttle}   STR ${_steer}',
-                      style: AppType.mono(
-                          size: 14,
-                          weight: FontWeight.w700,
-                          color: AppColors.signalDeep)),
+                  _Level(vec: _vec),
+                  Gap.h12,
+                  _CmdChip(cmd: _cmd),
                 ],
               ),
             ),
@@ -146,8 +158,8 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
             SurfaceCard(
               child: Row(
                 children: [
-                  Text('기울기 제어',
-                      style: const TextStyle(
+                  const Text('기울기 제어',
+                      style: TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   Switch(value: _active, onChanged: connected ? _toggle : null),
@@ -169,18 +181,25 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
                           style: AppType.mono(
                               size: 14,
                               weight: FontWeight.w700,
-                              color: AppColors.signal)),
+                              color: AppColors.accent)),
                     ],
                   ),
-                  Slider(
-                    value: _sensitivity,
-                    min: 0.4,
-                    max: 2.0,
-                    onChanged: (v) => setState(() => _sensitivity = v),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: AppColors.accent,
+                      thumbColor: AppColors.accent,
+                      overlayColor: AppColors.accent.withValues(alpha: 0.15),
+                    ),
+                    child: Slider(
+                      value: _sensitivity,
+                      min: 0.4,
+                      max: 2.0,
+                      onChanged: (v) => setState(() => _sensitivity = v),
+                    ),
                   ),
                   Row(
                     children: [
-                      Icon(_sensIcon, size: 15, color: AppColors.signal),
+                      Icon(_sensIcon, size: 15, color: AppColors.accent),
                       Gap.w8,
                       Expanded(
                         child: Text(_sensGuide,
@@ -205,12 +224,16 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
             const Spacer(),
             OutlinedButton.icon(
               onPressed: _calibrate,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.accent,
+                side: const BorderSide(color: AppColors.accent),
+              ),
               icon: const Icon(Icons.center_focus_strong),
               label: const Text('현재 자세를 수평(정지)으로 맞추기'),
             ),
             Gap.h8,
             Text(
-              '기기를 앞뒤로 기울이면 전진/후진, 좌우로 기울이면 조향입니다.',
+              '앞뒤로 기울이면 전진/후진, 좌우로 기울이면 좌/우, 대각선은 회전(q/w)입니다.',
               textAlign: TextAlign.center,
               style: AppType.mono(size: 11, color: AppColors.textMuted),
             ),
@@ -221,20 +244,40 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
   }
 }
 
-/// 수평계 UI — 조향/스로틀 위치를 점으로 표시.
-class _Level extends StatelessWidget {
-  const _Level({required this.throttle, required this.steer});
-  final int throttle;
-  final int steer;
+/// 전송 명령 칩 — "전송 → g / 전진". 코랄.
+class _CmdChip extends StatelessWidget {
+  const _CmdChip({required this.cmd});
+  final DriveCmd cmd;
+  @override
+  Widget build(BuildContext context) {
+    final isStop = cmd == DriveCmd.stop;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.tintOf(AppColors.accent),
+        borderRadius: Radii.pill,
+      ),
+      child: Text('전송 → ${cmd.code}   ${cmd.label}',
+          style: AppType.mono(
+              size: 14,
+              weight: FontWeight.w800,
+              color: isStop ? AppColors.listDesc : AppColors.accent)),
+    );
+  }
+}
 
+/// 수평계 — 기울기 벡터를 코랄 차 아이콘으로 표시.
+class _Level extends StatelessWidget {
+  const _Level({required this.vec});
+  final Offset vec; // dx=steer, dy=throttle(위=+)
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
       aspectRatio: 1.6,
       child: LayoutBuilder(builder: (context, c) {
         final w = c.maxWidth, h = c.maxHeight;
-        final dx = (steer / 100) * (w / 2 - 18);
-        final dy = -(throttle / 100) * (h / 2 - 18);
+        final dx = vec.dx.clamp(-1.0, 1.0) * (w / 2 - 18);
+        final dy = -vec.dy.clamp(-1.0, 1.0) * (h / 2 - 18);
         return Stack(
           alignment: Alignment.center,
           children: [
@@ -247,19 +290,18 @@ class _Level extends StatelessWidget {
             ),
             Container(width: 1, height: h, color: AppColors.border),
             Container(width: w, height: 1, color: AppColors.border),
-            // 폰 기울기 = 차 움직임 연동: 차 아이콘이 기울고(조향) 위아래로(스로틀) 이동.
             Transform.translate(
               offset: Offset(dx, dy),
               child: Transform.rotate(
-                angle: (steer / 100) * 0.5, // 좌우 기울임 = 조향 각
+                angle: vec.dx.clamp(-1.0, 1.0) * 0.5,
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.signal,
+                    color: AppColors.accent,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                          color: AppColors.signal.withValues(alpha: 0.45),
+                          color: AppColors.accent.withValues(alpha: 0.45),
                           blurRadius: 16),
                     ],
                   ),

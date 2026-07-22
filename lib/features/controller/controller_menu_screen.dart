@@ -1,7 +1,7 @@
 // Author: eduino
-// RC 주행 컨트롤러 — 선택한 RC 키트 프로파일이 노출 기능을 결정한다(차별 C).
-//   주행 컨트롤러 ✓ · 자율주행(초음파) ✓ · 라인트레이싱 = 프로파일/토글로 게이팅.
-// 화면 컴포넌트는 하나씩만 — 프로파일이 "무엇을 보여줄지"만 정한다(코드 중복 아님).
+// RC 주행 컨트롤러 — 기본 RC 펌웨어(단일 문자) 주행 4방식만 노출.
+//   조이스틱 · 방향 버튼 · 기울기 · 음성 (모두 g/b/l/r/q/w/s).
+//   자율주행(초음파)·라인트레이싱은 확장 펌웨어 트랙으로 분리 보관.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,11 +24,9 @@ class ControllerMenuScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final connected = ref.watch(connectionProvider).isConnected;
-    // RC 프로파일(미선택이면 2휠 기본). 프로파일이 기능 노출을 결정.
+    // RC 프로파일(미선택이면 2휠 기본). 프로파일이 요약 카드에 쓰인다.
     final rc = ref.watch(rcProfileProvider).valueOrNull ??
         KitProfile.forType(KitType.twoWheel);
-    final lineOn = ref.watch(lineSensorEnabledProvider).valueOrNull ?? false;
-    final showLine = rc.capLineTraceBuiltIn || lineOn;
 
     return Scaffold(
       appBar: AppBar(
@@ -100,42 +98,7 @@ class ControllerMenuScreen extends ConsumerWidget {
               accent: AppColors.accent,
               onTap: () => context.push(Routes.voice),
             ),
-
-            // 자율주행 — 초음파 있는 프로파일만(3종 공통).
-            if (rc.capAutoUltra) ...[
-              const SizedBox(height: 22),
-              const NodeRailHeader('자율주행'),
-              Gap.h8,
-              HomeMenuTile(
-                icon: Icons.sensors,
-                title: '자율주행 (초음파)',
-                subtitle: '초음파로 장애물 회피',
-                accent: AppColors.accent,
-                onTap: () => context.push(Routes.auto),
-              ),
-            ],
-
-            // 라인트레이싱 — 4휠 내장 또는 라인센서 토글 ON 일 때만.
-            const SizedBox(height: 22),
-            const NodeRailHeader('라인트레이싱'),
-            Gap.h8,
-            if (showLine)
-              HomeMenuTile(
-                icon: Icons.route_outlined,
-                title: '라인트레이싱',
-                subtitle: rc.capLineTraceBuiltIn
-                    ? '라인센서로 선 따라 주행 (내장)'
-                    : '라인센서(옵션)로 선 따라 주행',
-                accent: AppColors.accent,
-                onTap: () => context.push(Routes.line),
-              ),
-            // 2휠·메탈: 라인센서 별매 → 사용 토글 노출.
-            if (!rc.capLineTraceBuiltIn)
-              _LineSensorToggle(
-                value: lineOn,
-                onChanged: (v) =>
-                    ref.read(lineSensorEnabledProvider.notifier).set(v),
-              ),
+            // 자율주행(초음파)·라인트레이싱은 확장 펌웨어 트랙으로 분리 보관(현재 미노출).
           ],
         ),
       ),
@@ -189,62 +152,6 @@ class _RcHeaderCard extends StatelessWidget {
                     style: AppType.mono(size: 11, color: AppColors.listDesc)),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 라인센서(별매) 사용 토글 — 켜면 라인트레이싱 노출.
-class _LineSensorToggle extends StatelessWidget {
-  const _LineSensorToggle({required this.value, required this.onChanged});
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.chipGray,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.sensors_outlined,
-                color: AppColors.chipGrayIcon, size: 22),
-          ),
-          Gap.w12,
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('라인센서 사용',
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.listTitle)),
-                SizedBox(height: 2),
-                Text('별매 IR 라인센서를 달았다면 켜세요',
-                    style: TextStyle(fontSize: 12, color: AppColors.listDesc)),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: (v) {
-              HapticFeedback.selectionClick();
-              onChanged(v);
-            },
           ),
         ],
       ),

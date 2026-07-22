@@ -20,6 +20,7 @@ class ModeScaffold extends ConsumerWidget {
     this.actions,
     this.showStatusBar = true,
     this.requireConnection = true,
+    this.rc = false,
     this.help,
   });
 
@@ -30,6 +31,9 @@ class ModeScaffold extends ConsumerWidget {
 
   /// 미연결이면 상단에 "먼저 블루투스 연결하기" CTA 배너를 띄운다(B1).
   final bool requireConnection;
+
+  /// RC(교구) 주행 화면이면 연결 CTA 를 코랄 accent 로(모드 색 통일 · A2).
+  final bool rc;
 
   /// 우측 "?" 를 누르면 보여줄 도움말(없으면 기본 안내).
   final String? help;
@@ -58,7 +62,9 @@ class ModeScaffold extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(Gap.md, 12, Gap.md, 0),
               child: ConnectCtaBanner(
-                  onConnect: () => context.push(Routes.connect)),
+                accent: rc ? AppColors.accent : AppColors.signal,
+                onConnect: () => context.push(Routes.connect),
+              ),
             ),
           Expanded(child: child),
         ],
