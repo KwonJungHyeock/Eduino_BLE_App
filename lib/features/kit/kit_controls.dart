@@ -31,7 +31,6 @@ class KitControl {
     this.longPress = false,
     this.swatches = const [],
     this.offSwatchLabel = '끄기',
-    this.offChar,
   });
 
   final String label;
