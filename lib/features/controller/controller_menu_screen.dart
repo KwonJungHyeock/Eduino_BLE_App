@@ -70,7 +70,7 @@ class ControllerMenuScreen extends ConsumerWidget {
             HomeMenuTile(
               icon: Icons.gamepad_outlined,
               title: '조이스틱',
-              subtitle: '아날로그 벡터 주행 · 속도 게이지 (메인)',
+              subtitle: '스틱 방향으로 주행 (메인)',
               accent: AppColors.accent,
               onTap: () => context.push(Routes.joystick),
             ),
@@ -78,7 +78,7 @@ class ControllerMenuScreen extends ConsumerWidget {
             HomeMenuTile(
               icon: Icons.control_camera_outlined,
               title: '방향 버튼',
-              subtitle: '8방향 D-패드 + 정지',
+              subtitle: '방향 + 제자리 회전 + 정지',
               accent: AppColors.accent,
               onTap: () => context.push(Routes.dpad),
             ),

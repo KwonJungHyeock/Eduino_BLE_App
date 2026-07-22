@@ -14,6 +14,7 @@ import '../../app/theme.dart';
 import '../../core/protocol/commands.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
+import '../../widgets/drive_cmd_display.dart';
 import '../../widgets/surface_card.dart';
 
 class TiltScreen extends ConsumerStatefulWidget {
@@ -26,6 +27,8 @@ class TiltScreen extends ConsumerStatefulWidget {
 class _TiltScreenState extends ConsumerState<TiltScreen> {
   StreamSubscription<AccelerometerEvent>? _sub;
   bool _active = false;
+  // 슬라이더 범위 0.4~1.6 → 보통(1.0)이 정중앙. 기본값=보통(교실 안전).
+  static const double _kMaxSens = 1.6;
   double _sensitivity = 1.0;
   double _baseX = 0, _baseY = 3.5;
   Offset _vec = Offset.zero; // 시각화용 (dx=steer, dy=throttle 위=+)
@@ -150,7 +153,7 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
                 children: [
                   _Level(vec: _vec),
                   Gap.h12,
-                  _CmdChip(cmd: _cmd),
+                  DriveCmdDisplay(cmd: _cmd),
                 ],
               ),
             ),
@@ -177,7 +180,8 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
                           style: AppType.mono(
                               size: 12, color: AppColors.textMuted)),
                       const Spacer(),
-                      Text('${(_sensitivity * 100).round()}%',
+                      // %는 최대(높음=1.6) 기준 → 보통(가운데)≈63%, 높음=100%.
+                      Text('${(_sensitivity / _kMaxSens * 100).round()}%',
                           style: AppType.mono(
                               size: 14,
                               weight: FontWeight.w700,
@@ -193,7 +197,7 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
                     child: Slider(
                       value: _sensitivity,
                       min: 0.4,
-                      max: 2.0,
+                      max: _kMaxSens, // 보통(1.0)이 슬라이더 정중앙에 오도록
                       onChanged: (v) => setState(() => _sensitivity = v),
                     ),
                   ),
@@ -240,28 +244,6 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// 전송 명령 칩 — "전송 → g / 전진". 코랄.
-class _CmdChip extends StatelessWidget {
-  const _CmdChip({required this.cmd});
-  final DriveCmd cmd;
-  @override
-  Widget build(BuildContext context) {
-    final isStop = cmd == DriveCmd.stop;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.tintOf(AppColors.accent),
-        borderRadius: Radii.pill,
-      ),
-      child: Text('전송 → ${cmd.code}   ${cmd.label}',
-          style: AppType.mono(
-              size: 14,
-              weight: FontWeight.w800,
-              color: isStop ? AppColors.listDesc : AppColors.accent)),
     );
   }
 }

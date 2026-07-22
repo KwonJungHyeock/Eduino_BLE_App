@@ -11,6 +11,7 @@ import '../../app/theme.dart';
 import '../../core/protocol/commands.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
+import '../../widgets/drive_cmd_display.dart';
 import '../../widgets/neo_joystick.dart';
 import '../../widgets/pressable.dart';
 
@@ -56,7 +57,7 @@ class _JoystickScreenState extends ConsumerState<JoystickScreen> {
         padding: const EdgeInsets.all(Gap.md),
         child: Column(
           children: [
-            RiseIn(child: _CmdReadout(cmd: _cmd)),
+            RiseIn(child: DriveCmdDisplay(cmd: _cmd)),
             Gap.h16,
             Expanded(
               child: RiseIn(
@@ -103,83 +104,6 @@ class _JoystickScreenState extends ConsumerState<JoystickScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// 전송 명령 표시 — "전송 → g" + 한글 라벨 + 방향 글리프. 코랄.
-class _CmdReadout extends StatelessWidget {
-  const _CmdReadout({required this.cmd});
-  final DriveCmd cmd;
-
-  IconData get _icon => switch (cmd) {
-        DriveCmd.forward => Icons.keyboard_arrow_up,
-        DriveCmd.back => Icons.keyboard_arrow_down,
-        DriveCmd.left => Icons.keyboard_arrow_left,
-        DriveCmd.right => Icons.keyboard_arrow_right,
-        DriveCmd.rotLeft => Icons.rotate_left,
-        DriveCmd.rotRight => Icons.rotate_right,
-        DriveCmd.stop => Icons.stop,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final isStop = cmd == DriveCmd.stop;
-    final accent = AppColors.accent;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.tintOf(accent),
-        borderRadius: Radii.cardLg,
-        border: Border.all(color: accent.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: isStop ? AppColors.chipGray : accent,
-              borderRadius: Radii.card,
-            ),
-            child: Icon(_icon,
-                color: isStop ? AppColors.chipGrayIcon : Colors.white, size: 30),
-          ),
-          Gap.w16,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('전송 명령 · COMMAND',
-                    style: AppType.mono(
-                        size: 10, color: AppColors.listDesc, letterSpacing: 2)),
-                const SizedBox(height: 3),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text('전송 → ',
-                        style: AppType.mono(
-                            size: 15, color: AppColors.listTitle)),
-                    Text(cmd.code,
-                        style: AppType.mono(
-                            size: 28,
-                            weight: FontWeight.w800,
-                            color: isStop ? AppColors.listDesc : accent)),
-                    Gap.w12,
-                    Text(cmd.label,
-                        style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.listTitle)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
