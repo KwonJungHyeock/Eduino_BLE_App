@@ -77,15 +77,46 @@ class HomeScreen extends ConsumerWidget {
         ),
       ]);
     } else {
-      // 교구 학습 모드: 교구 학습하기 + RC 주행하기 — 두 허브 카드로 대칭 구성.
-      // (RC 세부 기능은 키트 선택 → 프로파일 컨트롤러에서 결정.)
-      content.addAll([
-        const NodeRailHeader('교구 학습'),
-        _KitHeroButton(kit: kit),
-        const SizedBox(height: 22),
-        const NodeRailHeader('RC 주행'),
-        _RcHeroButton(rc: rc),
-      ]);
+      // 교구 학습 모드: 허브를 카테고리 목록에서 자동 렌더(B2 · 하드코딩 금지).
+      // 카테고리가 3+ 로 늘면 여기서 "내 킷 + 둘러보기 탭" 뷰로 확장한다.
+      final hubs = <_HubData>[
+        _HubData(
+          section: '교구 학습',
+          title: '교구 학습하기',
+          desc: kit == null
+              ? '내 교구를 선택하고\n제어와 학습을 시작해요'
+              : '현재 교구: ${kit.name}\n눌러서 교구 선택·제어를 이어가요',
+          route: Routes.kit,
+          thumb: kit != null
+              ? KitIllustration(
+                  art: kitArtFor(kit.type), size: 60, showTile: false)
+              : const Icon(Icons.smart_toy_rounded,
+                  color: AppColors.accent, size: 40),
+        ),
+        _HubData(
+          section: 'RC 주행',
+          title: 'RC 주행하기',
+          desc: rc == null
+              ? '내 RC카를 고르고\n주행을 시작해요'
+              : '현재 RC: ${rc.name}\n눌러서 RC 선택·주행을 이어가요',
+          route: Routes.rcSelect,
+          thumb: rc != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(rc.assetImage,
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => KitIllustration(
+                          art: kitArtFor(rc.type), size: 60, showTile: false)),
+                )
+              : const Icon(Icons.sports_esports_rounded,
+                  color: AppColors.accent, size: 40),
+        ),
+      ];
+      for (var i = 0; i < hubs.length; i++) {
+        content.add(NodeRailHeader(hubs[i].section));
+        content.add(_HubHeroCard(data: hubs[i]));
+        if (i < hubs.length - 1) content.add(const SizedBox(height: 22));
+      }
     }
 
     return DoubleBackToExit(
@@ -182,85 +213,32 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// 교구 학습 모드의 단일 진입 CTA — 누르면 교구 선택 → 제어/학습.
-class _KitHeroButton extends StatelessWidget {
-  const _KitHeroButton({required this.kit});
-  final KitProfile? kit;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasKit = kit != null;
-    return Pressable(
-      onTap: () => context.push(Routes.kit),
-      child: Container(
-        padding: const EdgeInsets.all(Gap.lg),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.accentSoft, AppColors.accent],
-          ),
-          borderRadius: Radii.cardLg,
-          boxShadow: Shadows.glow(AppColors.accent),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: Radii.card,
-              ),
-              child: hasKit
-                  ? KitIllustration(
-                      art: kitArtFor(kit!.type), size: 60, showTile: false)
-                  : const Icon(Icons.smart_toy_rounded,
-                      color: AppColors.accent, size: 40),
-            ),
-            Gap.w16,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('교구 학습하기',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white)),
-                  Gap.h4,
-                  Text(
-                    hasKit
-                        ? '현재 교구: ${kit!.name}\n눌러서 교구 선택·제어를 이어가요'
-                        : '내 교구를 선택하고\n제어와 학습을 시작해요',
-                    style: TextStyle(
-                        fontSize: 13,
-                        height: 1.45,
-                        color: Colors.white.withValues(alpha: 0.92)),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_rounded, color: Colors.white),
-          ],
-        ),
-      ),
-    );
-  }
+/// 홈 허브 카드 데이터(B2) — 카테고리별 진입 CTA. 하드코딩 대신 목록으로 렌더.
+class _HubData {
+  const _HubData({
+    required this.section,
+    required this.title,
+    required this.desc,
+    required this.route,
+    required this.thumb,
+  });
+  final String section; // 섹션 헤더 라벨
+  final String title; // 카드 제목
+  final String desc; // 카드 설명(현재 선택 반영)
+  final String route; // 진입 경로
+  final Widget thumb; // 좌측 썸네일(일러스트/사진/아이콘)
 }
 
-/// RC 주행 모드의 단일 진입 CTA — 교구 학습하기와 대칭(같은 규격·코랄).
-/// 누르면 RC 키트 선택 → 프로파일 컨트롤러. 게임패드 아이콘(선택 시 실물 사진).
-class _RcHeroButton extends StatelessWidget {
-  const _RcHeroButton({required this.rc});
-  final KitProfile? rc;
+/// 공통 허브 히어로 카드 — 교구/ RC 두 카테고리가 같은 컴포넌트를 쓴다(B3).
+/// 코랄 그라디언트 · 72 흰 타일 썸네일 · 제목/설명 · 화살표.
+class _HubHeroCard extends StatelessWidget {
+  const _HubHeroCard({required this.data});
+  final _HubData data;
 
   @override
   Widget build(BuildContext context) {
-    final hasRc = rc != null;
     return Pressable(
-      onTap: () => context.push(Routes.rcSelect),
+      onTap: () => context.push(data.route),
       child: Container(
         padding: const EdgeInsets.all(Gap.lg),
         decoration: BoxDecoration(
@@ -282,34 +260,21 @@ class _RcHeroButton extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: Radii.card,
               ),
-              child: hasRc
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(
-                        rc!.assetImage,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stack) => KitIllustration(
-                            art: kitArtFor(rc!.type), size: 60, showTile: false),
-                      ),
-                    )
-                  : const Icon(Icons.sports_esports_rounded,
-                      color: AppColors.accent, size: 40),
+              child: data.thumb,
             ),
             Gap.w16,
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('RC 주행하기',
-                      style: TextStyle(
+                  Text(data.title,
+                      style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: Colors.white)),
                   Gap.h4,
                   Text(
-                    hasRc
-                        ? '현재 RC: ${rc!.name}\n눌러서 RC 선택·주행을 이어가요'
-                        : '내 RC카를 고르고\n주행을 시작해요',
+                    data.desc,
                     style: TextStyle(
                         fontSize: 13,
                         height: 1.45,

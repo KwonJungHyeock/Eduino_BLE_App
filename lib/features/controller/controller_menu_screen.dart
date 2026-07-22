@@ -37,13 +37,17 @@ class ControllerMenuScreen extends ConsumerWidget {
           IconButton(
             tooltip: 'RC 키트 변경',
             icon: const Icon(Icons.cached),
-            onPressed: () => context.pushReplacement(Routes.rcSelect),
+            // 계층 유지(A1): 뒤로가면 3종 선택으로. 스택에 없으면 새로 연다.
+            onPressed: () => context.canPop()
+                ? context.pop()
+                : context.push(Routes.rcSelect),
           ),
           IconButton(
             tooltip: 'RC카 설정 (휠·핀)',
             icon: const Icon(Icons.tune),
             onPressed: () => context.push(Routes.rcConfig),
           ),
+          const SizedBox(width: 4), // A5: 우측 아이콘 잘림 방지 여백.
         ],
       ),
       body: SafeArea(
@@ -53,20 +57,23 @@ class ControllerMenuScreen extends ConsumerWidget {
             // 현재 RC 카드(실물 인식) — 프로파일 확인.
             _RcHeaderCard(rc: rc),
             Gap.h16,
-            // 연결 우선 CTA(미연결) — 전역 패턴(길을 여는 흐름).
+            // 연결 우선 CTA(미연결) — 교구 모드 코랄 accent(A2).
             if (!connected) ...[
               ConnectCtaBanner(
-                  onConnect: () => context.push(Routes.connect)),
+                accent: AppColors.accent,
+                onConnect: () => context.push(Routes.connect),
+              ),
               Gap.h16,
             ],
 
-            const NodeRailHeader('주행 제어', color: AppColors.signal),
+            // 색상 통일(A2): 기능 아이콘칩 전부 코랄 tint / 섹션 라벨 뉴트럴 그레이.
+            const NodeRailHeader('주행 제어'),
             Gap.h8,
             HomeMenuTile(
               icon: Icons.gamepad_outlined,
               title: '조이스틱',
               subtitle: '아날로그 벡터 주행 · 속도 게이지 (메인)',
-              accent: AppColors.signal,
+              accent: AppColors.accent,
               onTap: () => context.push(Routes.joystick),
             ),
             Gap.h8,
@@ -74,7 +81,7 @@ class ControllerMenuScreen extends ConsumerWidget {
               icon: Icons.control_camera_outlined,
               title: '방향 버튼',
               subtitle: '8방향 D-패드 + 정지',
-              accent: AppColors.signalDeep,
+              accent: AppColors.accent,
               onTap: () => context.push(Routes.dpad),
             ),
             Gap.h8,
@@ -82,7 +89,7 @@ class ControllerMenuScreen extends ConsumerWidget {
               icon: Icons.screen_rotation_outlined,
               title: '기울기(틸트) 제어',
               subtitle: '기기를 기울여 조향·주행',
-              accent: AppColors.mint,
+              accent: AppColors.accent,
               onTap: () => context.push(Routes.tilt),
             ),
             Gap.h8,
@@ -97,20 +104,20 @@ class ControllerMenuScreen extends ConsumerWidget {
             // 자율주행 — 초음파 있는 프로파일만(3종 공통).
             if (rc.capAutoUltra) ...[
               const SizedBox(height: 22),
-              const NodeRailHeader('자율주행', color: AppColors.mint),
+              const NodeRailHeader('자율주행'),
               Gap.h8,
               HomeMenuTile(
                 icon: Icons.sensors,
                 title: '자율주행 (초음파)',
                 subtitle: '초음파로 장애물 회피',
-                accent: AppColors.mint,
+                accent: AppColors.accent,
                 onTap: () => context.push(Routes.auto),
               ),
             ],
 
             // 라인트레이싱 — 4휠 내장 또는 라인센서 토글 ON 일 때만.
             const SizedBox(height: 22),
-            const NodeRailHeader('라인트레이싱', color: AppColors.accent),
+            const NodeRailHeader('라인트레이싱'),
             Gap.h8,
             if (showLine)
               HomeMenuTile(

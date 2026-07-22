@@ -72,60 +72,72 @@ class EmptyState extends StatelessWidget {
 }
 
 /// 미연결 시 기능 화면 상단에 얹는 "길을 여는" CTA 배너(B1).
-/// 밝은 블루 톤 + 명시적 "연결하기" 버튼. 단순 비활성 대신 다음 행동을 연다.
+/// 텍스트는 전폭으로 두어 어절 단위 줄바꿈(A4), 버튼은 하단 전폭.
+/// accent 로 모드 색 통일(교구=코랄 / 실습=블루, A2).
 class ConnectCtaBanner extends StatelessWidget {
-  const ConnectCtaBanner({super.key, required this.onConnect});
+  const ConnectCtaBanner({
+    super.key,
+    required this.onConnect,
+    this.accent = AppColors.signal,
+  });
   final VoidCallback onConnect;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(Gap.md, 12, Gap.md, 0),
-      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.labTint,
+        color: AppColors.tintOf(accent),
         borderRadius: Radii.card,
-        border: Border.all(color: AppColors.signal.withValues(alpha: 0.18)),
+        border: Border.all(color: accent.withValues(alpha: 0.18)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
-              color: AppColors.signal,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.bluetooth_searching,
-                color: Colors.white, size: 20),
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                child: const Icon(Icons.bluetooth_searching,
+                    color: Colors.white, size: 20),
+              ),
+              Gap.w12,
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('먼저 블루투스를 연결하세요',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.listTitle)),
+                    SizedBox(height: 2),
+                    Text('연결하면 이 화면의 기능을 바로 써 볼 수 있어요',
+                        style:
+                            TextStyle(fontSize: 12, color: AppColors.listDesc)),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Gap.w12,
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('먼저 블루투스를 연결하세요',
-                    style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.listTitle)),
-                SizedBox(height: 2),
-                Text('연결하면 이 화면의 기능을 바로 써 볼 수 있어요',
-                    style: TextStyle(fontSize: 11.5, color: AppColors.listDesc)),
-              ],
+          Gap.h12,
+          SizedBox(
+            height: 42,
+            child: FilledButton.icon(
+              onPressed: onConnect,
+              style: FilledButton.styleFrom(
+                backgroundColor: accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: Radii.card),
+                textStyle:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+              ),
+              icon: const Icon(Icons.bluetooth, size: 18),
+              label: const Text('블루투스 연결하기'),
             ),
-          ),
-          Gap.w8,
-          FilledButton(
-            onPressed: onConnect,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(0, 38),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              shape: const StadiumBorder(),
-              textStyle:
-                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-            ),
-            child: const Text('연결하기'),
           ),
         ],
       ),

@@ -55,7 +55,11 @@ class ModeScaffold extends ConsumerWidget {
           if (showStatusBar) const StatusBar(),
           // 미연결이면 길을 여는 CTA 배너(단순 비활성 금지 · B1).
           if (requireConnection && !connected)
-            ConnectCtaBanner(onConnect: () => context.push(Routes.connect)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Gap.md, 12, Gap.md, 0),
+              child: ConnectCtaBanner(
+                  onConnect: () => context.push(Routes.connect)),
+            ),
           Expanded(child: child),
         ],
       ),

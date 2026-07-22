@@ -21,6 +21,11 @@ KitArt kitArtFor(KitType t) => switch (t) {
 /// 킷 분류 — 홈에서 RC / 교구 갈래로 나눈다.
 enum KitCategory { rcCar, appliance }
 
+/// 킷 경험(아키타입) — 카테고리가 어떤 화면 흐름으로 이어지는지(B1).
+///   rcController   : RC 3종 선택 → 프로파일 컨트롤러
+///   panelCurriculum: 교구 선택 → 제어판 + 강의 커리큘럼
+enum KitExperience { rcController, panelCurriculum }
+
 /// 제어 컴포넌트 종류. 제어판이 이걸 보고 위젯을 렌더한다.
 enum ControlKind {
   drive, // 주행 컨트롤러(조이스틱/방향/기울기/음성) 진입
@@ -83,6 +88,11 @@ class KitProfile {
 
   bool get isRc => category == KitCategory.rcCar;
 
+  /// 이 킷이 이어지는 경험(아키타입 · B1).
+  KitExperience get experience => isRc
+      ? KitExperience.rcController
+      : KitExperience.panelCurriculum;
+
   // 기능 노출 규칙(spec C/D) — 주행·자율(초음파)은 3종 공통, 라인은 프로파일별.
   bool get capDrive => isRc;
   bool get capAutoUltra => hasUltrasonic;
@@ -101,7 +111,7 @@ class KitProfile {
           hasLineSensor: false, // 라인센서 별매 옵션 → 토글로 활성.
           hasUltrasonic: true,
           wheels: 2,
-          motorSummary: 'DC×2 · L298N · 좌/우',
+          motorSummary: 'DC×2 · L293D 모터쉴드 · 좌/우',
           controls: [
             ControlSpec(kind: ControlKind.drive, label: '주행 컨트롤러', icon: Icons.sports_esports),
             ControlSpec(kind: ControlKind.ledToggle, label: 'LED (13번 핀)', icon: Icons.lightbulb),
@@ -118,7 +128,7 @@ class KitProfile {
           hasLineSensor: false,
           hasUltrasonic: true,
           wheels: 2,
-          motorSummary: 'DC×2 · L298N · 좌/우',
+          motorSummary: 'DC×2 · L293D 모터쉴드 · 좌/우',
           controls: [
             ControlSpec(kind: ControlKind.drive, label: '주행 컨트롤러', icon: Icons.sports_esports),
             ControlSpec(kind: ControlKind.ledToggle, label: 'LED (13번 핀)', icon: Icons.lightbulb),
