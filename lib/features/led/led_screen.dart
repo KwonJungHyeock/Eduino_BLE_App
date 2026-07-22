@@ -51,15 +51,15 @@ class _LedScreenState extends ConsumerState<LedScreen> {
                 height: 180,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _on ? AppColors.warn : AppColors.surface,
+                  color: _on ? AppColors.sun : AppColors.surface,
                   border: Border.all(
-                    color: _on ? AppColors.warn : AppColors.border,
+                    color: _on ? AppColors.sun : AppColors.border,
                     width: 2,
                   ),
                   boxShadow: _on
                       ? [
                           BoxShadow(
-                            color: AppColors.warn.withValues(alpha: 0.5),
+                            color: AppColors.sun.withValues(alpha: 0.5),
                             blurRadius: 48,
                             spreadRadius: 4,
                           ),
@@ -78,7 +78,7 @@ class _LedScreenState extends ConsumerState<LedScreen> {
               child: Text(
                 _on ? 'ON' : 'OFF',
                 style: AppType.instrument(
-                    size: 40, color: _on ? AppColors.warn : AppColors.textMuted),
+                    size: 40, color: _on ? AppColors.sun : AppColors.textMuted),
               ),
             ),
             Gap.h8,

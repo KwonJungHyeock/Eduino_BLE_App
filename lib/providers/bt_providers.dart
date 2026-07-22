@@ -156,22 +156,8 @@ class TerminalNotifier extends Notifier<List<TerminalEntry>> {
       if (line == null || line.isEmpty) return;
       _append(LogDir.incoming, line);
     });
-    ref.listen<BtConnectionState>(connectionProvider, (prev, next) {
-      if (prev == next) return;
-      // 사람이 읽는 친근한 상태 문구(A3) — "연결됨 · HM-10" 처럼 기기명까지.
-      final msg = switch (next) {
-        BtConnectionState.connected => () {
-            final name =
-                ref.read(transportProvider).connectedDevice?.displayName;
-            return (name == null || name.isEmpty) ? '연결됨' : '연결됨 · $name';
-          }(),
-        BtConnectionState.connecting => '연결 중…',
-        BtConnectionState.scanning => '기기 검색 중…',
-        BtConnectionState.disconnecting => '연결 해제 중…',
-        BtConnectionState.disconnected => '연결 해제됨',
-      };
-      _append(LogDir.system, msg);
-    });
+    // 연결 상태는 상단 앵커바(StatusBar)가 상시 표시하므로 채팅 로그에는
+    // 연결 상태 시스템 칩을 남기지 않는다(3차 항목3 · 이중 표시 제거).
     return const [];
   }
 

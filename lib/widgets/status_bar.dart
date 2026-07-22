@@ -68,12 +68,10 @@ class StatusBar extends ConsumerWidget {
                 _metric(Icons.straighten, '${tele.distanceCm}cm'),
                 Gap.w8,
               ],
-              if (connected)
-                _metric(
-                  Icons.battery_full,
-                  tele.batteryPercent != null ? '${tele.batteryPercent}%' : '--',
-                )
-              else ...[
+              // 배터리는 펌웨어가 실제 잔량을 보낼 때만 노출(항목2 · 근거 없는 "--" 제거).
+              if (connected && tele.batteryPercent != null)
+                _metric(Icons.battery_full, '${tele.batteryPercent}%')
+              else if (!connected) ...[
                 Text('탭하여 연결',
                     style: AppType.mono(
                         size: 12,

@@ -110,7 +110,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
     return Column(
       children: [
-        HintBanner(widget.hint),
+        // 미연결 땐 상단 CTA 배너(ModeScaffold)로 안내가 끝나므로 인포 배너는 숨기고,
+        // 연결되면 CTA 가 사라지는 대신 인포 배너를 노출한다(순서 교대 · 3차 항목1).
+        if (connected) HintBanner(widget.hint),
         Expanded(
           child: Container(
             color: const Color(0xFFEDF1F6),
@@ -132,18 +134,22 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                 size: 32, color: AppColors.signal),
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            connected ? '첫 메시지를 보내 보세요' : '대화를 시작해 볼까요?',
-                            style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.listTitle),
-                          ),
-                          const SizedBox(height: 6),
+                          // 연결 시에만 유도 제목 노출. 미연결이면 상단 CTA 배너와
+                          // 겹치지 않도록 "연결되면 표시" 한 줄만 남긴다(항목1).
+                          if (connected) ...[
+                            const Text(
+                              '첫 메시지를 보내 보세요',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.listTitle),
+                            ),
+                            const SizedBox(height: 6),
+                          ],
                           Text(
                             connected
                                 ? '아래 입력창이나 빠른 문장 칩으로 보낼 수 있어요.'
-                                : '먼저 블루투스를 연결하면 주고받은 내용이 여기에 표시돼요.',
+                                : '연결되면 주고받은 내용이 여기에 표시돼요.',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                                 fontSize: 12.5,
