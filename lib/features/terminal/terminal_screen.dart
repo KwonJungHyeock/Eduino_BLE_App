@@ -36,7 +36,7 @@ class TerminalScreen extends ConsumerWidget {
     return ChatView(
       mono: true,
       hint: hint,
-      placeholder: 'RAW 명령 입력 (예: AT+NAME?)',
+      placeholder: '명령 직접 입력 (예: AT+NAME?)',
       presets: isSpp ? _atHc06 : _atHm10,
       showSystem: true,
       showTxRx: true,

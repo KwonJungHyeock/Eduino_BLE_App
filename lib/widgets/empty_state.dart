@@ -71,6 +71,68 @@ class EmptyState extends StatelessWidget {
   }
 }
 
+/// 미연결 시 기능 화면 상단에 얹는 "길을 여는" CTA 배너(B1).
+/// 밝은 블루 톤 + 명시적 "연결하기" 버튼. 단순 비활성 대신 다음 행동을 연다.
+class ConnectCtaBanner extends StatelessWidget {
+  const ConnectCtaBanner({super.key, required this.onConnect});
+  final VoidCallback onConnect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(Gap.md, 12, Gap.md, 0),
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: AppColors.labTint,
+        borderRadius: Radii.card,
+        border: Border.all(color: AppColors.signal.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: const BoxDecoration(
+              color: AppColors.signal,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.bluetooth_searching,
+                color: Colors.white, size: 20),
+          ),
+          Gap.w12,
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('먼저 블루투스를 연결하세요',
+                    style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.listTitle)),
+                SizedBox(height: 2),
+                Text('연결하면 이 화면의 기능을 바로 써 볼 수 있어요',
+                    style: TextStyle(fontSize: 11.5, color: AppColors.listDesc)),
+              ],
+            ),
+          ),
+          Gap.w8,
+          FilledButton(
+            onPressed: onConnect,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 38),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              shape: const StadiumBorder(),
+              textStyle:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+            child: const Text('연결하기'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// 상단에 얹는 비차단(non-blocking) 미연결 안내 배너 — 눌러서 연결로 이동.
 class DisconnectedBanner extends StatelessWidget {
   const DisconnectedBanner({super.key, required this.onTap});

@@ -127,6 +127,9 @@ class GoRouterHolder {
           path: Routes.terminal,
           builder: (context, state) => const ModeScaffold(
             title: 'AT 커맨드',
+            // AT는 모듈에 따라 미연결(HC-06 AT 모드)이 정상 동작 상태라
+            // 일반 "연결 먼저" 배너를 띄우지 않고, 화면 내 모듈별 안내로 유도한다.
+            requireConnection: false,
             help: 'AT 명령으로 블루투스 모듈을 설정·확인합니다. 명령을 보내면 모듈이 응답을 돌려줘요.\n'
                 '· HC-06: 연결 전(AT 모드)에서 응답\n· HM-10(BLE): 연결 중에 응답\n'
                 '빠른 명령 칩을 눌러 예시를 보낼 수 있어요.',

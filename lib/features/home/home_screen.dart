@@ -461,6 +461,7 @@ class _MenuTile extends StatelessWidget {
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.cardBorder),
+            boxShadow: enabled ? Shadows.tap : null, // C1: 탭 가능 → 미세 그림자
           ),
           child: Row(
             children: [

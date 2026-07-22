@@ -3,17 +3,23 @@
 // 헤더 통일(지시서 0.3): 모든 기능 화면 = "‹ 제목" + 우측 "?" 도움말.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../app/router.dart';
 import '../app/theme.dart';
+import '../providers/bt_providers.dart';
+import 'empty_state.dart';
 import 'status_bar.dart';
 
-class ModeScaffold extends StatelessWidget {
+class ModeScaffold extends ConsumerWidget {
   const ModeScaffold({
     super.key,
     required this.title,
     required this.child,
     this.actions,
     this.showStatusBar = true,
+    this.requireConnection = true,
     this.help,
   });
 
@@ -22,11 +28,15 @@ class ModeScaffold extends StatelessWidget {
   final List<Widget>? actions;
   final bool showStatusBar;
 
+  /// 미연결이면 상단에 "먼저 블루투스 연결하기" CTA 배너를 띄운다(B1).
+  final bool requireConnection;
+
   /// 우측 "?" 를 누르면 보여줄 도움말(없으면 기본 안내).
   final String? help;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final connected = ref.watch(connectionProvider).isConnected;
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       appBar: AppBar(
@@ -43,6 +53,9 @@ class ModeScaffold extends StatelessWidget {
       body: Column(
         children: [
           if (showStatusBar) const StatusBar(),
+          // 미연결이면 길을 여는 CTA 배너(단순 비활성 금지 · B1).
+          if (requireConnection && !connected)
+            ConnectCtaBanner(onConnect: () => context.push(Routes.connect)),
           Expanded(child: child),
         ],
       ),

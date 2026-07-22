@@ -93,22 +93,24 @@ class _LedScreenState extends ConsumerState<LedScreen> {
               onChanged: (p) =>
                   ref.read(rcConfigProvider.notifier).setLedPin(p),
             ),
-            Gap.h12,
-            // 실제 전송 payload(보이는 통신) — digitalWrite 개념과 연결.
-            Center(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.chipGray,
-                  borderRadius: Radii.pill,
-                ),
-                child: Text(
-                  _lastSent == null ? '전송 → LED:$pin,0/1' : '전송 → $_lastSent',
-                  style: AppType.mono(size: 12, color: AppColors.listDesc),
+            // 실제 전송 payload(보이는 통신) — 연결 시에만 표시(A2).
+            if (connected) ...[
+              Gap.h12,
+              Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.chipGray,
+                    borderRadius: Radii.pill,
+                  ),
+                  child: Text(
+                    _lastSent == null ? '전송 → LED:$pin,0/1' : '전송 → $_lastSent',
+                    style: AppType.mono(size: 12, color: AppColors.listDesc),
+                  ),
                 ),
               ),
-            ),
+            ],
             const Spacer(),
             // 큰 토글 버튼
             _BigToggle(

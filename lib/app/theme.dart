@@ -63,6 +63,12 @@ abstract class Shadows {
             blurRadius: 22,
             offset: const Offset(0, 10)),
       ];
+
+  /// 탭 가능한 카드/버튼용 미세 그림자 1종(C1) — 정적 요소는 그림자 없이 flat.
+  /// 위계·깊이를 위해 "누를 수 있는 것"에만 얹는다.
+  static const List<BoxShadow> tap = [
+    BoxShadow(color: Color(0x0A1B3A6B), blurRadius: 10, offset: Offset(0, 3)),
+  ];
 }
 
 /// 모션 토큰 — 절제된, 부드러운 이징(§6.4 절제된 모션).
@@ -122,6 +128,23 @@ abstract class AppType {
         height: height,
         letterSpacing: letterSpacing,
       );
+
+  // ── 타입 램프(C4) — 화면 전반에서 재사용하는 텍스트 토큰 ──
+  /// 화면/섹션 제목.
+  static const TextStyle title = TextStyle(
+      fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.listTitle);
+
+  /// 카드/행 제목.
+  static const TextStyle rowTitle = TextStyle(
+      fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.listTitle);
+
+  /// 본문·설명.
+  static const TextStyle body =
+      TextStyle(fontSize: 14, height: 1.5, color: AppColors.listDesc);
+
+  /// 캡션·보조.
+  static const TextStyle caption =
+      TextStyle(fontSize: 12, color: AppColors.listDesc);
 
   /// 대형 계기 수치 (속도/거리 등). 굵기 대비로 계기판 느낌.
   static TextStyle instrument({

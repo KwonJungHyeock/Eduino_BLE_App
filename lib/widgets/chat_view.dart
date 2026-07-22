@@ -116,28 +116,55 @@ class _ChatViewState extends ConsumerState<ChatView> {
             color: const Color(0xFFEDF1F6),
             child: entries.isEmpty
                 ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(widget.emptyIcon,
-                            size: 40, color: AppColors.chevron),
-                        const SizedBox(height: 12),
-                        Text(
-                          connected ? '메시지를 입력해 보세요.' : '연결 후 사용할 수 있어요.',
-                          style: const TextStyle(
-                              fontSize: 13.5, color: AppColors.listDesc),
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: AppColors.signal.withValues(alpha: 0.10),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(widget.emptyIcon,
+                                size: 32, color: AppColors.signal),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            connected ? '첫 메시지를 보내 보세요' : '대화를 시작해 볼까요?',
+                            style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.listTitle),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            connected
+                                ? '아래 입력창이나 빠른 문장 칩으로 보낼 수 있어요.'
+                                : '먼저 블루투스를 연결하면 주고받은 내용이 여기에 표시돼요.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 12.5,
+                                height: 1.5,
+                                color: AppColors.listDesc),
+                          ),
+                        ],
+                      ),
                     ),
                   )
                 : ListView.builder(
                     controller: _scroll,
                     padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
                     itemCount: entries.length,
-                    itemBuilder: (context, i) => _Bubble(
-                        entry: entries[i],
-                        mono: widget.mono,
-                        showTxRx: widget.showTxRx),
+                    itemBuilder: (context, i) => _SlideIn(
+                      key: ValueKey(entries[i].atMillis),
+                      child: _Bubble(
+                          entry: entries[i],
+                          mono: widget.mono,
+                          showTxRx: widget.showTxRx),
+                    ),
                   ),
           ),
         ),
@@ -149,7 +176,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
               Expanded(
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(left: 12),
+                  padding: const EdgeInsets.only(left: 16),
                   children: [
                     for (final p in widget.presets) ...[
                       _PresetChip(
@@ -201,6 +228,45 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 }
 
+/// 메시지 등장 애니메이션(C3) — 새 말풍선이 아래에서 살짝 슬라이드+페이드.
+/// ValueKey(atMillis) 로 매칭돼 이미 표시된 말풍선은 다시 재생되지 않는다.
+class _SlideIn extends StatefulWidget {
+  const _SlideIn({super.key, required this.child});
+  final Widget child;
+
+  @override
+  State<_SlideIn> createState() => _SlideInState();
+}
+
+class _SlideInState extends State<_SlideIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  )..forward();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, child) {
+        final v = Curves.easeOut.transform(_c.value);
+        return Opacity(
+          opacity: v,
+          child: Transform.translate(offset: Offset(0, (1 - v) * 8), child: child),
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
 class _Bubble extends StatelessWidget {
   const _Bubble(
       {required this.entry, required this.mono, required this.showTxRx});
@@ -211,6 +277,15 @@ class _Bubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entry.dir == LogDir.system) {
+      // 상태 칩(A3) — 연결됨=민트 / 진행 중=노랑 / 해제=회색 dot 로 한눈에.
+      final t = entry.text;
+      final Color? dot = t.startsWith('연결됨')
+          ? AppColors.mint
+          : t.contains('중')
+              ? AppColors.warn
+              : t.contains('해제')
+                  ? AppColors.chipGrayIcon
+                  : null;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Center(
@@ -220,9 +295,22 @@ class _Bubble extends StatelessWidget {
               color: Colors.black.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(999),
             ),
-            child: Text(entry.text,
-                style:
-                    const TextStyle(fontSize: 11, color: AppColors.listDesc)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (dot != null) ...[
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                Text(entry.text,
+                    style: const TextStyle(
+                        fontSize: 11, color: AppColors.listDesc)),
+              ],
+            ),
           ),
         ),
       );
@@ -364,7 +452,7 @@ class _InputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
