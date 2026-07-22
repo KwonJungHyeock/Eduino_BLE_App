@@ -31,6 +31,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final conn = ref.watch(connectionProvider);
     final kit = ref.watch(kitProfileProvider).valueOrNull;
+    final rc = ref.watch(rcProfileProvider).valueOrNull;
     final module = ref.watch(moduleProvider).valueOrNull;
     final mode = ref.watch(appModeProvider).valueOrNull ?? AppMode.kit;
     final connected = conn.isConnected;
@@ -76,36 +77,14 @@ class HomeScreen extends ConsumerWidget {
         ),
       ]);
     } else {
-      // 교구 학습 모드: 교구 학습하기 + RC 주행(실습 모드에서 이동).
-      final accent = AppMode.kit.color;
+      // 교구 학습 모드: 교구 학습하기 + RC 주행하기 — 두 허브 카드로 대칭 구성.
+      // (RC 세부 기능은 키트 선택 → 프로파일 컨트롤러에서 결정.)
       content.addAll([
         const NodeRailHeader('교구 학습'),
         _KitHeroButton(kit: kit),
         const SizedBox(height: 22),
-        const NodeRailHeader('RC 주행', count: 3),
-        _MenuTile(
-          icon: Icons.sports_esports_outlined,
-          title: 'RC 주행 컨트롤러',
-          subtitle: '조이스틱·방향·음성',
-          accent: accent,
-          onTap: () => context.push(Routes.controller),
-        ),
-        Gap.h8,
-        _MenuTile(
-          icon: Icons.sensors,
-          title: '자율주행 (초음파)',
-          subtitle: '초음파로 장애물 회피',
-          accent: accent,
-          onTap: () => context.push(Routes.auto),
-        ),
-        Gap.h8,
-        _MenuTile(
-          icon: Icons.route_outlined,
-          title: '라인트레이싱',
-          subtitle: '라인센서로 선 따라 주행',
-          accent: accent,
-          onTap: () => context.push(Routes.line),
-        ),
+        const NodeRailHeader('RC 주행'),
+        _RcHeroButton(rc: rc),
       ]);
     }
 
@@ -255,6 +234,82 @@ class _KitHeroButton extends StatelessWidget {
                     hasKit
                         ? '현재 교구: ${kit!.name}\n눌러서 교구 선택·제어를 이어가요'
                         : '내 교구를 선택하고\n제어와 학습을 시작해요',
+                    style: TextStyle(
+                        fontSize: 13,
+                        height: 1.45,
+                        color: Colors.white.withValues(alpha: 0.92)),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// RC 주행 모드의 단일 진입 CTA — 교구 학습하기와 대칭(같은 규격·코랄).
+/// 누르면 RC 키트 선택 → 프로파일 컨트롤러. 게임패드 아이콘(선택 시 실물 사진).
+class _RcHeroButton extends StatelessWidget {
+  const _RcHeroButton({required this.rc});
+  final KitProfile? rc;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasRc = rc != null;
+    return Pressable(
+      onTap: () => context.push(Routes.rcSelect),
+      child: Container(
+        padding: const EdgeInsets.all(Gap.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.accentSoft, AppColors.accent],
+          ),
+          borderRadius: Radii.cardLg,
+          boxShadow: Shadows.glow(AppColors.accent),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: Radii.card,
+              ),
+              child: hasRc
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        rc!.assetImage,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stack) => KitIllustration(
+                            art: kitArtFor(rc!.type), size: 60, showTile: false),
+                      ),
+                    )
+                  : const Icon(Icons.sports_esports_rounded,
+                      color: AppColors.accent, size: 40),
+            ),
+            Gap.w16,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('RC 주행하기',
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white)),
+                  Gap.h4,
+                  Text(
+                    hasRc
+                        ? '현재 RC: ${rc!.name}\n눌러서 RC 선택·주행을 이어가요'
+                        : '내 RC카를 고르고\n주행을 시작해요',
                     style: TextStyle(
                         fontSize: 13,
                         height: 1.45,

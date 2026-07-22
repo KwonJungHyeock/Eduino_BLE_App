@@ -12,6 +12,7 @@ import '../features/connect/connect_screen.dart';
 import '../features/control/control_panel_screen.dart';
 import '../features/controller/controller_menu_screen.dart';
 import '../features/controller/controller_screen.dart';
+import '../features/controller/rc_select_screen.dart';
 import '../features/help/help_screen.dart';
 import '../features/help/privacy_screen.dart';
 import '../features/home/home_screen.dart';
@@ -41,6 +42,7 @@ abstract class Routes {
   static const connect = '/connect';
   static const kit = '/kit';
   static const kitLearn = '/kit-learn';
+  static const rcSelect = '/rc-select';
   static const control = '/control';
   static const motor = '/motor';
   static const rcConfig = '/rc-config';
@@ -145,6 +147,10 @@ class GoRouterHolder {
                 '빠른 문장 칩은 + 로 추가, 길게 눌러 삭제할 수 있어요.',
             child: SerialChatScreen(),
           ),
+        ),
+        GoRoute(
+          path: Routes.rcSelect,
+          builder: (context, state) => const RcSelectScreen(),
         ),
         GoRoute(
           path: Routes.controller,

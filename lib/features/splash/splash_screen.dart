@@ -9,8 +9,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
-import '../../providers/app_mode_providers.dart';
-import '../../providers/module_providers.dart';
 import '../../providers/onboarding_providers.dart';
 import '../../widgets/brand_mark.dart';
 
@@ -52,15 +50,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       context.go(Routes.tutorial);
       return;
     }
-    final mode = await ref.read(appModeProvider.future);
-    if (!mounted) return;
-    if (mode == null) {
-      context.go(Routes.mode);
-      return;
-    }
-    final module = await ref.read(moduleProvider.future);
-    if (!mounted) return;
-    context.go(module == null ? Routes.module : Routes.home);
+    // 사용 모드(교구/블루투스)는 매 실행마다 다시 고르게 노출한다(사용자 결정).
+    // 저장값이 있어도 시작 시 항상 모드 선택으로 보낸다. 모드 화면에서 확정하면
+    // 모듈 유무에 따라 모듈 선택/홈으로 이어진다.
+    context.go(Routes.mode);
   }
 
   @override

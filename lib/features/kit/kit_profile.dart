@@ -64,6 +64,7 @@ class KitProfile {
     required this.controls,
     this.hasLineSensor = false,
     this.hasUltrasonic = false,
+    this.wheels = 2,
     this.motorSummary = '',
   });
 
@@ -75,11 +76,17 @@ class KitProfile {
   final List<ControlSpec> controls;
 
   // RC 전용 부가 정보(주행 화면 게이팅에 사용).
-  final bool hasLineSensor;
+  final bool hasLineSensor; // 라인센서 "기본 내장" 여부(4휠=true). 2휠/메탈=별매 옵션.
   final bool hasUltrasonic;
+  final int wheels; // 2 | 4 — 실물 인식용 표시.
   final String motorSummary;
 
   bool get isRc => category == KitCategory.rcCar;
+
+  // 기능 노출 규칙(spec C/D) — 주행·자율(초음파)은 3종 공통, 라인은 프로파일별.
+  bool get capDrive => isRc;
+  bool get capAutoUltra => hasUltrasonic;
+  bool get capLineTraceBuiltIn => hasLineSensor; // 토글과 별개로 "내장" 여부.
   String get storageKey => type.name;
 
   static KitProfile forType(KitType type) {
@@ -88,11 +95,12 @@ class KitProfile {
         return const KitProfile(
           type: KitType.twoWheel,
           category: KitCategory.rcCar,
-          name: '2휠 RC카',
-          tagline: 'H-10 · IR 라인센서 + 초음파',
+          name: '2휠 교육용 RC카',
+          tagline: '투명 바디 · 초음파 기본 · 라인센서 옵션',
           assetImage: 'assets/kits/two_wheel.jpg',
-          hasLineSensor: true,
+          hasLineSensor: false, // 라인센서 별매 옵션 → 토글로 활성.
           hasUltrasonic: true,
+          wheels: 2,
           motorSummary: 'DC×2 · L298N · 좌/우',
           controls: [
             ControlSpec(kind: ControlKind.drive, label: '주행 컨트롤러', icon: Icons.sports_esports),
@@ -105,10 +113,11 @@ class KitProfile {
           type: KitType.metal,
           category: KitCategory.rcCar,
           name: '메탈 RC카',
-          tagline: '초음파 장애물 회피 (IR 라인센서 없음)',
+          tagline: '2휠 메탈 섀시 · 초음파 기본 · 라인센서 옵션',
           assetImage: 'assets/kits/metal.png',
           hasLineSensor: false,
           hasUltrasonic: true,
+          wheels: 2,
           motorSummary: 'DC×2 · L298N · 좌/우',
           controls: [
             ControlSpec(kind: ControlKind.drive, label: '주행 컨트롤러', icon: Icons.sports_esports),
@@ -120,11 +129,12 @@ class KitProfile {
         return const KitProfile(
           type: KitType.fourWheel,
           category: KitCategory.rcCar,
-          name: '4휠 스마트카',
-          tagline: 'IR 라인센서 + 초음파 · 4륜 구동',
+          name: '4휠 스마트 RC카',
+          tagline: 'IR 라인센서 + 초음파 내장 · 4륜 구동',
           assetImage: 'assets/kits/four_wheel.jpg',
           hasLineSensor: true,
           hasUltrasonic: true,
+          wheels: 4,
           motorSummary: 'DC×4 · L298N×2 · 좌2·우2 병렬',
           controls: [
             ControlSpec(kind: ControlKind.drive, label: '주행 컨트롤러', icon: Icons.sports_esports),
