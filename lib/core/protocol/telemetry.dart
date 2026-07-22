@@ -61,6 +61,31 @@ class UnknownEvent extends TelemetryEvent {
   final String raw;
 }
 
+/// 교구(팜/홈) 접두어 없는 모니터링 텍스트 파싱(§4).
+///   "온도,습도" 콤마 → [TMP, HUM]   ·   "N" 또는 "N%" → [SOL]
+/// 수신값은 SensorEvent 로 반환 → 텔레메트리 provider 가 흡수.
+List<SensorEvent> parseMonitorText(String line) {
+  final t = line.trim();
+  if (t.isEmpty) return const [];
+  if (t.contains(',')) {
+    final p = t.split(',');
+    if (p.length >= 2) {
+      final temp = double.tryParse(p[0].trim());
+      final humi = double.tryParse(p[1].trim());
+      final out = <SensorEvent>[];
+      if (temp != null) out.add(SensorEvent('TMP', temp));
+      if (humi != null) out.add(SensorEvent('HUM', humi));
+      return out;
+    }
+    return const [];
+  }
+  // 토양수분: 숫자 또는 숫자%.
+  final numOnly = t.endsWith('%') ? t.substring(0, t.length - 1).trim() : t;
+  final soil = double.tryParse(numOnly);
+  if (soil != null) return [SensorEvent('SOL', soil)];
+  return const [];
+}
+
 abstract class TelemetryDecoder {
   /// 한 줄(개행 제외) → 이벤트. 형식 오류는 UnknownEvent 로 보존.
   static TelemetryEvent decode(String line) {

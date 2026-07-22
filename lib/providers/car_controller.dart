@@ -10,7 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/bt/bt_transport.dart';
 import '../core/protocol/commands.dart';
+import '../features/kit/kit_controls.dart';
 import 'bt_providers.dart';
+import 'kit_providers.dart';
 
 /// 연속 스트림 명령(조이스틱/틸트/슬라이더)을 초당 N회로 제한하는 리딩+트레일링 스로틀러.
 class _Throttler {
@@ -62,11 +64,22 @@ class CarController {
   void onConnectionChanged(BtConnectionState s) {
     if (s == BtConnectionState.connected) {
       _startHeartbeat();
+      _kitInit(); // 교구 초기화(팩토리 's' 등) 자동 전송.
     } else {
       _stopHeartbeat();
       _cancelThrottlers();
       _lastCmd = null; // 재연결 시 첫 명령이 항상 전송되도록 초기화(안전).
     }
+  }
+
+  /// 연결 직후 교구 초기화 문자 전송(데이터 주도 · 팩토리 's').
+  void _kitInit() {
+    final kit = _ref.read(kitProfileProvider).valueOrNull;
+    final init = kit == null ? null : kitControlsFor(kit.type)?.initChar;
+    if (init == null) return;
+    Timer(const Duration(milliseconds: 300), () {
+      if (_connected) kitChar(init);
+    });
   }
 
   void _startHeartbeat() {
@@ -114,6 +127,25 @@ class CarController {
     if (!_connected) return;
     _ref.read(transportProvider).send(utf8.encode(ch));
     _ref.read(terminalProvider.notifier).logOutgoing(ch);
+  }
+
+  // ---- 교구(스마트킷) 명령 — 데이터 주도 commandMap 이 문자를 결정 ---------
+
+  /// 교구 단일 문자 명령(토글/프리셋). 전송 + "보이는 통신" 로그.
+  void kitChar(String ch) => _sendChar(ch);
+
+  /// 교구 네오픽셀 RGB — R,G,B 3바이트 전송(팜 LED). 로그는 "R,G,B".
+  void kitRgb(int r, int g, int b) {
+    if (!_connected) return;
+    _ref.read(transportProvider).send([r & 0xFF, g & 0xFF, b & 0xFF]);
+    _ref.read(terminalProvider.notifier).logOutgoing('$r,$g,$b');
+  }
+
+  /// 모니터 요청 바이트(홈 온습도 0x00 등). 주기 타이머에서 호출.
+  void kitRequest(List<int> bytes, {String log = '요청'}) {
+    if (!_connected) return;
+    _ref.read(transportProvider).send(bytes);
+    _ref.read(terminalProvider.notifier).logOutgoing(log);
   }
 
   // ---- 확장 펌웨어 트랙 (속도/아날로그/자율/라인 — 라인 프로토콜) -------------

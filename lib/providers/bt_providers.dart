@@ -7,6 +7,7 @@ import '../core/bt/bt_transport.dart';
 import '../core/bt/transport_factory.dart';
 import '../core/protocol/commands.dart';
 import '../core/protocol/telemetry.dart';
+import 'kit_providers.dart';
 import 'module_providers.dart';
 
 // connectionProvider 등의 공개 타입이 여기에 있으므로, 확장(isConnected/isBusy)까지
@@ -124,7 +125,21 @@ class TelemetryNotifier extends Notifier<TelemetryState> {
     ref.listen<AsyncValue<String>>(incomingLineProvider, (prev, next) {
       final line = next.valueOrNull;
       if (line == null || line.isEmpty) return;
-      state = state._apply(TelemetryDecoder.decode(line));
+      final event = TelemetryDecoder.decode(line);
+      // 접두어 없는 라인은 교구(스마트킷) 모니터링 텍스트로 해석 시도(팜/홈).
+      if (event is UnknownEvent) {
+        final kit = ref.read(kitProfileProvider).valueOrNull;
+        if (kit != null && !kit.isRc) {
+          final sensors = parseMonitorText(line);
+          if (sensors.isNotEmpty) {
+            for (final s in sensors) {
+              state = state._apply(s);
+            }
+            return;
+          }
+        }
+      }
+      state = state._apply(event);
     });
     return const TelemetryState();
   }
