@@ -170,13 +170,15 @@ class KitProfile {
           type: KitType.smartHome,
           category: KitCategory.appliance,
           name: '스마트 홈 키트',
-          tagline: '현관문 서보 · 조명 · LCD',
+          // 실제 앱 제어 대상만(LCD 는 기기 표시용이라 제외).
+          tagline: '에어컨 · 현관문 · RGB조명 · 침입경보 · 온·습도',
           assetImage: 'assets/kits/smart_home.jpg',
           controls: [
-            ControlSpec(kind: ControlKind.servoSlider, label: '현관문 (서보)', icon: Icons.meeting_room, id: 0, min: 0, max: 180),
-            ControlSpec(kind: ControlKind.relayToggle, label: '조명', icon: Icons.light, id: 1),
-            ControlSpec(kind: ControlKind.lcdText, label: 'LCD 메시지', icon: Icons.message),
-            ControlSpec(kind: ControlKind.sensorReadout, label: '조도', icon: Icons.wb_sunny, sensorKey: 'LUX'),
+            ControlSpec(kind: ControlKind.relayToggle, label: '에어컨', icon: Icons.ac_unit),
+            ControlSpec(kind: ControlKind.relayToggle, label: '현관문', icon: Icons.meeting_room),
+            ControlSpec(kind: ControlKind.ledToggle, label: 'RGB조명', icon: Icons.lightbulb),
+            ControlSpec(kind: ControlKind.relayToggle, label: '침입경보', icon: Icons.notifications_active),
+            ControlSpec(kind: ControlKind.sensorReadout, label: '온·습도', icon: Icons.thermostat, sensorKey: 'TMP', unit: '°C'),
           ],
         );
       case KitType.smartFarm:

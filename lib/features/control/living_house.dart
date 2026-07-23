@@ -18,6 +18,7 @@ class HouseState {
     this.acOn = false,
     this.doorOpen = false,
     this.alarmOn = false,
+    this.intrusion = false,
     this.ledColor,
     this.live = false,
   });
@@ -25,7 +26,8 @@ class HouseState {
   final double? humi; // %
   final bool acOn;
   final bool doorOpen;
-  final bool alarmOn;
+  final bool alarmOn; // 경계(armed) — arm/disarm 1/0.
+  final bool intrusion; // 실제 침입 감지(펌웨어 신호) — 현재 미수신, 예약.
   final Color? ledColor;
   final bool live;
 
@@ -72,6 +74,23 @@ class _LivingHouseState extends State<LivingHouse>
     super.dispose();
   }
 
+  Widget _badge(IconData icon, String label, Color color) => Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 5),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.92),
+              borderRadius: Radii.pill,
+            ),
+            child: Text(label,
+                style: AppType.mono(
+                    size: 10, weight: FontWeight.w800, color: Colors.white)),
+          ),
+        ],
+      );
+
   @override
   Widget build(BuildContext context) {
     final s = widget.state;
@@ -96,8 +115,8 @@ class _LivingHouseState extends State<LivingHouse>
                           child: scene,
                         ),
                 ),
-                // 침입자 경보 — 붉은 펄스 테두리 + 사이렌 배지.
-                if (live && s.alarmOn)
+                // 실제 침입 감지(펌웨어 신호) — 강한 붉은 펄스. 예약(현 펌웨어 미수신).
+                if (live && s.intrusion) ...[
                   Positioned.fill(
                     child: IgnorePointer(
                       child: DecoratedBox(
@@ -112,33 +131,36 @@ class _LivingHouseState extends State<LivingHouse>
                       ),
                     ),
                   ),
-                if (live && s.alarmOn)
                   Positioned(
                     top: 10,
                     left: 10,
-                    child: Row(
-                      children: [
-                        Icon(Icons.notifications_active,
-                            size: 20,
-                            color: AppColors.accent.withValues(
-                                alpha: 0.6 + 0.4 * (0.5 + 0.5 * math.sin(_loop.value * 2 * math.pi)))),
-                        const SizedBox(width: 5),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.accent.withValues(alpha: 0.92),
-                            borderRadius: Radii.pill,
+                    child: _badge(Icons.notifications_active, '침입 발생',
+                        AppColors.accent),
+                  ),
+                ]
+                // 경계 중(armed) — 차분한 보안 표시(과잉 경보 방지).
+                else if (live && s.alarmOn) ...[
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: Radii.cardLg,
+                          border: Border.all(
+                            color: AppColors.signal.withValues(
+                                alpha: 0.22 + 0.12 * (0.5 + 0.5 * math.sin(_loop.value * 2 * math.pi))),
+                            width: 2,
                           ),
-                          child: Text('침입 경보',
-                              style: AppType.mono(
-                                  size: 10,
-                                  weight: FontWeight.w800,
-                                  color: Colors.white)),
                         ),
-                      ],
+                      ),
                     ),
                   ),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: _badge(Icons.shield_outlined, '경계 중',
+                        AppColors.signal),
+                  ),
+                ],
                 // 에어컨 배지(우상단).
                 if (live && s.acOn)
                   Positioned(
