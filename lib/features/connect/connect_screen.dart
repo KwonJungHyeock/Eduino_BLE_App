@@ -1,6 +1,7 @@
 // Author: eduino
 // 연결 화면 (§5.1): 권한 → 스캔 → 연결. HM-10(BLE) 주력. HC-06 탭은 현재 스코프 미포함.
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +40,11 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
   }
 
   Future<void> _requestPerms() async {
+    // 웹(스텁)은 네이티브 BT 권한이 없다 — 바로 스캔 흐름으로.
+    if (kIsWeb) {
+      setState(() => _permsReady = true);
+      return;
+    }
     setState(() => _requesting = true);
     try {
       final statuses = await [
