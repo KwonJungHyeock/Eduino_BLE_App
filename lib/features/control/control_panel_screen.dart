@@ -79,6 +79,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
       humi: tele.sensors['HUM'],
       fanOn: _toggles['냉각팬'] ?? false,
       ledColor: _ledColor,
+      live: connected,
     );
     final isFarm = kit?.type == KitType.smartFarm;
     if (kit != null && set != null) {
@@ -99,11 +100,14 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                     children: [
                       _KitHeader(kit: kit),
                       Gap.h16,
-                      // Living Twin — 살아있는 온실 씬 + 상태 코칭(팜).
+                      // Living Twin — 살아있는 온실 씬. 코칭은 실제 센서값이
+                      // 있을 때만(B1 · 미연결 안내는 씬 오버레이 + 연결 CTA 로 일원화).
                       if (isFarm) ...[
                         LivingGreenhouse(state: gh),
-                        Gap.h12,
-                        _CoachCard(state: gh),
+                        if (gh.hasData) ...[
+                          Gap.h12,
+                          _CoachCard(state: gh),
+                        ],
                         Gap.h16,
                       ],
                       if (!connected) ...[
@@ -173,18 +177,22 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
         return _ColorCard(
           control: c,
           enabled: connected,
-          onSwatch: (s) {
-            final col = s.color;
-            setState(() => _ledColor = col); // 온실 조명 틴트 반영.
-            _send('${_r(col)},${_g(col)},${_b(col)}',
-                () => _car.kitRgb(_r(col), _g(col), _b(col)));
-          },
+          spectrum: true, // C1 · 무지개 자유 색(컬러 피커).
+          onSwatch: (s) => _pickColor(s.color),
+          onColor: _pickColor,
           onOff: () {
             setState(() => _ledColor = null);
             _send('0,0,0', () => _car.kitRgb(0, 0, 0));
           },
         );
     }
+  }
+
+  /// 팜 네오픽셀 — 임의 색 → R,G,B 3바이트 전송 + 온실 조명 틴트 반영.
+  void _pickColor(Color col) {
+    setState(() => _ledColor = col);
+    _send('${_r(col)},${_g(col)},${_b(col)}',
+        () => _car.kitRgb(_r(col), _g(col), _b(col)));
   }
 
   static int _r(Color c) => (c.r * 255).round();
@@ -340,11 +348,15 @@ class _ColorCard extends StatelessWidget {
     required this.enabled,
     required this.onSwatch,
     required this.onOff,
+    this.spectrum = false,
+    this.onColor,
   });
   final KitControl control;
   final bool enabled;
   final void Function(KitSwatch) onSwatch;
   final VoidCallback onOff;
+  final bool spectrum; // 무지개 자유 색 피커 노출(팜 네오픽셀).
+  final void Function(Color)? onColor;
 
   @override
   Widget build(BuildContext context) {
@@ -361,6 +373,14 @@ class _ColorCard extends StatelessWidget {
                       fontSize: 16, fontWeight: FontWeight.w700)),
             ],
           ),
+          // 무지개 스펙트럼 — 자유 색 선택(C1). 프리셋은 빠른 선택으로 아래 유지.
+          if (spectrum && onColor != null) ...[
+            Gap.h12,
+            _SpectrumBar(
+              enabled: enabled,
+              onPick: onColor!,
+            ),
+          ],
           Gap.h12,
           Opacity(
             opacity: enabled ? 1 : 0.5,
@@ -414,6 +434,83 @@ class _ColorCard extends StatelessWidget {
                 color: light ? AppColors.textPrimary : Colors.white)),
       ),
     );
+  }
+}
+
+/// 무지개 스펙트럼 바(C1) — 탭/드래그로 임의 색 선택 → HSV(색상,1,1) → RGB 전송.
+class _SpectrumBar extends StatefulWidget {
+  const _SpectrumBar({required this.enabled, required this.onPick});
+  final bool enabled;
+  final void Function(Color) onPick;
+
+  @override
+  State<_SpectrumBar> createState() => _SpectrumBarState();
+}
+
+class _SpectrumBarState extends State<_SpectrumBar> {
+  double? _frac; // 0..1 선택 위치(무선택 시 null).
+
+  static const List<Color> _hues = [
+    Color(0xFFFF0000),
+    Color(0xFFFF8000),
+    Color(0xFFFFFF00),
+    Color(0xFF00FF00),
+    Color(0xFF00FFFF),
+    Color(0xFF0000FF),
+    Color(0xFF8000FF),
+    Color(0xFFFF00FF),
+    Color(0xFFFF0000),
+  ];
+
+  void _pick(double dx, double width) {
+    if (!widget.enabled) return;
+    final f = (dx / width).clamp(0.0, 1.0);
+    final color = HSVColor.fromAHSV(1, f * 360, 1, 1).toColor();
+    setState(() => _frac = f);
+    HapticFeedback.selectionClick();
+    widget.onPick(color);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final width = constraints.maxWidth;
+      return Opacity(
+        opacity: widget.enabled ? 1 : 0.5,
+        child: GestureDetector(
+          onTapDown: (d) => _pick(d.localPosition.dx, width),
+          onHorizontalDragUpdate: (d) => _pick(d.localPosition.dx, width),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                height: 30,
+                decoration: BoxDecoration(
+                  borderRadius: Radii.pill,
+                  border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.06)),
+                  gradient: const LinearGradient(colors: _hues),
+                ),
+              ),
+              if (_frac != null)
+                Positioned(
+                  left: (_frac! * width - 9).clamp(0.0, width - 18),
+                  top: 3,
+                  child: Container(
+                    width: 18,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.white, width: 2.5),
+                      boxShadow: Shadows.tap,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 }
 
