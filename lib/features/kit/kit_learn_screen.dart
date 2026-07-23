@@ -24,6 +24,15 @@ class KitLearnScreen extends ConsumerWidget {
     final kit = ref.watch(kitProfileProvider).valueOrNull;
     final cur = kit == null ? null : kitCurriculumFor(kit.type);
 
+    // 강의 커리큘럼이 아직 없는 교구(홈 등)는 준비중 벽 대신 제어판(집 씬)으로
+    // 바로 보낸다(A1). 콘텐츠가 OCR 로 채워지면 커리큘럼이 생겨 학습이 열림.
+    if (kit != null && cur == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) context.pushReplacement(Routes.control);
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(kit == null ? '교구 학습' : '${_emoji(kit.type)} ${kit.name}'),

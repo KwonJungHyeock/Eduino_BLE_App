@@ -24,6 +24,7 @@ import '../../widgets/surface_card.dart';
 import '../kit/kit_controls.dart';
 import '../kit/kit_profile.dart';
 import 'living_greenhouse.dart';
+import 'living_house.dart';
 
 class ControlPanelScreen extends ConsumerStatefulWidget {
   const ControlPanelScreen({super.key});
@@ -83,21 +84,49 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
       live: connected,
     );
     final isFarm = kit?.type == KitType.smartFarm;
+    final isHome = kit?.type == KitType.smartHome;
+    // Living Twin 집 씬 상태(홈).
+    final house = HouseState(
+      temp: tele.sensors['TMP'],
+      humi: tele.sensors['HUM'],
+      acOn: _toggles['에어컨'] ?? false,
+      doorOpen: _toggles['현관문'] ?? false,
+      alarmOn: _toggles['침입자 경보'] ?? false,
+      ledColor: _ledColor,
+      live: connected,
+    );
     if (kit != null && set != null) {
       WidgetsBinding.instance
           .addPostFrameCallback((_) => _wireMonitor(kit.type, set));
     }
-    // 팜 데모(웹): 연결되면 팬/LED 기본값을 시드해 히어로가 완전히 살아나게 한다.
+    // 데모(웹): 연결되면 액추에이터 기본값을 시드해 히어로가 완전히 살아나게 한다.
     final demoFarm = ref.watch(demoFarmProvider).valueOrNull ?? false;
-    if (isFarm && demoFarm && connected && !_demoSeeded) {
-      _demoSeeded = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() {
-          _toggles['냉각팬'] = true;
-          _ledColor = const Color(0xFFB56BFF); // 보라 그로우라이트 틴트.
+    final demoHome = ref.watch(demoHomeProvider).valueOrNull;
+    if (connected && !_demoSeeded) {
+      if (isFarm && demoFarm) {
+        _demoSeeded = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {
+            _toggles['냉각팬'] = true;
+            _ledColor = const Color(0xFFB56BFF); // 보라 그로우라이트 틴트.
+          });
         });
-      });
+      } else if (isHome && demoHome != null) {
+        _demoSeeded = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {
+            if (demoHome == 'alarm') {
+              _toggles['침입자 경보'] = true;
+            } else {
+              _toggles['에어컨'] = true;
+              _toggles['현관문'] = true;
+              _ledColor = const Color(0xFFFFC24B); // 따뜻한 앰비언트.
+            }
+          });
+        });
+      }
     }
 
     return Scaffold(
@@ -121,6 +150,11 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                           Gap.h12,
                           _CoachCard(state: gh),
                         ],
+                        Gap.h16,
+                      ],
+                      // Living Twin — 살아있는 집 씬(홈).
+                      if (isHome) ...[
+                        LivingHouse(state: house),
                         Gap.h16,
                       ],
                       if (!connected) ...[
@@ -183,8 +217,14 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
         return _ColorCard(
           control: c,
           enabled: connected,
-          onSwatch: (s) => _send(s.char!, () => _car.kitChar(s.char!)),
-          onOff: () => _send(c.offChar!, () => _car.kitChar(c.offChar!)),
+          onSwatch: (s) {
+            setState(() => _ledColor = s.color); // 방 앰비언트 틴트 반영.
+            _send(s.char!, () => _car.kitChar(s.char!));
+          },
+          onOff: () {
+            setState(() => _ledColor = null);
+            _send(c.offChar!, () => _car.kitChar(c.offChar!));
+          },
         );
       case KitCtlKind.colorRgb:
         return _ColorCard(

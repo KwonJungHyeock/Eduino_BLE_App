@@ -12,6 +12,7 @@ import '../../app/theme.dart';
 import '../../providers/kit_providers.dart';
 import '../../widgets/kit_pick_card.dart';
 import '../../widgets/responsive.dart';
+import 'kit_curriculum.dart';
 import 'kit_profile.dart';
 
 class KitSelectScreen extends ConsumerWidget {
@@ -69,11 +70,14 @@ class KitSelectScreen extends ConsumerWidget {
           HapticFeedback.selectionClick();
           await ref.read(kitProfileProvider.notifier).select(type);
           if (!context.mounted) return;
-          // 선택 즉시 교구 학습으로(강의자료 커리큘럼 + 제어).
+          // 강의 커리큘럼이 있으면 학습으로, 없으면(홈 등) 제어판(집 씬) 직행(A1).
+          // 학습 콘텐츠는 추후 강의자료 OCR 로 채워지면 자동 재활성.
+          final dest =
+              kitCurriculumFor(type) != null ? Routes.kitLearn : Routes.control;
           if (context.canPop()) {
-            context.pushReplacement(Routes.kitLearn);
+            context.pushReplacement(dest);
           } else {
-            context.go(Routes.kitLearn);
+            context.go(dest);
           }
         },
       ),

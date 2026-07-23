@@ -89,3 +89,9 @@ final demoFarmProvider = FutureProvider<bool>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getBool('eduino.demo.farm') ?? false;
 });
+
+/// 홈 데모 모드('cozy'=냉방·문열림·앰비언트 / 'alarm'=침입 경보). null=일반.
+final demoHomeProvider = FutureProvider<String?>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('eduino.demo.home');
+});

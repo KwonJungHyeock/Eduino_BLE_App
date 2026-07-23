@@ -13,7 +13,7 @@ import 'bt_transport.dart';
 
 class StubTransport implements BtTransport {
   StubTransport() {
-    _maybeStartFarmDemo();
+    _maybeStartDemo();
   }
 
   final StreamController<BtConnectionState> _state =
@@ -57,13 +57,18 @@ class StubTransport implements BtTransport {
   @override
   Stream<List<int>> get incoming => _incoming.stream;
 
-  // ── 팜 데모 시뮬레이터 ──────────────────────────────────────────────
-  void _maybeStartFarmDemo() {
-    var on = false;
+  // ── 데모 시뮬레이터(웹) ─────────────────────────────────────────────
+  bool _homeMode = false;
+
+  void _maybeStartDemo() {
+    var farm = false;
+    String? home;
     try {
-      on = html.window.localStorage['flutter.eduino.demo.farm'] == 'true';
+      farm = html.window.localStorage['flutter.eduino.demo.farm'] == 'true';
+      home = html.window.localStorage['flutter.eduino.demo.home'];
     } catch (_) {}
-    if (!on) return;
+    if (!farm && (home == null || home.isEmpty)) return;
+    _homeMode = !farm; // 팜 우선, 아니면 홈.
     Timer(const Duration(milliseconds: 900), () {
       if (_state.isClosed) return;
       _cur = BtConnectionState.connected;
@@ -74,15 +79,22 @@ class StubTransport implements BtTransport {
     });
   }
 
-  // 온도↑·토양↓ 로 서서히 드리프트 → 건강 → 갈수록 메마름/열기(코칭 경고 유발).
   void _emit() {
     if (_incoming.isClosed) return;
-    final p = (_tick / 14).clamp(0.0, 1.0);
-    final temp = (24 + p * 11).round(); // 24 → 35℃
-    final humi = (58 + (_tick % 3) * 3).round(); // 58~64%
-    final soil = (72 - p * 52).round(); // 72 → 20%
-    _push('$temp,$humi'); // → TMP, HUM
-    _push('$soil%'); // → SOL
+    if (_homeMode) {
+      // 홈 — 실내 온·습도 완만한 변동(냉방 느낌).
+      final temp = (22 + (_tick % 5)).round(); // 22~26℃
+      final humi = (52 + (_tick % 6)).round(); // 52~57%
+      _push('$temp,$humi');
+    } else {
+      // 팜 — 온도↑·토양↓ 드리프트(건강 → 메마름/열기, 코칭 경고 유발).
+      final p = (_tick / 14).clamp(0.0, 1.0);
+      final temp = (24 + p * 11).round(); // 24 → 35℃
+      final humi = (58 + (_tick % 3) * 3).round(); // 58~64%
+      final soil = (72 - p * 52).round(); // 72 → 20%
+      _push('$temp,$humi');
+      _push('$soil%');
+    }
     _tick++;
   }
 
