@@ -14,13 +14,6 @@ name: Build Release
 
 on:
   workflow_dispatch:
-  # (임시) 릴리스 파이프라인 검증용 push 트리거 — 검증 후 제거 예정.
-  push:
-    branches:
-      - claude/new-session-jnm6sg
-    paths:
-      - "tool/patch_release_gradle.py"
-      - ".github/workflows/build-release.yml"
 
 jobs:
   android-aab:
