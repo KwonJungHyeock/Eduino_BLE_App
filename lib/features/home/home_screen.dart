@@ -474,6 +474,8 @@ class _MenuTile extends StatelessWidget {
       enabled: enabled,
       pressedScale: 0.98, // 리스트 행(B5)
       semanticLabel: '$title. $subtitle',
+      highlightColor: accent.withValues(alpha: 0.06), // press 하이라이트(B5)
+      borderRadius: Radii.card,
       child: Container(
         constraints: const BoxConstraints(minHeight: 64),
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),

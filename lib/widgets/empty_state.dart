@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../app/theme.dart';
 import 'pressable.dart';
+import 'primary_button.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -61,7 +62,12 @@ class EmptyState extends StatelessWidget {
               ],
               if (actionLabel != null && onAction != null) ...[
                 Gap.h24,
-                FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+                PrimaryButton(
+                  label: actionLabel!,
+                  onPressed: onAction,
+                  color: accent,
+                  expand: false,
+                ),
               ],
             ],
           ),
@@ -124,20 +130,12 @@ class ConnectCtaBanner extends StatelessWidget {
             ],
           ),
           Gap.h12,
-          SizedBox(
-            height: 42,
-            child: FilledButton.icon(
-              onPressed: onConnect,
-              style: FilledButton.styleFrom(
-                backgroundColor: accent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: Radii.card),
-                textStyle:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-              ),
-              icon: const Icon(Icons.bluetooth, size: 18),
-              label: const Text('블루투스 연결하기'),
-            ),
+          PrimaryButton(
+            label: '블루투스 연결하기',
+            icon: Icons.bluetooth,
+            color: accent,
+            height: 48,
+            onPressed: onConnect,
           ),
         ],
       ),

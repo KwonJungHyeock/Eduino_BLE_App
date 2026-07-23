@@ -16,6 +16,8 @@ class Pressable extends StatefulWidget {
     this.haptic = true,
     this.enabled = true,
     this.semanticLabel, // E: 스크린리더 라벨.
+    this.highlightColor, // B5: press 시 배경 하이라이트(둥근 카드용).
+    this.borderRadius,
   });
 
   final Widget child;
@@ -24,6 +26,8 @@ class Pressable extends StatefulWidget {
   final bool haptic;
   final bool enabled;
   final String? semanticLabel;
+  final Color? highlightColor;
+  final BorderRadius? borderRadius;
 
   @override
   State<Pressable> createState() => _PressableState();
@@ -60,7 +64,27 @@ class _PressableState extends State<Pressable> {
           curve: Curves.easeOut,
           child: Opacity(
             opacity: widget.enabled ? 1 : 0.55, // disabled 명도↓(B1)
-            child: widget.child,
+            child: widget.highlightColor == null
+                ? widget.child
+                : Stack(
+                    children: [
+                      widget.child,
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: AnimatedOpacity(
+                            opacity: _down && widget.enabled ? 1 : 0,
+                            duration: Motion.press,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: widget.highlightColor,
+                                borderRadius: widget.borderRadius,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),

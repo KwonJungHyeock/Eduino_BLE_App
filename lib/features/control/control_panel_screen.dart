@@ -516,6 +516,7 @@ class _ColorCard extends StatelessWidget {
       onTap: onTap ?? () {},
       enabled: onTap != null,
       pressedScale: 0.92, // 스와치 press(B4)
+      semanticLabel: border ? '조명 끄기' : '색상 선택',
       child: Container(
         width: 44,
         height: 44,
