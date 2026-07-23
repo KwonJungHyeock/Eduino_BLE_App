@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/theme.dart';
+import '../../widgets/primary_button.dart';
 import '../../widgets/surface_card.dart';
 
 class MissionsScreen extends ConsumerStatefulWidget {
@@ -150,15 +151,13 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
               ),
             ),
             const Spacer(),
-            FilledButton.icon(
+            PrimaryButton(
+              label: running ? '기록 종료' : '시작',
+              icon: running ? Icons.flag : Icons.play_arrow,
+              color: running ? AppColors.accent : AppColors.signal,
+              height: 60,
+              expand: false,
               onPressed: _toggle,
-              style: FilledButton.styleFrom(
-                backgroundColor: running ? AppColors.accent : AppColors.signal,
-                minimumSize: const Size(0, 60),
-              ),
-              icon: Icon(running ? Icons.flag : Icons.play_arrow),
-              label: Text(running ? '기록 종료' : '시작',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             ),
           ],
         ),

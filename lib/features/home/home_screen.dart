@@ -239,6 +239,7 @@ class _HubHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Pressable(
       onTap: () => context.push(data.route),
+      semanticLabel: '${data.title}. ${data.desc}',
       child: Container(
         padding: const EdgeInsets.all(Gap.lg),
         decoration: BoxDecoration(

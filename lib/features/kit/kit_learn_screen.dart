@@ -394,6 +394,7 @@ class _ControlSection extends StatelessWidget {
           Gap.h12,
           Pressable(
             onTap: () => context.push(Routes.control),
+            semanticLabel: '블루투스 제어판 열기',
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 15),

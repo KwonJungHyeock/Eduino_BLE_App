@@ -11,6 +11,8 @@ import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/motor_config_providers.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/skeleton.dart';
 import '../../widgets/surface_card.dart';
 import '../kit/kit_profile.dart';
 
@@ -28,9 +30,12 @@ class MotorConfigScreen extends ConsumerWidget {
         child: kit == null
             ? _NeedKit()
             : config.when(
-                loading: () => const Center(
-                    child: CircularProgressIndicator(color: AppColors.signal)),
-                error: (e, _) => Center(child: Text('오류: $e')),
+                loading: () => const Padding(
+                    padding: EdgeInsets.all(Gap.md),
+                    child: SkeletonList(count: 3)), // D1 로딩=스켈레톤
+                error: (e, _) => ErrorRetry(
+                    message: '모터 설정을 불러오지 못했어요.\n$e',
+                    onRetry: () => ref.invalidate(motorConfigProvider)),
                 data: (map) {
                   final ports = map[kit.type] ?? defaultMotorPorts(kit.type);
                   final labels = motorSlotLabels(kit.type);
@@ -177,22 +182,13 @@ class _FirmwareHint extends StatelessWidget {
 class _NeedKit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.smart_toy_outlined,
-              size: 44, color: AppColors.textMuted),
-          Gap.h16,
-          Text('먼저 에듀이노 교구(키트)를 선택하세요.',
-              style: AppType.mono(size: 13, color: AppColors.textMuted)),
-          Gap.h16,
-          FilledButton(
-            onPressed: () => context.push(Routes.kit),
-            child: const Text('키트 선택'),
-          ),
-        ],
-      ),
+    return EmptyState(
+      icon: Icons.smart_toy_outlined,
+      accent: AppColors.accent,
+      title: '먼저 교구를 선택하세요',
+      message: '모터 포트 설정은 교구(키트)를 고른 뒤 열 수 있어요.',
+      actionLabel: '키트 선택',
+      onAction: () => context.push(Routes.kit),
     );
   }
 }

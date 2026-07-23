@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../widgets/primary_button.dart';
 import '../../providers/onboarding_providers.dart';
 import '../../widgets/brand_mark.dart';
 import '../../widgets/kit_illustration.dart';
@@ -117,12 +118,9 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(Gap.md),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _next,
-                  child: Text(_index >= _count - 1 ? '시작하기' : '다음'),
-                ),
+              child: PrimaryButton(
+                label: _index >= _count - 1 ? '시작하기' : '다음',
+                onPressed: _next,
               ),
             ),
           ],

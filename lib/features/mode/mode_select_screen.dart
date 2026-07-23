@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../widgets/primary_button.dart';
 import '../../providers/app_mode_providers.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/pressable.dart';
@@ -36,6 +37,7 @@ class _ModeSelectScreenState extends ConsumerState<ModeSelectScreen> {
         title: const Text('무엇을 할까요?'),
         leading: canPop
             ? IconButton(
+                tooltip: '뒤로',
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => context.pop())
             : null,
@@ -168,6 +170,7 @@ class _ModeCard extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       haptic: false, // _select 에서 처리.
+      semanticLabel: '$title 모드 선택',
       child: AnimatedContainer(
         duration: Motion.base,
         curve: Motion.emphasized,
@@ -249,23 +252,11 @@ class _StartBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(Gap.lg, 8, Gap.lg, 14),
-      child: SizedBox(
+      child: PrimaryButton(
+        label: '이 모드로 시작',
+        color: accent,
         height: 54,
-        width: double.infinity,
-        child: FilledButton(
-          onPressed: enabled ? onTap : null,
-          style: FilledButton.styleFrom(
-            backgroundColor: accent,
-            disabledBackgroundColor: AppColors.border,
-            foregroundColor: Colors.white,
-            elevation: enabled ? 2 : 0,
-            shadowColor: accent.withValues(alpha: 0.4),
-            shape: RoundedRectangleBorder(borderRadius: Radii.card),
-            textStyle:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-          ),
-          child: const Text('이 모드로 시작'),
-        ),
+        onPressed: enabled ? onTap : null,
       ),
     );
   }

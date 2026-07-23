@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../widgets/primary_button.dart';
 import '../../core/protocol/commands.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
@@ -78,10 +79,11 @@ class _LineTraceScreenState extends ConsumerState<LineTraceScreen> {
                       size: 12, color: AppColors.textMuted, height: 1.5),
                 ),
                 Gap.h24,
-                FilledButton.icon(
+                PrimaryButton(
+                  label: '컨트롤러 설정 열기',
+                  icon: Icons.tune,
+                  expand: false,
                   onPressed: () => context.push(Routes.rcConfig),
-                  icon: const Icon(Icons.tune, size: 18),
-                  label: const Text('컨트롤러 설정 열기'),
                 ),
               ],
             ),

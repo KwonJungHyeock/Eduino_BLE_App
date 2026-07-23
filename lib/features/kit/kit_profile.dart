@@ -93,10 +93,8 @@ class KitProfile {
       ? KitExperience.rcController
       : KitExperience.panelCurriculum;
 
-  // 기능 노출 규칙(spec C/D) — 주행·자율(초음파)은 3종 공통, 라인은 프로파일별.
-  bool get capDrive => isRc;
-  bool get capAutoUltra => hasUltrasonic;
-  bool get capLineTraceBuiltIn => hasLineSensor; // 토글과 별개로 "내장" 여부.
+  // 라인/초음파 게이팅은 hasLineSensor·hasUltrasonic 필드로 직접 판단한다.
+  // (현재 라인·자율 화면은 확장 펌웨어 트랙으로 미노출 — 별도 cap getter 제거.)
   String get storageKey => type.name;
 
   static KitProfile forType(KitType type) {

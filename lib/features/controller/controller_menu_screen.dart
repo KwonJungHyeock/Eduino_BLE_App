@@ -117,7 +117,7 @@ class _RcHeaderCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: Radii.card,
         border: Border.all(color: AppColors.cardBorder),
         boxShadow: Shadows.tap,
       ),

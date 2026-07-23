@@ -2,7 +2,6 @@
 // Signal Board 디자인 언어 — 회로/신호 은유. 장식이 아니라 구조(섹션)와 상태(연결)를 표현.
 //  · NodeRailHeader : 섹션을 회로 레일처럼(솔더 노드 + 점선 레일)
 //  · SignalTrace    : 연결 상태를 APP↔모듈 신호선으로(연결 시 신호가 흐름)
-//  · BreadboardBackground : 아주 옅은 브레드보드 도트 격자
 //  · CircuitAccent  : 앱바용 은은한 회로 트레이스
 
 import 'dart:math' as math;
@@ -194,37 +193,6 @@ class _WirePainter extends CustomPainter {
   @override
   bool shouldRepaint(_WirePainter old) =>
       old.progress != progress || old.connected != connected;
-}
-
-/// 아주 옅은 브레드보드 도트 격자 — 배경에 회로 기판 은유(절제).
-class BreadboardBackground extends StatelessWidget {
-  const BreadboardBackground({super.key, this.child});
-  final Widget? child;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _BreadboardPainter(),
-      child: child,
-    );
-  }
-}
-
-class _BreadboardPainter extends CustomPainter {
-  static const double _step = 20;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final dot = Paint()..color = AppColors.signal.withValues(alpha: 0.05);
-    for (var y = _step; y < size.height; y += _step) {
-      for (var x = _step; x < size.width; x += _step) {
-        canvas.drawCircle(Offset(x, y), 1, dot);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_BreadboardPainter old) => false;
 }
 
 /// 앱바용 은은한 회로 트레이스 악센트.

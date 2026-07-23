@@ -29,6 +29,7 @@ class ModuleSelectScreen extends ConsumerWidget {
         title: const Text('블루투스 모듈 선택'),
         leading: canPop
             ? IconButton(
+                tooltip: '뒤로',
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => context.pop(),
               )
@@ -143,13 +144,7 @@ class _ModuleCard extends StatelessWidget {
               color: selected ? AppColors.signal : AppColors.border,
               width: selected ? 2 : 1,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0x14000000),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: selected ? Shadows.lift : Shadows.tap, // 소프트 뎁스 토큰
           ),
           child: Row(
             children: [

@@ -18,6 +18,7 @@ import '../../providers/connection_manager.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/skeleton.dart';
+import '../../widgets/primary_button.dart';
 import '../../widgets/success_check.dart';
 import '../../widgets/surface_card.dart';
 
@@ -215,11 +216,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Text(device?.displayName ?? '',
                 style: AppType.mono(size: 13, color: AppColors.textMuted)),
             Gap.h24,
-            FilledButton(
+            PrimaryButton(
+              label: '완료',
+              expand: false,
               onPressed: () {
                 if (context.canPop()) context.pop();
               },
-              child: const Text('완료'),
             ),
             Gap.h8,
             OutlinedButton(
@@ -259,8 +261,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                 textAlign: TextAlign.center,
                 style: AppType.mono(size: 11, color: AppColors.textMuted)),
             Gap.h16,
-            FilledButton(
-                onPressed: _requestPerms, child: const Text('권한 다시 요청')),
+            PrimaryButton(
+                label: '권한 다시 요청', expand: false, onPressed: _requestPerms),
             Gap.h8,
             OutlinedButton.icon(
               onPressed: openAppSettings,
