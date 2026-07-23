@@ -44,11 +44,11 @@ class _LivingGreenhouseState extends State<LivingGreenhouse>
       AnimationController(vsync: this, duration: const Duration(seconds: 3))
         ..repeat();
 
-  // 채도 매트릭스 — live=false 시 씬을 잿빛으로(대기).
+  // 채도 40%로 살짝 낮춘 + 은은한 밝기 — live=false 시 "잠든" 느낌(고장 아님).
   static const List<double> _mono = <double>[
-    0.42, 0.28, 0.10, 0, 18, //
-    0.32, 0.38, 0.10, 0, 18, //
-    0.32, 0.28, 0.20, 0, 18, //
+    0.5276, 0.4291, 0.0433, 0, 14, //
+    0.1276, 0.8291, 0.0433, 0, 14, //
+    0.1276, 0.4291, 0.4433, 0, 14, //
     0, 0, 0, 1, 0, //
   ];
 
@@ -83,34 +83,37 @@ class _LivingGreenhouseState extends State<LivingGreenhouse>
                           child: scene,
                         ),
                 ),
-                // 미연결 대기 오버레이(B1 · 코칭 문구 흡수).
+                // 미연결 대기 오버레이(B1 · 코칭 문구 흡수). 식물과 겹치지 않게
+                // 상단 하늘 영역에 초대 문구 배치(항목2), 옅은 베일(항목1).
                 if (!live)
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.22),
+                        color: Colors.white.withValues(alpha: 0.06),
                       ),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.92),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.eco,
-                                  color: AppColors.mint, size: 22),
-                            ),
-                            const SizedBox(height: 8),
-                            Text('연결하면 온실이 살아납니다',
-                                style: AppType.mono(
-                                    size: 12.5,
-                                    weight: FontWeight.w800,
-                                    color: Colors.white)),
-                          ],
+                      child: Align(
+                        alignment: const Alignment(0, -0.62),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.92),
+                            borderRadius: Radii.pill,
+                            boxShadow: Shadows.soft,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.eco,
+                                  color: AppColors.mint, size: 16),
+                              const SizedBox(width: 6),
+                              Text('연결하면 온실이 살아나요',
+                                  style: AppType.mono(
+                                      size: 12,
+                                      weight: FontWeight.w800,
+                                      color: AppColors.listTitle)),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -337,7 +340,7 @@ class _ScenePainter extends CustomPainter {
       final a = angFromUp + angFromUp.sign * droop;
       final tip = Offset(
           ox + math.sin(a) * len, oy - math.cos(a) * len + droop * len * 0.9);
-      final wid = len * 0.34;
+      final wid = len * 0.42; // 잎 폭 — 풍성한 모종(항목3).
       final perp = Offset(math.cos(a), math.sin(a)) * wid;
       final mid = Offset((ox + tip.dx) / 2, (oy + tip.dy) / 2);
       final path = Path()

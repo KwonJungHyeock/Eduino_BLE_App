@@ -38,6 +38,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
   Color? _ledColor; // Living Twin 조명 틴트(마지막 선택 색).
   Timer? _monitorTimer;
   KitType? _wiredType;
+  bool _demoSeeded = false; // 팜 데모: 팬/LED 기본값 1회 시드.
 
   CarController get _car => ref.read(carControllerProvider);
 
@@ -85,6 +86,18 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     if (kit != null && set != null) {
       WidgetsBinding.instance
           .addPostFrameCallback((_) => _wireMonitor(kit.type, set));
+    }
+    // 팜 데모(웹): 연결되면 팬/LED 기본값을 시드해 히어로가 완전히 살아나게 한다.
+    final demoFarm = ref.watch(demoFarmProvider).valueOrNull ?? false;
+    if (isFarm && demoFarm && connected && !_demoSeeded) {
+      _demoSeeded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _toggles['냉각팬'] = true;
+          _ledColor = const Color(0xFFB56BFF); // 보라 그로우라이트 틴트.
+        });
+      });
     }
 
     return Scaffold(

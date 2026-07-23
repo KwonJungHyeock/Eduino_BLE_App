@@ -80,3 +80,12 @@ class LineSensorNotifier extends AsyncNotifier<bool> {
 
 final lineSensorEnabledProvider =
     AsyncNotifierProvider<LineSensorNotifier, bool>(LineSensorNotifier.new);
+
+// ── 팜 데모 시뮬레이션 플래그(웹 데모 전용) ──
+// true 면 StubTransport 가 자동 연결 + 센서 램프를 주입하고, 팜 제어판이
+// 팬/LED 기본값을 시드해 "연결 후 살아있는 온실"을 미리 볼 수 있다.
+// 실제 앱 흐름과 무관(플래그 없으면 항상 미연결 데모).
+final demoFarmProvider = FutureProvider<bool>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getBool('eduino.demo.farm') ?? false;
+});
