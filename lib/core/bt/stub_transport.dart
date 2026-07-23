@@ -39,8 +39,11 @@ class StubTransport implements BtTransport {
 
   @override
   Stream<List<BtDevice>> scan(
-          {Duration timeout = const Duration(seconds: 8)}) =>
-      Stream.value(const <BtDevice>[]);
+      {Duration timeout = const Duration(seconds: 8)}) async* {
+    // 웹 데모: 잠깐 로딩(스켈레톤) 후 빈 목록(빈 상태) — 상태 세트 흐름 확인.
+    await Future<void>.delayed(const Duration(milliseconds: 1800));
+    yield const <BtDevice>[];
+  }
 
   @override
   Future<void> stopScan() async {}

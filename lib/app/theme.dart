@@ -31,7 +31,7 @@ abstract class AppColors {
 
   // ── 리스트/홈 디자인 토큰(지시서 확정 — 전역 공유) ──
   static const Color listTitle = Color(0xFF1A1D21); // 행 제목
-  static const Color listDesc = Color(0xFF8A9099); // 행 설명
+  static const Color listDesc = Color(0xFF6E7681); // 행 설명(대비 ≥4.5:1 · E1)
   static const Color cardBorder = Color(0xFFECEEF1); // 카드 보더
   static const Color pageBg = Color(0xFFEEF1F6); // 페이지 배경(웜그레이 · A4)
   static const Color chipGray = Color(0xFFF0F2F5); // 설정칩 배경(유틸)

@@ -62,6 +62,18 @@ abstract class Routes {
   static const privacy = '/privacy';
 }
 
+// 일반 화면 전환용 크로스페이드(C3) — 200ms ease-out 통일(C1).
+CustomTransitionPage<void> _xfade(Widget child) => CustomTransitionPage<void>(
+      child: child,
+      transitionDuration: const Duration(milliseconds: 200),
+      reverseTransitionDuration: const Duration(milliseconds: 180),
+      transitionsBuilder: (context, animation, secondary, child) =>
+          FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: child,
+      ),
+    );
+
 // 온보딩 화면 전환용 크로스페이드 페이지(인트로→튜토리얼 등 끊김 없이 인계).
 CustomTransitionPage<void> _fadePage(Widget child) => CustomTransitionPage<void>(
       child: child,
@@ -103,27 +115,27 @@ class GoRouterHolder {
         ),
         GoRoute(
           path: Routes.connect,
-          builder: (context, state) => const ConnectScreen(),
+          pageBuilder: (context, state) => _xfade(const ConnectScreen()),
         ),
         GoRoute(
           path: Routes.kit,
-          builder: (context, state) => const KitSelectScreen(),
+          pageBuilder: (context, state) => _xfade(const KitSelectScreen()),
         ),
         GoRoute(
           path: Routes.kitLearn,
-          builder: (context, state) => const KitLearnScreen(),
+          pageBuilder: (context, state) => _xfade(const KitLearnScreen()),
         ),
         GoRoute(
           path: Routes.control,
-          builder: (context, state) => const ControlPanelScreen(),
+          pageBuilder: (context, state) => _xfade(const ControlPanelScreen()),
         ),
         GoRoute(
           path: Routes.motor,
-          builder: (context, state) => const MotorConfigScreen(),
+          pageBuilder: (context, state) => _xfade(const MotorConfigScreen()),
         ),
         GoRoute(
           path: Routes.rcConfig,
-          builder: (context, state) => const RcConfigScreen(),
+          pageBuilder: (context, state) => _xfade(const RcConfigScreen()),
         ),
         GoRoute(
           path: Routes.terminal,
@@ -150,11 +162,11 @@ class GoRouterHolder {
         ),
         GoRoute(
           path: Routes.rcSelect,
-          builder: (context, state) => const RcSelectScreen(),
+          pageBuilder: (context, state) => _xfade(const RcSelectScreen()),
         ),
         GoRoute(
           path: Routes.controller,
-          builder: (context, state) => const ControllerMenuScreen(),
+          pageBuilder: (context, state) => _xfade(const ControllerMenuScreen()),
         ),
         GoRoute(
           path: Routes.joystick,

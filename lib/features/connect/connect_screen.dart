@@ -16,6 +16,7 @@ import '../../providers/last_device_providers.dart';
 import '../../providers/connection_manager.dart';
 import '../../providers/module_providers.dart';
 import '../../widgets/dialogs.dart';
+import '../../widgets/skeleton.dart';
 import '../../widgets/success_check.dart';
 import '../../widgets/surface_card.dart';
 
@@ -318,8 +319,14 @@ class _DeviceList extends ConsumerWidget {
     final scan = ref.watch(scanResultsProvider);
 
     return scan.when(
-      loading: () => _hint('스캔 중…', spinner: true),
-      error: (e, _) => _hint('스캔 오류: $e'),
+      loading: () => const Padding(
+        padding: EdgeInsets.only(top: 4),
+        child: SkeletonList(count: 4), // D1 로딩=스켈레톤
+      ),
+      error: (e, _) => ErrorRetry(
+        message: '스캔 중 문제가 생겼어요.\n$e',
+        onRetry: () => ref.invalidate(scanResultsProvider), // D1 에러=재시도
+      ),
       data: (devices) {
         if (devices.isEmpty) return _scanningEmpty();
         return ListView.separated(

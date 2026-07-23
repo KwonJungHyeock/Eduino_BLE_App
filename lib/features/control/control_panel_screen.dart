@@ -228,6 +228,8 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
           enabled: connected,
           onChanged: (v) {
             final ch = v ? c.onChar! : c.offChar!;
+            // 경보(armed) 켜기 = warning급 햅틱(C4), 그 외 토글=light.
+            if (c.longPress && v) HapticFeedback.heavyImpact();
             setState(() => _toggles[c.label] = v);
             _send(ch, () => _car.kitChar(ch));
           },
