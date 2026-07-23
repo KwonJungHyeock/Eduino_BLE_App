@@ -8,7 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 /// 컬러 팔레트 (라이트 + 블루투스 블루) — 흰 배경, 선택/연결은 신뢰감 있는 블루.
 /// 톤: 밝고 친근한 교육형. 코랄 브랜드 + 하늘 블루, 부드러운 그림자와 틴트로 온기.
 abstract class AppColors {
-  static const Color baseBg = Color(0xFFF3F7FC); // 아주 옅은 블루-그레이 배경(더 밝게)
+  static const Color baseBg = Color(0xFFEEF1F6); // 살짝 웜그레이 — 흰 카드가 떠 보이게(A4)
   static const Color surface = Color(0xFFFFFFFF); // 카드/표면 = 화이트
   static const Color surfaceHigh = Color(0xFFF3F7FC); // 살짝 눌린 표면
   static const Color border = Color(0xFFE2E9F2); // 더 부드러운 보더
@@ -33,7 +33,7 @@ abstract class AppColors {
   static const Color listTitle = Color(0xFF1A1D21); // 행 제목
   static const Color listDesc = Color(0xFF8A9099); // 행 설명
   static const Color cardBorder = Color(0xFFECEEF1); // 카드 보더
-  static const Color pageBg = Color(0xFFF6F8FA); // 페이지 배경
+  static const Color pageBg = Color(0xFFEEF1F6); // 페이지 배경(웜그레이 · A4)
   static const Color chipGray = Color(0xFFF0F2F5); // 설정칩 배경(유틸)
   static const Color chipGrayIcon = Color(0xFF9AA1A9); // 설정칩 아이콘
   static const Color chevron = Color(0xFFC3C8CE); // 우측 chevron
@@ -44,19 +44,28 @@ abstract class AppColors {
       Color.alphaBlend(accent.withValues(alpha: 0.11), surface);
 }
 
-/// 부드러운 그림자 토큰 — 밝고 친근한 톤의 깊이감(짙은 검정 대신 블루-그레이 확산).
+/// 소프트 뎁스 토큰(A1) — 이중 그림자(짙은 확산 드롭 + 좌상단 흰 하이라이트)로
+/// 카드가 웜그레이 배경 위로 부드럽게 "떠오르는" 느낌. 색은 유지, 깊이만 추가.
 abstract class Shadows {
-  /// 카드 기본 그림자(살짝 떠 있는 느낌).
+  /// 카드 resting(기본).
   static const List<BoxShadow> soft = [
-    BoxShadow(color: Color(0x0F1B3A6B), blurRadius: 16, offset: Offset(0, 6)),
+    BoxShadow(color: Color(0x1A263250), blurRadius: 22, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0xB3FFFFFF), blurRadius: 14, offset: Offset(-5, -5)),
   ];
 
-  /// 눌림/강조된 카드(더 크게 떠오름).
+  /// 눌림/선택 강조(더 크게 떠오름).
   static const List<BoxShadow> lift = [
-    BoxShadow(color: Color(0x1A1B3A6B), blurRadius: 24, offset: Offset(0, 10)),
+    BoxShadow(color: Color(0x24263250), blurRadius: 28, offset: Offset(0, 12)),
+    BoxShadow(color: Color(0xCCFFFFFF), blurRadius: 18, offset: Offset(-6, -6)),
   ];
 
-  /// 컬러 액센트 아래 은은한 컬러 글로우(코랄/블루 카드용).
+  /// 히어로/큰 카드 raised(soft ×1.3).
+  static const List<BoxShadow> raised = [
+    BoxShadow(color: Color(0x24263250), blurRadius: 30, offset: Offset(0, 12)),
+    BoxShadow(color: Color(0xCCFFFFFF), blurRadius: 20, offset: Offset(-7, -7)),
+  ];
+
+  /// 컬러 액센트 아래 은은한 컬러 글로우(코랄/블루 카드·토글 ON용).
   static List<BoxShadow> glow(Color c) => [
         BoxShadow(
             color: c.withValues(alpha: 0.28),
@@ -64,15 +73,22 @@ abstract class Shadows {
             offset: const Offset(0, 10)),
       ];
 
-  /// 탭 가능한 카드/버튼용 미세 그림자 1종(C1) — 정적 요소는 그림자 없이 flat.
-  /// 위계·깊이를 위해 "누를 수 있는 것"에만 얹는다.
+  /// 탭 가능한 카드/버튼용 미세 이중 그림자(C1) — 정적 요소는 flat 유지.
   static const List<BoxShadow> tap = [
-    BoxShadow(color: Color(0x0A1B3A6B), blurRadius: 10, offset: Offset(0, 3)),
+    BoxShadow(color: Color(0x14263250), blurRadius: 14, offset: Offset(0, 5)),
+    BoxShadow(color: Color(0x99FFFFFF), blurRadius: 10, offset: Offset(-3, -3)),
+  ];
+
+  /// pressed 상태 — 그림자 축소(살짝 눌린 느낌).
+  static const List<BoxShadow> pressed = [
+    BoxShadow(color: Color(0x0F263250), blurRadius: 6, offset: Offset(0, 2)),
   ];
 }
 
 /// 모션 토큰 — 절제된, 부드러운 이징(§6.4 절제된 모션).
 abstract class Motion {
+  static const Duration press = Duration(milliseconds: 120); // 버튼 눌림(B1)
+  static const Duration ui = Duration(milliseconds: 200); // 전환/트랜지션 통일(C1)
   static const Duration fast = Duration(milliseconds: 160);
   static const Duration base = Duration(milliseconds: 260);
   static const Duration slow = Duration(milliseconds: 480);
@@ -104,11 +120,14 @@ abstract class Gap {
 /// 반경 토큰
 abstract class Radii {
   static const Radius r = Radius.circular(14);
-  static const BorderRadius card = BorderRadius.all(Radius.circular(14));
+  static const BorderRadius card =
+      BorderRadius.all(Radius.circular(20)); // 카드 20~22(A3)
   static const BorderRadius cardLg =
       BorderRadius.all(Radius.circular(22)); // 히어로 카드(친근한 라운드)
   static const BorderRadius pill = BorderRadius.all(Radius.circular(999));
-  static const BorderRadius chip = BorderRadius.all(Radius.circular(10));
+  static const BorderRadius chip = BorderRadius.all(Radius.circular(13)); // 칩 13~14(A3)
+  static const BorderRadius button =
+      BorderRadius.all(Radius.circular(14)); // 버튼 14(A3)
 }
 
 /// §6.2 타이포 — 수치·텔레메트리·터미널 = JetBrains Mono, 본문·라벨 = Pretendard(폴백 sans).
@@ -219,8 +238,10 @@ ThemeData buildNeoCockpitTheme() {
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.signal,
         foregroundColor: Colors.white,
+        disabledBackgroundColor: AppColors.chipGray, // B1 disabled
+        disabledForegroundColor: AppColors.chipGrayIcon,
         minimumSize: const Size(0, 54),
-        shape: const RoundedRectangleBorder(borderRadius: Radii.chip),
+        shape: const RoundedRectangleBorder(borderRadius: Radii.button),
         textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
       ),
     ),
@@ -229,8 +250,18 @@ ThemeData buildNeoCockpitTheme() {
         foregroundColor: AppColors.signal,
         side: const BorderSide(color: AppColors.border),
         minimumSize: const Size(0, 54),
-        shape: const RoundedRectangleBorder(borderRadius: Radii.chip),
+        shape: const RoundedRectangleBorder(borderRadius: Radii.button),
       ),
+    ),
+    // 토글(B2) — 흰 thumb + track. ON 색은 화면별 accent 로 로컬 지정(제어판=코랄).
+    switchTheme: SwitchThemeData(
+      thumbColor: const WidgetStatePropertyAll(Colors.white),
+      trackColor: WidgetStateProperty.resolveWith((s) =>
+          s.contains(WidgetState.selected)
+              ? AppColors.signal
+              : AppColors.chipGray),
+      trackOutlineColor:
+          const WidgetStatePropertyAll(Colors.transparent),
     ),
     snackBarTheme: const SnackBarThemeData(
       backgroundColor: AppColors.textPrimary,

@@ -24,14 +24,8 @@ class SurfaceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: Radii.card,
-        border: Border.all(color: AppColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F1B3A6B), // 옅은 블루-그레이 그림자로 깊이감
-            blurRadius: 14,
-            offset: Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: Shadows.soft, // 소프트 뎁스(A1)
       ),
       child: child,
     );

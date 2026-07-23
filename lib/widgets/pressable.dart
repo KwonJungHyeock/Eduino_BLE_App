@@ -15,6 +15,7 @@ class Pressable extends StatefulWidget {
     this.pressedScale = 0.97,
     this.haptic = true,
     this.enabled = true,
+    this.semanticLabel, // E: 스크린리더 라벨.
   });
 
   final Widget child;
@@ -22,6 +23,7 @@ class Pressable extends StatefulWidget {
   final double pressedScale;
   final bool haptic;
   final bool enabled;
+  final String? semanticLabel;
 
   @override
   State<Pressable> createState() => _PressableState();
@@ -37,22 +39,30 @@ class _PressableState extends State<Pressable> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _set(true),
-      onTapCancel: () => _set(false),
-      onTapUp: (_) => _set(false),
-      onTap: widget.enabled
-          ? () {
-              if (widget.haptic) HapticFeedback.selectionClick();
-              widget.onTap();
-            }
-          : null,
-      child: AnimatedScale(
-        scale: _down ? widget.pressedScale : 1.0,
-        duration: Motion.fast,
-        curve: Motion.emphasized,
-        child: widget.child,
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      label: widget.semanticLabel,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _set(true),
+        onTapCancel: () => _set(false),
+        onTapUp: (_) => _set(false),
+        onTap: widget.enabled
+            ? () {
+                if (widget.haptic) HapticFeedback.selectionClick();
+                widget.onTap();
+              }
+            : null,
+        child: AnimatedScale(
+          scale: _down ? widget.pressedScale : 1.0,
+          duration: Motion.press, // 120ms(B1)
+          curve: Curves.easeOut,
+          child: Opacity(
+            opacity: widget.enabled ? 1 : 0.55, // disabled 명도↓(B1)
+            child: widget.child,
+          ),
+        ),
       ),
     );
   }

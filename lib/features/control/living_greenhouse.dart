@@ -359,12 +359,26 @@ class _ScenePainter extends CustomPainter {
     }
 
     final s = scale;
+    leaf(2 * s, -1.28, 22 * s, leafDark); // 최하 좌(넓게)
+    leaf(2 * s, 1.28, 22 * s, leafCol); // 최하 우
     leaf(6 * s, -1.05, 26 * s, leafCol); // 좌하
     leaf(6 * s, 1.05, 26 * s, leafDark); // 우하
     leaf(16 * s, -0.72, 30 * s, leafDark); // 좌중
     leaf(16 * s, 0.72, 30 * s, leafCol); // 우중
     leaf(26 * s, -0.34, 28 * s, leafCol); // 좌상
     leaf(28 * s, 0.18, 32 * s, leafDark); // 중앙 정상
+
+    // 작은 꽃(건강할 때) — 리치 디테일(F1).
+    if (health > 0.55) {
+      final fx = baseX + sway, fy = rootY - 36 * s;
+      final petal = Paint()..color = const Color(0xFFFFC24B);
+      for (var i = 0; i < 5; i++) {
+        final a = i / 5 * 2 * math.pi + t * 0.5;
+        canvas.drawCircle(
+            Offset(fx + math.cos(a) * 5, fy + math.sin(a) * 5), 3.2, petal);
+      }
+      canvas.drawCircle(Offset(fx, fy), 3, Paint()..color = const Color(0xFFEE8B4C));
+    }
   }
 
   // A1. 아치형 온실 프레임 — 유리 구조 라인 + 은은한 글라스 필.

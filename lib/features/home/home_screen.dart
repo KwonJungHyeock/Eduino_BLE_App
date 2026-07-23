@@ -469,32 +469,32 @@ class _MenuTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final chipBg = utility ? AppColors.chipGray : AppColors.tintOf(accent);
     final chipIcon = utility ? AppColors.chipGrayIcon : accent;
-    return Opacity(
-      opacity: enabled ? 1 : 0.5,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 64),
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.cardBorder),
-            boxShadow: enabled ? Shadows.tap : null, // C1: 탭 가능 → 미세 그림자
-          ),
-          child: Row(
-            children: [
-              // 아이콘 칩 40×40 · r12 · 통일.
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: chipBg,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: chipIcon, size: 22),
+    return Pressable(
+      onTap: onTap,
+      enabled: enabled,
+      pressedScale: 0.98, // 리스트 행(B5)
+      semanticLabel: '$title. $subtitle',
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: Radii.card,
+          border: Border.all(color: AppColors.cardBorder),
+          boxShadow: enabled ? Shadows.tap : null, // C1: 탭 가능 → 소프트 뎁스
+        ),
+        child: Row(
+          children: [
+            // 아이콘 칩 40×40 · r13 · 통일.
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: chipBg,
+                borderRadius: Radii.chip,
               ),
+              child: Icon(icon, color: chipIcon, size: 22),
+            ),
               Gap.w12,
               Expanded(
                 child: Column(
@@ -536,8 +536,7 @@ class _MenuTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

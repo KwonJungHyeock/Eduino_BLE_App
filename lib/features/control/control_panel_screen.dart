@@ -17,6 +17,7 @@ import '../../providers/kit_providers.dart';
 import '../../widgets/circuit.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/kit_illustration.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/responsive.dart';
 import '../../widgets/sparkline.dart';
 import '../../widgets/status_bar.dart';
@@ -235,6 +236,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
         return _ColorCard(
           control: c,
           enabled: connected,
+          selectedColor: _ledColor,
           onSwatch: (s) {
             setState(() => _ledColor = s.color); // 방 앰비언트 틴트 반영.
             _send(s.char!, () => _car.kitChar(s.char!));
@@ -249,6 +251,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
           control: c,
           enabled: connected,
           spectrum: true, // C1 · 무지개 자유 색(컬러 피커).
+          selectedColor: _ledColor,
           onSwatch: (s) => _pickColor(s.color),
           onColor: _pickColor,
           onOff: () {
@@ -386,7 +389,24 @@ class _ToggleCard extends StatelessWidget {
                       color: on ? Colors.white : AppColors.chipGrayIcon)),
             ),
           )
-        : Switch(value: on, onChanged: enabled ? onChanged : null);
+        : Container(
+            decoration: on
+                ? BoxDecoration(
+                    borderRadius: Radii.pill,
+                    boxShadow: [
+                      BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4)),
+                    ],
+                  )
+                : null,
+            child: Switch(
+              value: on,
+              onChanged: enabled ? onChanged : null,
+              activeTrackColor: AppColors.accent, // 제어 토글=코랄 채움(B2)
+            ),
+          );
 
     return SurfaceCard(
       child: Row(
@@ -421,6 +441,7 @@ class _ColorCard extends StatelessWidget {
     required this.onOff,
     this.spectrum = false,
     this.onColor,
+    this.selectedColor,
   });
   final KitControl control;
   final bool enabled;
@@ -428,6 +449,7 @@ class _ColorCard extends StatelessWidget {
   final VoidCallback onOff;
   final bool spectrum; // 무지개 자유 색 피커 노출(팜 네오픽셀).
   final void Function(Color)? onColor;
+  final Color? selectedColor; // 현재 선택 색(선택 아웃라인 표시 · B4).
 
   @override
   Widget build(BuildContext context) {
@@ -463,12 +485,15 @@ class _ColorCard extends StatelessWidget {
                   _swatch(
                     color: s.color,
                     label: s.char ?? '', // 프리셋이면 문자 표시
+                    selected: selectedColor != null &&
+                        s.color.toARGB32() == selectedColor!.toARGB32(),
                     onTap: enabled ? () => onSwatch(s) : null,
                   ),
                 _swatch(
                   color: AppColors.surface,
                   label: '×',
                   border: true,
+                  selected: selectedColor == null,
                   onTap: enabled ? onOff : null,
                 ),
               ],
@@ -483,11 +508,14 @@ class _ColorCard extends StatelessWidget {
     required Color color,
     required String label,
     bool border = false,
+    bool selected = false,
     VoidCallback? onTap,
   }) {
     final light = color.computeLuminance() > 0.6;
-    return GestureDetector(
-      onTap: onTap,
+    return Pressable(
+      onTap: onTap ?? () {},
+      enabled: onTap != null,
+      pressedScale: 0.92, // 스와치 press(B4)
       child: Container(
         width: 44,
         height: 44,
@@ -496,7 +524,14 @@ class _ColorCard extends StatelessWidget {
           color: color,
           borderRadius: Radii.chip,
           border: Border.all(
-              color: border ? AppColors.border : Colors.black.withValues(alpha: 0.06)),
+            color: selected
+                ? Colors.white
+                : (border
+                    ? AppColors.border
+                    : Colors.black.withValues(alpha: 0.06)),
+            width: selected ? 3 : 1,
+          ),
+          boxShadow: selected ? Shadows.lift : null, // 선택 강조(B4)
         ),
         child: Text(label,
             style: AppType.mono(

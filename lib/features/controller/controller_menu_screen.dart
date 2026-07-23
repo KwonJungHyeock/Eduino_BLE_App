@@ -45,7 +45,7 @@ class ControllerMenuScreen extends ConsumerWidget {
             icon: const Icon(Icons.tune),
             onPressed: () => context.push(Routes.rcConfig),
           ),
-          const SizedBox(width: 4), // A5: 우측 아이콘 잘림 방지 여백.
+          const SizedBox(width: 8), // 우측 아이콘 잘림 방지 여백(F3).
         ],
       ),
       body: SafeArea(
