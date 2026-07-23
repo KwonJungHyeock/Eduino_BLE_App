@@ -245,7 +245,7 @@ class _HousePainter extends CustomPainter {
     if (led != null) {
       canvas.drawRect(
         Rect.fromLTRB(wall.left, roofY, wall.right, h),
-        Paint()..color = led.withValues(alpha: 0.22),
+        Paint()..color = led.withValues(alpha: 0.30),
       );
     }
 

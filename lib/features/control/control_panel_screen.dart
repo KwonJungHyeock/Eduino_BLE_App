@@ -122,7 +122,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
             } else {
               _toggles['에어컨'] = true;
               _toggles['현관문'] = true;
-              _ledColor = const Color(0xFFFFC24B); // 따뜻한 앰비언트.
+              _ledColor = const Color(0xFFB56BFF); // 보라 무드라이트(앰비언트 가시성).
             }
           });
         });
