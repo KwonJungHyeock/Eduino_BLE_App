@@ -61,21 +61,27 @@ class StubTransport implements BtTransport {
   bool _homeMode = false;
 
   void _maybeStartDemo() {
-    var farm = false;
+    var farm = false, factory = false;
     String? home;
     try {
-      farm = html.window.localStorage['flutter.eduino.demo.farm'] == 'true';
-      home = html.window.localStorage['flutter.eduino.demo.home'];
+      final ls = html.window.localStorage;
+      farm = ls['flutter.eduino.demo.farm'] == 'true';
+      factory = ls['flutter.eduino.demo.factory'] == 'true';
+      home = ls['flutter.eduino.demo.home'];
     } catch (_) {}
-    if (!farm && (home == null || home.isEmpty)) return;
-    _homeMode = !farm; // 팜 우선, 아니면 홈.
+    final homeOn = home != null && home.isNotEmpty;
+    if (!farm && !factory && !homeOn) return;
+    _homeMode = homeOn;
+    final doEmit = farm || homeOn; // 팩토리는 센서 수신 없음(연결만).
     Timer(const Duration(milliseconds: 900), () {
       if (_state.isClosed) return;
       _cur = BtConnectionState.connected;
       _state.add(_cur);
-      _emit();
-      _demoTimer =
-          Timer.periodic(const Duration(milliseconds: 900), (_) => _emit());
+      if (doEmit) {
+        _emit();
+        _demoTimer =
+            Timer.periodic(const Duration(milliseconds: 900), (_) => _emit());
+      }
     });
   }
 

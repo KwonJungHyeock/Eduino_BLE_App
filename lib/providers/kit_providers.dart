@@ -95,3 +95,9 @@ final demoHomeProvider = FutureProvider<String?>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString('eduino.demo.home');
 });
+
+/// 팩토리 데모(true=라인 가동). 연결 + 가동('1') 시드.
+final demoFactoryProvider = FutureProvider<bool>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getBool('eduino.demo.factory') ?? false;
+});

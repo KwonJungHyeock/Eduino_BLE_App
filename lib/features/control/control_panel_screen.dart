@@ -23,6 +23,7 @@ import '../../widgets/status_bar.dart';
 import '../../widgets/surface_card.dart';
 import '../kit/kit_controls.dart';
 import '../kit/kit_profile.dart';
+import 'living_factory.dart';
 import 'living_greenhouse.dart';
 import 'living_house.dart';
 
@@ -85,6 +86,11 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     );
     final isFarm = kit?.type == KitType.smartFarm;
     final isHome = kit?.type == KitType.smartHome;
+    final isFactory = kit?.type == KitType.smartFactory;
+    final factory = FactoryState(
+      running: _toggles['컨베이어 가동 / 중지'] ?? false,
+      live: connected,
+    );
     // Living Twin 집 씬 상태(홈).
     final house = HouseState(
       temp: tele.sensors['TMP'],
@@ -102,8 +108,15 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     // 데모(웹): 연결되면 액추에이터 기본값을 시드해 히어로가 완전히 살아나게 한다.
     final demoFarm = ref.watch(demoFarmProvider).valueOrNull ?? false;
     final demoHome = ref.watch(demoHomeProvider).valueOrNull;
+    final demoFactory = ref.watch(demoFactoryProvider).valueOrNull ?? false;
     if (connected && !_demoSeeded) {
-      if (isFarm && demoFarm) {
+      if (isFactory && demoFactory) {
+        _demoSeeded = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() => _toggles['컨베이어 가동 / 중지'] = true);
+        });
+      } else if (isFarm && demoFarm) {
         _demoSeeded = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
@@ -155,6 +168,11 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                       // Living Twin — 살아있는 집 씬(홈).
                       if (isHome) ...[
                         LivingHouse(state: house),
+                        Gap.h16,
+                      ],
+                      // Living Twin — 가동 라인 씬(팩토리).
+                      if (isFactory) ...[
+                        LivingFactory(state: factory),
                         Gap.h16,
                       ],
                       if (!connected) ...[
