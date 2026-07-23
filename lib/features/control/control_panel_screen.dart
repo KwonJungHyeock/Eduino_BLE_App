@@ -18,10 +18,12 @@ import '../../widgets/circuit.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/responsive.dart';
+import '../../widgets/sparkline.dart';
 import '../../widgets/status_bar.dart';
 import '../../widgets/surface_card.dart';
 import '../kit/kit_controls.dart';
 import '../kit/kit_profile.dart';
+import 'living_greenhouse.dart';
 
 class ControlPanelScreen extends ConsumerStatefulWidget {
   const ControlPanelScreen({super.key});
@@ -33,6 +35,7 @@ class ControlPanelScreen extends ConsumerStatefulWidget {
 class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
   final Map<String, bool> _toggles = {};
   String? _lastSent; // "전송 → x" (보이는 통신)
+  Color? _ledColor; // Living Twin 조명 틴트(마지막 선택 색).
   Timer? _monitorTimer;
   KitType? _wiredType;
 
@@ -67,7 +70,17 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
   Widget build(BuildContext context) {
     final kit = ref.watch(kitProfileProvider).valueOrNull;
     final connected = ref.watch(connectionProvider).isConnected;
+    final tele = ref.watch(telemetryProvider);
     final set = kit == null ? null : kitControlsFor(kit.type);
+    // Living Twin 상태(현재는 팜 씬). 홈/팩토리 확장 지점.
+    final gh = GreenhouseState(
+      soil: tele.sensors['SOL'],
+      temp: tele.sensors['TMP'],
+      humi: tele.sensors['HUM'],
+      fanOn: _toggles['냉각팬'] ?? false,
+      ledColor: _ledColor,
+    );
+    final isFarm = kit?.type == KitType.smartFarm;
     if (kit != null && set != null) {
       WidgetsBinding.instance
           .addPostFrameCallback((_) => _wireMonitor(kit.type, set));
@@ -86,6 +99,13 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                     children: [
                       _KitHeader(kit: kit),
                       Gap.h16,
+                      // Living Twin — 살아있는 온실 씬 + 상태 코칭(팜).
+                      if (isFarm) ...[
+                        LivingGreenhouse(state: gh),
+                        Gap.h12,
+                        _CoachCard(state: gh),
+                        Gap.h16,
+                      ],
                       if (!connected) ...[
                         ConnectCtaBanner(
                           accent: AppColors.accent,
@@ -155,10 +175,14 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
           enabled: connected,
           onSwatch: (s) {
             final col = s.color;
+            setState(() => _ledColor = col); // 온실 조명 틴트 반영.
             _send('${_r(col)},${_g(col)},${_b(col)}',
                 () => _car.kitRgb(_r(col), _g(col), _b(col)));
           },
-          onOff: () => _send('0,0,0', () => _car.kitRgb(0, 0, 0)),
+          onOff: () {
+            setState(() => _ledColor = null);
+            _send('0,0,0', () => _car.kitRgb(0, 0, 0));
+          },
         );
     }
   }
@@ -191,6 +215,57 @@ class _SentChip extends StatelessWidget {
           Text(text ?? '—',
               style: AppType.mono(
                   size: 16, weight: FontWeight.w800, color: AppColors.accent)),
+        ],
+      ),
+    );
+  }
+}
+
+/// 상태 코칭 카드(B2) — 임계 기반 안내. 경고 톤(코랄) ↔ 안정 톤(민트).
+class _CoachCard extends StatelessWidget {
+  const _CoachCard({required this.state});
+  final GreenhouseState state;
+
+  ({String msg, IconData icon, bool warn}) _coach() {
+    final g = state;
+    if (g.soil != null && g.soil! < 30) {
+      return (msg: '흙이 많이 말랐어요 — 물을 주거나 습도를 높여 주세요.', icon: Icons.water_drop, warn: true);
+    }
+    if (g.temp != null && g.temp! > 30 && !g.fanOn) {
+      return (msg: '온실이 더워요 — 냉각팬을 켜 보세요.', icon: Icons.thermostat, warn: true);
+    }
+    if (g.humi != null && g.humi! > 85) {
+      return (msg: '습도가 너무 높아요 — 환기가 필요할 수 있어요.', icon: Icons.cloud, warn: true);
+    }
+    if (g.soil == null && g.temp == null && g.humi == null) {
+      return (msg: '연결하면 센서값으로 온실이 살아 움직여요.', icon: Icons.eco, warn: false);
+    }
+    return (msg: '환경이 안정적이에요. 식물이 건강해요.', icon: Icons.eco, warn: false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _coach();
+    final color = c.warn ? AppColors.warn : AppColors.mint;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: Radii.card,
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(c.icon, color: color, size: 22),
+          Gap.w12,
+          Expanded(
+            child: Text(c.msg,
+                style: const TextStyle(
+                    fontSize: 13.5,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.listTitle)),
+          ),
         ],
       ),
     );
@@ -237,7 +312,7 @@ class _ToggleCard extends StatelessWidget {
     return SurfaceCard(
       child: Row(
         children: [
-          _iconBox(control.icon, on ? AppColors.accent : AppColors.chipGrayIcon),
+          _iconBox(control.icon, AppColors.accent), // 제어=코랄 통일(A4)
           Gap.w16,
           Expanded(
             child: Column(
@@ -342,18 +417,38 @@ class _ColorCard extends StatelessWidget {
   }
 }
 
-class _MonitorCard extends ConsumerWidget {
+class _MonitorCard extends ConsumerStatefulWidget {
   const _MonitorCard({required this.monitor});
   final KitMonitor monitor;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_MonitorCard> createState() => _MonitorCardState();
+}
+
+class _MonitorCardState extends ConsumerState<_MonitorCard> {
+  final List<double> _hist = []; // 최근 추이(B3 스파크라인).
+
+  String get _sensorKey =>
+      widget.monitor.kind == KitMonKind.soil ? 'SOL' : 'TMP';
+
+  @override
+  Widget build(BuildContext context) {
+    final color = monitorColor(widget.monitor.kind);
+    // 대표값 추이 누적.
+    ref.listen(telemetryProvider, (prev, next) {
+      final v = next.sensors[_sensorKey];
+      if (v != null && (_hist.isEmpty || _hist.last != v)) {
+        setState(() {
+          _hist.add(v);
+          if (_hist.length > 40) _hist.removeAt(0);
+        });
+      }
+    });
     final tele = ref.watch(telemetryProvider);
-    final color = monitorColor(monitor.kind);
 
     String value;
     String extra = '';
-    switch (monitor.kind) {
+    switch (widget.monitor.kind) {
       case KitMonKind.tempHumi:
         final t = tele.sensors['TMP'];
         final h = tele.sensors['HUM'];
@@ -368,25 +463,34 @@ class _MonitorCard extends ConsumerWidget {
     }
 
     return SurfaceCard(
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _iconBox(monitor.icon, color),
-          Gap.w16,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(monitor.label,
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600)),
-                if (extra.isNotEmpty)
-                  Text(extra,
-                      style:
-                          AppType.mono(size: 12, color: AppColors.textMuted)),
-              ],
-            ),
+          Row(
+            children: [
+              _iconBox(widget.monitor.icon, color),
+              Gap.w16,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.monitor.label,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
+                    if (extra.isNotEmpty)
+                      Text(extra,
+                          style: AppType.mono(
+                              size: 12, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+              Text(value, style: AppType.instrument(size: 28, color: color)),
+            ],
           ),
-          Text(value, style: AppType.instrument(size: 28, color: color)),
+          if (_hist.length >= 2) ...[
+            Gap.h12,
+            Sparkline(values: _hist, color: color, height: 34),
+          ],
         ],
       ),
     );

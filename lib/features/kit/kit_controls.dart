@@ -182,8 +182,5 @@ int soilStage(double pct) {
   return 100;
 }
 
-/// 모니터 값 색(디자인 토큰 재사용).
-Color monitorColor(KitMonKind k) => switch (k) {
-      KitMonKind.tempHumi => AppColors.accent,
-      KitMonKind.soil => AppColors.mint,
-    };
+/// 모니터 값 색 — 모니터링은 민트로 통일(A4). (제어=코랄, 키트색 green=장식만)
+Color monitorColor(KitMonKind k) => AppColors.mint;

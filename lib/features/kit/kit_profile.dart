@@ -184,16 +184,13 @@ class KitProfile {
           type: KitType.smartFarm,
           category: KitCategory.appliance,
           name: '스마트 팜 온실',
-          tagline: '환기팬 · 워터펌프 · 조명 · 온습도/토양',
+          tagline: '냉각팬 · RGB조명 · 온습도 · 토양수분',
           assetImage: 'assets/kits/smart_farm.png',
           controls: [
-            ControlSpec(kind: ControlKind.relayToggle, label: '환기팬', icon: Icons.air, id: 0),
-            ControlSpec(kind: ControlKind.relayToggle, label: '워터펌프', icon: Icons.water_drop, id: 1),
-            ControlSpec(kind: ControlKind.relayToggle, label: '조명', icon: Icons.light, id: 2),
-            ControlSpec(kind: ControlKind.sensorReadout, label: '온도', icon: Icons.thermostat, sensorKey: 'TMP', unit: '°C'),
-            ControlSpec(kind: ControlKind.sensorReadout, label: '습도', icon: Icons.water, sensorKey: 'HUM', unit: '%'),
+            ControlSpec(kind: ControlKind.relayToggle, label: '냉각팬', icon: Icons.air, id: 0),
+            ControlSpec(kind: ControlKind.ledToggle, label: 'RGB조명', icon: Icons.palette, id: 1),
+            ControlSpec(kind: ControlKind.sensorReadout, label: '온습도', icon: Icons.thermostat, sensorKey: 'TMP', unit: '°C'),
             ControlSpec(kind: ControlKind.sensorReadout, label: '토양수분', icon: Icons.grass, sensorKey: 'SOL'),
-            ControlSpec(kind: ControlKind.lcdText, label: 'LCD 메시지', icon: Icons.message),
           ],
         );
     }
