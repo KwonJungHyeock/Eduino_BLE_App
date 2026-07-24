@@ -484,7 +484,10 @@ class _ToggleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final on = value;
-    final sub = '${control.onChar} / ${control.offChar}'
+    // 전송 명령 표시 — 텍스트 라인(FAN:1/0)이면 그것을, 아니면 단일문자.
+    final onLbl = control.onLine ?? control.onChar ?? '';
+    final offLbl = control.offLine ?? control.offChar ?? '';
+    final sub = '$onLbl / $offLbl'
         '${control.longPress ? '  ·  길게 눌러 전환' : ''}';
     // 침입자 경보 등 longPress: 스위치 대신 길게 눌러 전환하는 버튼.
     final Widget trailing = control.longPress
