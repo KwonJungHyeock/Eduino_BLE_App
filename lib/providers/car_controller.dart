@@ -82,7 +82,25 @@ class CarController {
     });
   }
 
+  // 교육용 시리얼 채팅/AT 터미널 화면에서는 RC 주행 하트비트(PNG:)를 억제한다.
+  // 하트비트는 주행 안전 전용이며, "보이는 통신" 교보재 화면의 실제 송신을 오염시키면 안 된다.
+  int _hbPauseCount = 0;
+  bool get _heartbeatAllowed => _hbPauseCount == 0;
+
+  /// 하트비트 일시 중단(화면 진입 시). 중첩 진입 대비 카운트 기반.
+  void pauseHeartbeat() {
+    _hbPauseCount++;
+    _stopHeartbeat();
+  }
+
+  /// 하트비트 재개(화면 이탈 시). 억제가 모두 풀리고 연결 중이면 재시작.
+  void resumeHeartbeat() {
+    if (_hbPauseCount > 0) _hbPauseCount--;
+    if (_heartbeatAllowed && _connected) _startHeartbeat();
+  }
+
   void _startHeartbeat() {
+    if (!_heartbeatAllowed) return; // 억제 중이면 재연결로 다시 시작되지 않도록 가드.
     _heartbeat?.cancel();
     _heartbeat = Timer.periodic(_heartbeatInterval, (_) {
       _sendRaw(Commands.ping(), silent: true); // 하트비트는 터미널 스팸 방지 위해 미표시.

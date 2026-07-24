@@ -14,7 +14,6 @@ import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../providers/kit_providers.dart';
-import '../../widgets/circuit.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/pressable.dart';
@@ -197,7 +196,8 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                         _control(c, connected),
                         Gap.h12,
                       ],
-                      if (set.monitors.isNotEmpty) ...[
+                      // 홈은 온·습도를 집 씬(벽 온도계)에 통합 표시 → 별도 패널 생략.
+                      if (set.monitors.isNotEmpty && !isHome) ...[
                         const SizedBox(height: 10),
                         const NodeRailHeader('모니터링',
                             color: AppColors.mint),
@@ -806,7 +806,15 @@ class _MonitorCardState extends ConsumerState<_MonitorCard> {
                   ],
                 ),
               ),
-              Text(value, style: AppType.instrument(size: 28, color: color)),
+              // 좁은 폭에서도 잘리지 않게 축소(잘림 방지 · ⑩).
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(value,
+                      style: AppType.instrument(size: 28, color: color)),
+                ),
+              ),
             ],
           ),
           if (_hist.length >= 2) ...[

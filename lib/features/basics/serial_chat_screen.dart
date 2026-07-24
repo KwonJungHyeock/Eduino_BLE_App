@@ -6,10 +6,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/bt_providers.dart';
+import '../../providers/car_controller.dart';
 import '../../providers/serial_presets_provider.dart';
 import '../../widgets/chat_view.dart';
 
-class SerialChatScreen extends ConsumerWidget {
+class SerialChatScreen extends ConsumerStatefulWidget {
   const SerialChatScreen({super.key});
 
   static const List<String> _fallback = [
@@ -22,8 +24,28 @@ class SerialChatScreen extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final presets = ref.watch(serialPresetsProvider).valueOrNull ?? _fallback;
+  ConsumerState<SerialChatScreen> createState() => _SerialChatScreenState();
+}
+
+class _SerialChatScreenState extends ConsumerState<SerialChatScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // 재시작 시 로그 초기화 + RC 주행 하트비트(PNG:) 억제 → 교보재 로그를 깨끗하게 시작.
+    ref.read(terminalProvider.notifier).clear();
+    ref.read(carControllerProvider).pauseHeartbeat();
+  }
+
+  @override
+  void dispose() {
+    ref.read(carControllerProvider).resumeHeartbeat();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final presets =
+        ref.watch(serialPresetsProvider).valueOrNull ?? SerialChatScreen._fallback;
     return ChatView(
       mono: false,
       hint: '앱 ↔ 아두이노 ↔ PC 시리얼 모니터로 글자를 주고받아요. (9600 bps)',

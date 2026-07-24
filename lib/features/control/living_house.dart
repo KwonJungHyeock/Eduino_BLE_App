@@ -63,7 +63,9 @@ class _LivingHouseState extends State<LivingHouse>
   void didUpdateWidget(covariant LivingHouse old) {
     super.didUpdateWidget(old);
     if (widget.state.doorOpen != old.state.doorOpen) {
-      widget.state.doorOpen ? _door.forward() : _door.reverse();
+      // 반복 토글 안정화: 현재 위치에서 목표(0/1)로 수렴(중간 재트리거 안전).
+      _door.animateTo(widget.state.doorOpen ? 1.0 : 0.0,
+          curve: Curves.easeInOut);
     }
   }
 
@@ -298,6 +300,45 @@ class _HousePainter extends CustomPainter {
 
     // 10) 현관문(우측) — 여닫힘.
     _door(canvas, w, h, floorY);
+
+    // 11) 펜던트 조명 — 선택한 RGB 색 그대로 발광(앰비언트 틴트와 동색).
+    _lamp(canvas, w, h, roofY);
+  }
+
+  // 천장 펜던트 조명 — ledColor 원색으로 전구+헤일로 발광(끄기=중립 회색).
+  void _lamp(Canvas canvas, double w, double h, double roofY) {
+    final led = state.ledColor;
+    final cx = w * 0.45;
+    final capY = roofY + 2; // 천장(벽 상단)에서 전선 시작.
+    final bulbY = roofY + h * 0.16;
+    // 전선.
+    canvas.drawLine(Offset(cx, capY), Offset(cx, bulbY - 10),
+        Paint()..color = const Color(0xFF6B7280)..strokeWidth = 2);
+    // 갓(펜던트).
+    final shade = Path()
+      ..moveTo(cx - 16, bulbY - 10)
+      ..lineTo(cx + 16, bulbY - 10)
+      ..lineTo(cx + 10, bulbY - 2)
+      ..lineTo(cx - 10, bulbY - 2)
+      ..close();
+    canvas.drawPath(shade, Paint()..color = const Color(0xFF3A4250));
+    final bulbC = Offset(cx, bulbY + 4);
+    if (led != null) {
+      // 발광 헤일로 — 선택 색 그대로(원색).
+      canvas.drawCircle(bulbC, 30, Paint()..color = led.withValues(alpha: 0.10));
+      canvas.drawCircle(bulbC, 20, Paint()..color = led.withValues(alpha: 0.16));
+      canvas.drawCircle(bulbC, 12, Paint()..color = led.withValues(alpha: 0.28));
+    }
+    // 전구 — 켜짐: 선택 색 원색 / 꺼짐: 중립 회색.
+    canvas.drawCircle(bulbC, 8,
+        Paint()..color = led ?? const Color(0xFFB8BEC6));
+    canvas.drawCircle(
+        bulbC,
+        8,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.5)
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke);
   }
 
   // 벽 온도계 — 수신값(없으면 --).

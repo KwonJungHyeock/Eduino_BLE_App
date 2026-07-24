@@ -145,11 +145,11 @@ class _JoystickPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(radius, radius);
 
-    // 베이스 표면
+    // 베이스 표면(노브와 대비되도록 살짝 가라앉힌 뮤트 톤)
     canvas.drawCircle(
       center,
       radius,
-      Paint()..color = AppColors.surface,
+      Paint()..color = AppColors.baseBg,
     );
     // 외곽 링
     canvas.drawCircle(
@@ -206,25 +206,33 @@ class _JoystickPainter extends CustomPainter {
       );
     }
 
-    // 노브 본체
+    // 노브 그림자(솟아오른 퍽처럼 보이도록 — 유휴 시에도 대비 확보)
+    canvas.drawCircle(
+      knobCenter + const Offset(0, 2),
+      knobRadius,
+      Paint()
+        ..color = AppColors.signal.withValues(alpha: active ? 0.0 : 0.22)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    );
+    // 노브 본체(유휴 시 솔리드 블루로 베이스와 확실히 구분)
     canvas.drawCircle(
       knobCenter,
       knobRadius,
-      Paint()..color = active ? color : AppColors.surfaceHigh,
+      Paint()..color = active ? color : AppColors.signal,
     );
     canvas.drawCircle(
       knobCenter,
       knobRadius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = active ? color : AppColors.border,
+        ..strokeWidth = 2.5
+        ..color = Colors.white,
     );
     // 노브 중앙 도트
     canvas.drawCircle(
       knobCenter,
       3,
-      Paint()..color = active ? AppColors.baseBg : AppColors.textMuted,
+      Paint()..color = Colors.white,
     );
   }
 

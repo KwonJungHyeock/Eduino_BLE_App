@@ -28,6 +28,16 @@ class _LedScreenState extends ConsumerState<LedScreen> {
       _on = v;
       _lastSent = 'LED:$pin,${v ? 1 : 0}';
     });
+    // QA ⑤ — 전송 문자 매핑(펌웨어와 반드시 일치 확인).
+    // 이 화면은 색상 LED가 아니라 "디지털 핀 ON/OFF"(digitalWrite) 예제이므로,
+    // 스마트홈 조명 단일문자 규약(r/o/y/g/b/v/w/x)이 아니라 구조화 라인 프레임을 보낸다.
+    //   ON  → "LED:<pin>,1\n"   (예: LED:13,1)
+    //   OFF → "LED:<pin>,0\n"   (예: LED:13,0)
+    // 즉 상태값은 아스키 '1'(0x31)=켜기 / '0'(0x30)=끄기.
+    // 반드시 CarController(→Commands.led→BtTransport) 경로로만 전송(§통신규칙).
+    // ※ 경로확인필요: 예제 펌웨어가 이 프레임을 파싱하는지, 아니면 단일문자
+    //   ('1'/'0' 또는 'H'/'L', 'a'/'b') ON/OFF만 기대하는지는 스펙 미명시.
+    //   펌웨어 스케치와 대조 후 확정할 것.
     ref.read(carControllerProvider).led(pin, v);
   }
 

@@ -15,6 +15,7 @@ import '../../core/protocol/commands.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../widgets/drive_cmd_display.dart';
+import '../../widgets/primary_button.dart';
 import '../../widgets/surface_card.dart';
 
 class TiltScreen extends ConsumerStatefulWidget {
@@ -75,7 +76,9 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
       return n.abs() < dead ? 0.0 : n.clamp(-1.0, 1.0);
     }
 
-    final steer = norm(e.x - _baseX);
+    // 좌우 축 보정: 기기를 왼쪽으로 기울이면 가속도계 x가 +로 커지므로,
+    // 부호를 뒤집어야 왼쪽 기울임=좌회전(l), 오른쪽 기울임=우회전(r)이 된다.
+    final steer = norm(-(e.x - _baseX));
     final throttle = norm(-(e.y - _baseY));
     final vec = Offset(steer, throttle);
     final cmd = _cmdFor(vec);
@@ -158,16 +161,12 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
               ),
             ),
             Gap.h16,
-            SurfaceCard(
-              child: Row(
-                children: [
-                  const Text('기울기 제어',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
-                  const Spacer(),
-                  Switch(value: _active, onChanged: connected ? _toggle : null),
-                ],
-              ),
+            // 시작/정지: 크고 눈에 잘 띄는 Primary 토글(연결 안 되면 비활성).
+            PrimaryButton(
+              label: _active ? '기울기 조작 정지' : '기울기 조작 시작',
+              icon: _active ? Icons.stop_rounded : Icons.play_arrow_rounded,
+              color: _active ? AppColors.accent : AppColors.signal,
+              onPressed: connected ? () => _toggle(!_active) : null,
             ),
             Gap.h16,
             SurfaceCard(

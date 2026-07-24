@@ -145,14 +145,21 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                               style: const TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 15)),
                           Gap.h4,
+                          // 페어링 선안내: 미연결 시 상단에서 눈에 띄게(파란 강조) 노출.
                           Text(
                               connected
                                   ? '연결되어 있습니다.'
                                   : module == BtModule.spp
-                                      ? '설정에서 페어링(PIN 1234) 후 목록에서 선택'
-                                      : '전원을 켠 뒤 사용하는 블루투스 모듈을 가까이 두세요.',
+                                      ? '설정에서 페어링(PIN 1234) 후 목록에서 선택하세요.'
+                                      : '전원을 켜고 파란 LED가 깜빡이면 목록에서 선택하세요.',
                               style: AppType.mono(
-                                  size: 12, color: AppColors.textMuted)),
+                                  size: connected ? 12 : 12.5,
+                                  weight: connected
+                                      ? FontWeight.w400
+                                      : FontWeight.w600,
+                                  color: connected
+                                      ? AppColors.textMuted
+                                      : AppColors.signal)),
                         ],
                       ),
                     ),
@@ -516,9 +523,7 @@ class _DeviceTile extends StatelessWidget {
                         if (device.rssi != null) ...[
                           _SignalBars(rssi: device.rssi!),
                           const SizedBox(width: 6),
-                          Text('${device.rssi} dBm',
-                              style: AppType.mono(
-                                  size: 11, color: AppColors.listDesc)),
+                          _SignalStrengthTag(rssi: device.rssi!),
                           Gap.w8,
                         ],
                         Flexible(
@@ -583,6 +588,37 @@ class _SignalBars extends StatelessWidget {
   }
 }
 
+/// 신호세기 강/중/약(초보자 직관) — dBm 은 작은 보조 표기로.
+/// >= -60 강(mint) · -60~-80 중(sun) · < -80 약(coral).
+class _SignalStrengthTag extends StatelessWidget {
+  const _SignalStrengthTag({required this.rssi});
+  final int rssi;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color, icon) = _signalInfo(rssi);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 3),
+        Text(label,
+            style:
+                AppType.mono(size: 11, weight: FontWeight.w800, color: color)),
+        const SizedBox(width: 4),
+        Text('$rssi dBm',
+            style: AppType.mono(size: 10, color: AppColors.listDesc)),
+      ],
+    );
+  }
+
+  static (String, Color, IconData) _signalInfo(int rssi) {
+    if (rssi >= -60) return ('강', AppColors.mint, Icons.wifi);
+    if (rssi >= -80) return ('중', AppColors.sun, Icons.wifi_2_bar);
+    return ('약', AppColors.accent, Icons.wifi_1_bar);
+  }
+}
+
 class _ConnStateChip extends StatelessWidget {
   const _ConnStateChip({required this.state});
   final BtConnectionState state;
@@ -596,16 +632,35 @@ class _ConnStateChip extends StatelessWidget {
       BtConnectionState.disconnecting => (AppColors.warn, '해제 중'),
       BtConnectionState.disconnected => (AppColors.chipGrayIcon, '연결 대기'),
     };
+    // ⑪ 연결/스캔 피드백은 상태 칩 옆 작은 인라인 링으로(과한 애니 금지).
+    final busy = state == BtConnectionState.connecting ||
+        state == BtConnectionState.scanning ||
+        state == BtConnectionState.disconnecting;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: Radii.pill,
       ),
-      child: Text(text,
-          maxLines: 1,
-          softWrap: false,
-          style: AppType.mono(size: 11, weight: FontWeight.w700, color: color)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (busy) ...[
+            SizedBox(
+              width: 9,
+              height: 9,
+              child:
+                  CircularProgressIndicator(strokeWidth: 1.6, color: color),
+            ),
+            const SizedBox(width: 6),
+          ],
+          Text(text,
+              maxLines: 1,
+              softWrap: false,
+              style: AppType.mono(
+                  size: 11, weight: FontWeight.w700, color: color)),
+        ],
+      ),
     );
   }
 }

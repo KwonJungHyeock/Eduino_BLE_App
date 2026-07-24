@@ -1,5 +1,5 @@
 // Author: eduino
-// 방향 버튼 — 상/하/좌/우 = g/b/l/r, 좌회전/우회전 = q/w. 대각선·속도상한 제거.
+// 방향 버튼 — 상/하/좌/우 = g/b/l/r, 제자리좌/우회전 = q/w. 대각선·속도상한 제거.
 // 누르는 동안 이동, 떼면 정지(s). 단일 문자 명령(기본 RC 펌웨어).
 
 import 'package:flutter/material.dart';
@@ -52,7 +52,7 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
               children: [
                 Expanded(
                   child: _HoldButton(
-                    label: '좌회전',
+                    label: '제자리좌회전',
                     sub: 'q',
                     icon: Icons.rotate_left,
                     enabled: connected,
@@ -63,7 +63,7 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
                 Gap.w12,
                 Expanded(
                   child: _HoldButton(
-                    label: '우회전',
+                    label: '제자리우회전',
                     sub: 'w',
                     icon: Icons.rotate_right,
                     enabled: connected,
@@ -295,11 +295,15 @@ class _HoldButtonState extends State<_HoldButton> {
                 Icon(widget.icon,
                     color: _down ? Colors.white : AppColors.accent, size: 22),
                 Gap.w8,
-                Text(widget.label,
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: _down ? Colors.white : AppColors.listTitle)),
+                Flexible(
+                  child: Text(widget.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: _down ? Colors.white : AppColors.listTitle)),
+                ),
                 Gap.w8,
                 Text(widget.sub,
                     style: AppType.mono(

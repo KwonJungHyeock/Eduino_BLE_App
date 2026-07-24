@@ -37,12 +37,22 @@ class LivingFactory extends StatefulWidget {
 }
 
 class _LivingFactoryState extends State<LivingFactory>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _loop =
       AnimationController(vsync: this, duration: const Duration(seconds: 3))
         ..repeat();
+  // 감지→판정 단계 연출 — 새 분류(lastSort 변경) 수신 시 1회 재생.
+  late final AnimationController _sort = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1500));
   Timer? _tick;
   int _secs = 0; // 가동 시간(앱 카운트) — 연결/명령 무관, 실제 표시 가능한 사실.
+
+  static const _sortNames = {'r': '빨강', 'g': '초록', 'b': '파랑'};
+  static const _sortColors = {
+    'r': Color(0xFFE53935),
+    'g': Color(0xFF43A047),
+    'b': Color(0xFF1E88E5),
+  };
 
   static const List<double> _mono = <double>[
     0.5276, 0.4291, 0.0433, 0, 14, //
@@ -66,13 +76,56 @@ class _LivingFactoryState extends State<LivingFactory>
     super.didUpdateWidget(old);
     // 가동 시작(off→on) 시 가동 시간 리셋.
     if (widget.state.running && !old.state.running) _secs = 0;
+    // 새 분류 수신(lastSort 변경) → 감지→판정 단계 연출 1회 재생.
+    final ls = widget.state.lastSort;
+    if (ls != old.state.lastSort &&
+        _sortNames.containsKey(ls) &&
+        widget.state.live &&
+        widget.state.running) {
+      _sort.forward(from: 0);
+    }
   }
 
   @override
   void dispose() {
     _tick?.cancel();
     _loop.dispose();
+    _sort.dispose();
     super.dispose();
+  }
+
+  // 단계 칩 페이드(등장/퇴장).
+  double _stageOpacity(double p) {
+    if (p <= 0 || p >= 1) return 0.0;
+    if (p < 0.15) return p / 0.15;
+    if (p > 0.85) return (1 - p) / 0.15;
+    return 1.0;
+  }
+
+  Widget _stageChip(String k) {
+    final detecting = _sort.value < 0.4;
+    final col = _sortColors[k]!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: Radii.pill,
+        boxShadow: Shadows.soft,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(detecting ? Icons.radar : Icons.check_circle,
+              size: 14, color: detecting ? AppColors.signal : col),
+          const SizedBox(width: 5),
+          Text(detecting ? '감지' : '판정: ${_sortNames[k]}',
+              style: AppType.mono(
+                  size: 11,
+                  weight: FontWeight.w800,
+                  color: AppColors.listTitle)),
+        ],
+      ),
+    );
   }
 
   String get _uptime {
@@ -91,11 +144,14 @@ class _LivingFactoryState extends State<LivingFactory>
       child: AspectRatio(
         aspectRatio: 1.9,
         child: AnimatedBuilder(
-          animation: _loop,
+          animation: Listenable.merge([_loop, _sort]),
           builder: (context, _) {
             final scene = CustomPaint(
               painter: _LinePainter(
-                  running: running, t: _loop.value, lastSort: st.lastSort),
+                  running: running,
+                  t: _loop.value,
+                  lastSort: st.lastSort,
+                  sortProgress: _sort.value),
             );
             return Stack(
               children: [
@@ -153,6 +209,18 @@ class _LivingFactoryState extends State<LivingFactory>
                       ],
                     ),
                   ),
+                // 감지→판정 단계 칩 — 실 수신 분류(lastSort) 순간을 또렷하게.
+                if (live &&
+                    _sort.value > 0 &&
+                    _sortNames.containsKey(st.lastSort))
+                  Positioned(
+                    top: 40,
+                    left: 10,
+                    child: Opacity(
+                      opacity: _stageOpacity(_sort.value),
+                      child: _stageChip(st.lastSort!),
+                    ),
+                  ),
                 // 정직성 라벨(A3) — 물체/분류는 연출.
                 if (live)
                   Positioned(
@@ -208,10 +276,15 @@ class _LivingFactoryState extends State<LivingFactory>
 }
 
 class _LinePainter extends CustomPainter {
-  _LinePainter({required this.running, required this.t, this.lastSort});
+  _LinePainter(
+      {required this.running,
+      required this.t,
+      this.lastSort,
+      this.sortProgress = 0});
   final bool running;
   final double t; // 0..1 애니메이션 위상
   final String? lastSort; // 마지막 분류 색('r'/'g'/'b') — 실데이터(QA 0-3).
+  final double sortProgress; // 0..1 감지→판정 단계 진행(0=대기).
 
   static const _blue = AppColors.signal;
   static const _binColors = <String, Color>{
@@ -271,6 +344,13 @@ class _LinePainter extends CustomPainter {
             ..style = PaintingStyle.stroke);
     }
 
+    // 스캐너 게이트(벨트 끝) — 감지 단계에 색 하이라이트/펄스.
+    final scanX = beltR - 26;
+    final scanGlow = (running && sortProgress > 0 && sortProgress < 0.5)
+        ? (1 - sortProgress / 0.5)
+        : 0.0;
+    _scanner(canvas, scanX, beltY, h, scanGlow, lastSort);
+
     // 분류 서보(벨트 끝 위) — 스윙 암.
     final pivot = Offset(beltR + w * 0.03, beltY - h * 0.02);
     final swing = math.sin(phase * 2 * math.pi) * 0.5; // -0.5..0.5 rad
@@ -309,17 +389,37 @@ class _LinePainter extends CustomPainter {
             ..style = PaintingStyle.stroke);
     }
 
-    // 분류되는 물체 — 마지막 수신 색(lastSort)을 해당 색 함으로 낙하(실데이터).
-    if (running && lastSort != null && _binColors.containsKey(lastSort)) {
+    // 분류되는 물체 — 감지→판정 단계 연출(실 수신 lastSort · sortProgress).
+    //   0..0.4 감지: 스캐너 아래 정지(무채) · 0.4..1 판정: 색 부여 후 해당 함으로 낙하.
+    if (running &&
+        lastSort != null &&
+        _binColors.containsKey(lastSort) &&
+        sortProgress > 0) {
       final idx = keys.indexOf(lastSort!);
       final tx = centers[idx];
-      final drop = phase; // 0..1 낙하 위상
-      final ox = armEnd.dx + (tx - armEnd.dx) * drop;
-      final oy = armEnd.dy + (binY - armEnd.dy) * drop;
+      final col = _binColors[lastSort]!;
+      final startY = beltY - 12;
+      final p = sortProgress;
+      final Offset pos;
+      final Color boxCol;
+      if (p < 0.4) {
+        pos = Offset(scanX, startY); // 감지 단계 — 스캐너 아래 정지.
+        boxCol = const Color(0xFFC79A5B); // 아직 무채(크래프트).
+      } else {
+        final tp = (p - 0.4) / 0.6; // 0..1 판정+낙하.
+        pos = Offset(scanX + (tx - scanX) * tp, startY + (binY - startY) * tp);
+        boxCol = col; // 판정 색 부여.
+      }
+      final box = RRect.fromRectAndRadius(
+          Rect.fromLTWH(pos.dx - 7, pos.dy - 6, 14, 12),
+          const Radius.circular(2));
+      canvas.drawRRect(box, Paint()..color = boxCol);
       canvas.drawRRect(
-          RRect.fromRectAndRadius(
-              Rect.fromLTWH(ox - 6, oy - 5, 12, 10), const Radius.circular(2)),
-          Paint()..color = _binColors[lastSort]!);
+          box,
+          Paint()
+            ..color = Colors.white.withValues(alpha: 0.25)
+            ..strokeWidth = 1
+            ..style = PaintingStyle.stroke);
     }
 
     // 지지 다리.
@@ -328,6 +428,47 @@ class _LinePainter extends CustomPainter {
       ..strokeWidth = 4;
     canvas.drawLine(Offset(beltL + 10, beltY + beltH), Offset(beltL + 10, floorY), leg);
     canvas.drawLine(Offset(beltR - 10, beltY + beltH), Offset(beltR - 10, floorY), leg);
+  }
+
+  // 스캐너 게이트 — 벨트 위 감지 헤드. glow(0..1)로 렌즈/스캔라인 색 하이라이트.
+  void _scanner(Canvas canvas, double x, double beltY, double h, double glow,
+      String? sort) {
+    final topY = beltY - h * 0.14;
+    final botY = beltY + 2;
+    final post = Paint()
+      ..color = const Color(0xFF556070)
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(x - 15, topY), Offset(x - 15, botY), post);
+    canvas.drawLine(Offset(x + 15, topY), Offset(x + 15, botY), post);
+    // 상단 센서 헤드.
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromLTRB(x - 19, topY - 6, x + 19, topY + 6),
+            const Radius.circular(3)),
+        Paint()..color = const Color(0xFF3A4250));
+    // 렌즈 — 감지 중이면 판정 색으로 점등.
+    final lensCol = (glow > 0 && sort != null && _binColors.containsKey(sort))
+        ? _binColors[sort]!
+        : const Color(0xFF7C8797);
+    canvas.drawCircle(Offset(x, topY),
+        3.2, Paint()..color = Color.lerp(const Color(0xFF7C8797), lensCol, glow)!);
+    // 스캔 라인 + 펄스 링(감지 중).
+    if (glow > 0) {
+      canvas.drawLine(
+          Offset(x - 13, botY - 4),
+          Offset(x + 13, botY - 4),
+          Paint()
+            ..color = lensCol.withValues(alpha: 0.5 * glow)
+            ..strokeWidth = 2);
+      canvas.drawCircle(
+          Offset(x, (topY + botY) / 2),
+          10 + 10 * (1 - glow),
+          Paint()
+            ..color = lensCol.withValues(alpha: 0.35 * glow)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.5);
+    }
   }
 
   void _roller(Canvas canvas, Offset c, double r, double phase) {
@@ -361,5 +502,8 @@ class _LinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_LinePainter old) =>
-      old.t != t || old.running != running || old.lastSort != lastSort;
+      old.t != t ||
+      old.running != running ||
+      old.lastSort != lastSort ||
+      old.sortProgress != sortProgress;
 }

@@ -60,6 +60,8 @@ class BleTransport implements BtTransport {
   @override
   Stream<List<BtDevice>> scan({Duration timeout = const Duration(seconds: 12)}) {
     // 발견 기기 누적 후 스냅샷 방출. FFE0 광고 기기는 isKnownModule=true.
+    // found 는 구독마다 새로 생성 → "다시 스캔"(provider invalidate)이 재구독하면
+    // 이전 스캔 결과가 완전히 초기화된다(모듈 개명 후 옛 이름 잔존 방지).
     final controller = StreamController<List<BtDevice>>();
     final Map<String, BtDevice> found = {};
 
@@ -70,6 +72,8 @@ class BleTransport implements BtTransport {
         _scanSub = FlutterBluePlus.scanResults.listen((results) {
           var changed = false;
           for (final r in results) {
+            // 최신 광고 이름 우선(advName). 캐시된 platformName 은 폴백 —
+            // 개명 후에도 광고 이름이 오면 항상 그것으로 갱신된다.
             final name = r.advertisementData.advName.isNotEmpty
                 ? r.advertisementData.advName
                 : r.device.platformName;
@@ -81,6 +85,7 @@ class BleTransport implements BtTransport {
               rssi: r.rssi,
               isKnownModule: knows,
             );
+            // 같은 id 재발견 시 최신 이름·RSSI 로 덮어쓴다(옛 값 잔존 금지).
             found[dev.id] = dev;
             changed = true;
           }
