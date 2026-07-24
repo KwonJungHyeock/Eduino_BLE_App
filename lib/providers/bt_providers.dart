@@ -47,9 +47,13 @@ final scanResultsProvider =
 });
 
 /// 수신 원시 조각 → \n 재조립 → 라인 스트림. telemetry/terminal 이 공유 구독.
+/// 연결 직후 재조립 버퍼를 flush(0-5) — 이전 세션/모듈의 잔여 쓰레기값 제거.
 final incomingLineProvider = StreamProvider<String>((ref) {
   final transport = ref.watch(transportProvider);
   final reassembler = LineReassembler();
+  ref.listen<BtConnectionState>(connectionProvider, (prev, next) {
+    if (next == BtConnectionState.connected) reassembler.reset();
+  });
   return transport.incoming.expand(reassembler.add);
 });
 
