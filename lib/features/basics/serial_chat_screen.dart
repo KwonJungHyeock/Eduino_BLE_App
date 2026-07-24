@@ -32,8 +32,12 @@ class _SerialChatScreenState extends ConsumerState<SerialChatScreen> {
   void initState() {
     super.initState();
     // 재시작 시 로그 초기화 + RC 주행 하트비트(PNG:) 억제 → 교보재 로그를 깨끗하게 시작.
-    ref.read(terminalProvider.notifier).clear();
-    ref.read(carControllerProvider).pauseHeartbeat();
+    // 위젯 트리 빌드 중 provider 수정 금지 → 첫 프레임 이후로 지연.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(terminalProvider.notifier).clear();
+      ref.read(carControllerProvider).pauseHeartbeat();
+    });
   }
 
   @override

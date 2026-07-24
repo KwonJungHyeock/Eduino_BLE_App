@@ -167,7 +167,14 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                           Gap.h12,
                           _CoachCard(state: gh),
                         ],
-                        Gap.h16,
+                        // 모니터링(토양수분·온·습도)을 씬 바로 아래에 통합 —
+                        // 하단 중복 섹션 제거로 잘림·이중 표시 방지(QA 2-a).
+                        Gap.h12,
+                        for (final m in set.monitors) ...[
+                          _MonitorCard(monitor: m),
+                          Gap.h12,
+                        ],
+                        Gap.h4,
                       ],
                       // Living Twin — 살아있는 집 씬(홈).
                       if (isHome) ...[
@@ -197,8 +204,8 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                         _control(c, connected),
                         Gap.h12,
                       ],
-                      // 홈은 온·습도를 집 씬(벽 온도계)에 통합 표시 → 별도 패널 생략.
-                      if (set.monitors.isNotEmpty && !isHome) ...[
+                      // 홈=집 씬 벽 온도계 / 팜=씬 바로 아래 통합 → 하단 별도 패널 생략.
+                      if (set.monitors.isNotEmpty && !isHome && !isFarm) ...[
                         const SizedBox(height: 10),
                         const NodeRailHeader('모니터링',
                             color: AppColors.mint),

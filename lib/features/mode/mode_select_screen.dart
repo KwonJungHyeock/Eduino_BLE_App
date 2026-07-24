@@ -71,12 +71,20 @@ class _ModeSelectScreenState extends ConsumerState<ModeSelectScreen> {
                 child: Column(
                   children: [
                     Expanded(
-                      child: SingleChildScrollView(
-                        padding:
-                            const EdgeInsets.fromLTRB(Gap.lg, 18, Gap.lg, 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
+                      // 카드+안내를 세로 중앙 정렬(상단 쏠림·하단 여백 과다 해소),
+                      // 내용이 길면 스크롤로 자연스럽게 흐르게(작은 화면 안전).
+                      child: LayoutBuilder(
+                        builder: (context, inner) => SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(
+                              Gap.lg, 18, Gap.lg, 12),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                                minHeight:
+                                    (inner.maxHeight - 30).clamp(0, 4000)),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
                             // 헤더는 화면 타이틀로만, 여기선 보조 안내 한 줄만(중복 제거).
                             const Text(
                               '나중에 설정에서 언제든 바꿀 수 있어요.',
@@ -102,7 +110,9 @@ class _ModeSelectScreenState extends ConsumerState<ModeSelectScreen> {
                               Gap.h16,
                               labCard,
                             ],
-                          ],
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
