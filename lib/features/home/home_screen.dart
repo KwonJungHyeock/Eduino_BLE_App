@@ -31,7 +31,6 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final conn = ref.watch(connectionProvider);
     final kit = ref.watch(kitProfileProvider).valueOrNull;
-    final rc = ref.watch(rcProfileProvider).valueOrNull;
     final module = ref.watch(moduleProvider).valueOrNull;
     final mode = ref.watch(appModeProvider).valueOrNull ?? AppMode.kit;
     final connected = conn.isConnected;
@@ -77,46 +76,11 @@ class HomeScreen extends ConsumerWidget {
         ),
       ]);
     } else {
-      // 교구 학습 모드: 허브를 카테고리 목록에서 자동 렌더(B2 · 하드코딩 금지).
-      // 카테고리가 3+ 로 늘면 여기서 "내 킷 + 둘러보기 탭" 뷰로 확장한다.
-      final hubs = <_HubData>[
-        _HubData(
-          section: '교구 학습',
-          title: '교구 학습하기',
-          desc: kit == null
-              ? '내 교구를 선택하고\n제어와 학습을 시작해요'
-              : '현재 교구: ${kit.name}\n눌러서 교구 선택·제어를 이어가요',
-          route: Routes.kit,
-          thumb: kit != null
-              ? KitIllustration(
-                  art: kitArtFor(kit.type), size: 60, showTile: false)
-              : const Icon(Icons.smart_toy_rounded,
-                  color: AppColors.accent, size: 40),
-        ),
-        _HubData(
-          section: 'RC 주행',
-          title: 'RC 주행하기',
-          desc: rc == null
-              ? '내 RC카를 고르고\n주행을 시작해요'
-              : '현재 RC: ${rc.name}\n눌러서 RC 선택·주행을 이어가요',
-          route: Routes.rcSelect,
-          thumb: rc != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(rc.assetImage,
-                      fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => KitIllustration(
-                          art: kitArtFor(rc.type), size: 60, showTile: false)),
-                )
-              : const Icon(Icons.sports_esports_rounded,
-                  color: AppColors.accent, size: 40),
-        ),
-      ];
-      for (var i = 0; i < hubs.length; i++) {
-        content.add(NodeRailHeader(hubs[i].section));
-        content.add(_HubHeroCard(data: hubs[i]));
-        if (i < hubs.length - 1) content.add(const SizedBox(height: 22));
-      }
+      // 교구 학습 모드: 진입 즉시 전 키트 이미지 그리드 + 필터 탭(QA 6).
+      // 진입 버튼 없음 — 카드(상품 이미지) 자체가 버튼(탭 → 해당 키트 컨트롤러).
+      content.add(const NodeRailHeader('내 키트 선택'));
+      content.add(Gap.h12);
+      content.add(const _KitGrid());
     }
 
     return DoubleBackToExit(
@@ -143,7 +107,11 @@ class HomeScreen extends ConsumerWidget {
         ),
         backgroundColor: AppColors.pageBg,
         body: SafeArea(
-          child: ListView(
+          // 태블릿 과폭 방지(QA 6) — 콘텐츠 폭을 캡해 카드/설정 버튼이 과하게 넓어지지 않게.
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: ListView(
             padding: pagePadding(context),
             children: _stagger([
               _StatusCard(conn: conn, kit: kit),
@@ -187,6 +155,8 @@ class HomeScreen extends ConsumerWidget {
                 onTap: () => context.push(Routes.privacy),
               ),
             ]),
+              ),
+            ),
           ),
         ),
       ),
@@ -213,78 +183,160 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// 홈 허브 카드 데이터(B2) — 카테고리별 진입 CTA. 하드코딩 대신 목록으로 렌더.
-class _HubData {
-  const _HubData({
-    required this.section,
-    required this.title,
-    required this.desc,
-    required this.route,
-    required this.thumb,
-  });
-  final String section; // 섹션 헤더 라벨
-  final String title; // 카드 제목
-  final String desc; // 카드 설명(현재 선택 반영)
-  final String route; // 진입 경로
-  final Widget thumb; // 좌측 썸네일(일러스트/사진/아이콘)
+/// 교구 학습 메인(QA 6) — 필터 탭 + 전 키트 이미지 카드 그리드.
+///   진입 즉시 카드 노출(진입 버튼 없음), 카드(상품 이미지) 탭 → 해당 키트 컨트롤러.
+class _KitGrid extends ConsumerStatefulWidget {
+  const _KitGrid();
+  @override
+  ConsumerState<_KitGrid> createState() => _KitGridState();
 }
 
-/// 공통 허브 히어로 카드 — 교구/ RC 두 카테고리가 같은 컴포넌트를 쓴다(B3).
-/// 코랄 그라디언트 · 72 흰 타일 썸네일 · 제목/설명 · 화살표.
-class _HubHeroCard extends StatelessWidget {
-  const _HubHeroCard({required this.data});
-  final _HubData data;
+enum _KitFilter { all, rc, farm, factory, home }
+
+class _KitGridState extends ConsumerState<_KitGrid> {
+  _KitFilter _f = _KitFilter.all;
+
+  static const _tabs = <(_KitFilter, String)>[
+    (_KitFilter.all, '전체'),
+    (_KitFilter.rc, 'RC'),
+    (_KitFilter.farm, '스마트팜'),
+    (_KitFilter.factory, '스마트팩토리'),
+    (_KitFilter.home, '스마트홈'),
+  ];
+
+  List<KitType> get _kits => switch (_f) {
+        _KitFilter.all => KitProfile.all,
+        _KitFilter.rc => KitProfile.rcKits,
+        _KitFilter.farm => const [KitType.smartFarm],
+        _KitFilter.factory => const [KitType.smartFactory],
+        _KitFilter.home => const [KitType.smartHome],
+      };
+
+  Future<void> _open(KitType type) async {
+    HapticFeedback.selectionClick();
+    if (KitProfile.forType(type).isRc) {
+      await ref.read(rcProfileProvider.notifier).select(type);
+      if (mounted) context.push(Routes.controller);
+    } else {
+      await ref.read(kitProfileProvider.notifier).select(type);
+      if (mounted) context.push(Routes.control);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Pressable(
-      onTap: () => context.push(data.route),
-      semanticLabel: '${data.title}. ${data.desc}',
-      child: Container(
-        padding: const EdgeInsets.all(Gap.lg),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.accentSoft, AppColors.accent],
+    final cols =
+        MediaQuery.sizeOf(context).width >= Breakpoints.tablet ? 3 : 2;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 필터 탭(기본=전체).
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final t in _tabs) ...[
+                _filterPill(t.$1, t.$2),
+                Gap.w8,
+              ],
+            ],
           ),
-          borderRadius: Radii.cardLg,
-          boxShadow: Shadows.glow(AppColors.accent),
         ),
-        child: Row(
+        Gap.h16,
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: cols,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.82,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: Radii.card,
-              ),
-              child: data.thumb,
-            ),
-            Gap.w16,
+            for (final k in _kits)
+              _KitGridCard(
+                  profile: KitProfile.forType(k), onTap: () => _open(k)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _filterPill(_KitFilter f, String label) {
+    final sel = _f == f;
+    return Pressable(
+      onTap: () => setState(() => _f = f),
+      semanticLabel: '$label 필터',
+      child: AnimatedContainer(
+        duration: Motion.fast,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: sel ? AppColors.accent : AppColors.chipGray,
+          borderRadius: Radii.pill,
+        ),
+        child: Text(label,
+            style: AppType.mono(
+                size: 12,
+                weight: FontWeight.w700,
+                color: sel ? Colors.white : AppColors.listDesc)),
+      ),
+    );
+  }
+}
+
+/// 그리드 카드 — 상품 이미지 자체가 버튼. 이미지 없으면 커스텀 일러스트로 폴백.
+class _KitGridCard extends StatelessWidget {
+  const _KitGridCard({required this.profile, required this.onTap});
+  final KitProfile profile;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = profile.isRc ? AppColors.accent : AppColors.signal;
+    return Pressable(
+      onTap: onTap,
+      pressedScale: 0.97,
+      semanticLabel: '${profile.name} 열기',
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: Radii.cardLg,
+          border: Border.all(color: AppColors.cardBorder),
+          boxShadow: Shadows.tap,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Expanded(
+              child: Container(
+                color: AppColors.tintOf(accent),
+                alignment: Alignment.center,
+                child: Image.asset(
+                  profile.assetImage,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  errorBuilder: (c, e, s) => KitIllustration(
+                      art: kitArtFor(profile.type), size: 72, showTile: false),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(data.title,
+                  Text(profile.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white)),
-                  Gap.h4,
-                  Text(
-                    data.desc,
-                    style: TextStyle(
-                        fontSize: 13,
-                        height: 1.45,
-                        color: Colors.white.withValues(alpha: 0.92)),
-                  ),
+                          color: AppColors.listTitle)),
+                  const SizedBox(height: 3),
+                  Text(profile.isRc ? 'RC카' : '스마트 교구',
+                      style: AppType.mono(size: 10, color: accent)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_rounded, color: Colors.white),
           ],
         ),
       ),
