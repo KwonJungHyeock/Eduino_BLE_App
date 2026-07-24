@@ -14,6 +14,7 @@ import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../providers/kit_providers.dart';
+import '../../widgets/circuit.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/pressable.dart';
