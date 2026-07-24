@@ -106,6 +106,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
         .watch(terminalProvider)
         .where((e) => widget.showSystem || e.dir != LogDir.system)
         .toList();
+    // 연속 동일 라인(예: 보드가 1초마다 흘리는 TH:28,49 텔레메트리)을 한 말풍선으로
+    // 접어 ×N 으로 표기 — 내가 주고받은 메시지가 반복 수신에 묻히지 않게 한다(데이터는 보존).
+    final groups = <_Group>[];
+    for (final e in entries) {
+      if (groups.isNotEmpty &&
+          groups.last.dir == e.dir &&
+          groups.last.text == e.text) {
+        groups.last.count++;
+        groups.last.lastMs = e.atMillis;
+      } else {
+        groups.add(_Group(e.dir, e.text, e.atMillis));
+      }
+    }
     ref.listen(terminalProvider, (_, __) => _scrollToEnd());
 
     return Column(
@@ -163,11 +176,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
                 : ListView.builder(
                     controller: _scroll,
                     padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-                    itemCount: entries.length,
+                    itemCount: groups.length,
                     itemBuilder: (context, i) => _SlideIn(
-                      key: ValueKey(entries[i].atMillis),
+                      key: ValueKey(groups[i].firstMs),
                       child: _Bubble(
-                          entry: entries[i],
+                          entry: TerminalEntry(
+                              groups[i].dir, groups[i].text, groups[i].lastMs),
+                          count: groups[i].count,
                           mono: widget.mono,
                           showTxRx: widget.showTxRx),
                     ),
@@ -273,12 +288,26 @@ class _SlideInState extends State<_SlideIn>
   }
 }
 
+/// 연속 동일 라인 묶음(반복 텔레메트리 접기용). firstMs=키 안정, lastMs=시각 표시.
+class _Group {
+  _Group(this.dir, this.text, this.firstMs) : lastMs = firstMs;
+  final LogDir dir;
+  final String text;
+  final int firstMs;
+  int lastMs;
+  int count = 1;
+}
+
 class _Bubble extends StatelessWidget {
   const _Bubble(
-      {required this.entry, required this.mono, required this.showTxRx});
+      {required this.entry,
+      required this.mono,
+      required this.showTxRx,
+      this.count = 1});
   final TerminalEntry entry;
   final bool mono;
   final bool showTxRx;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -350,9 +379,12 @@ class _Bubble extends StatelessWidget {
           crossAxisAlignment:
               mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            if (showTxRx) ...[
+            if (showTxRx || count > 1) ...[
               Text(
-                mine ? 'TX · 보냄' : 'RX · 받음',
+                [
+                  if (showTxRx) mine ? 'TX · 보냄' : 'RX · 받음',
+                  if (count > 1) '×$count',
+                ].join('  '),
                 style: AppType.mono(
                   size: 8.5,
                   letterSpacing: 0.5,

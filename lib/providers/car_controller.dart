@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/bt/bt_transport.dart';
 import '../core/protocol/commands.dart';
 import '../features/kit/kit_controls.dart';
+import 'app_mode_providers.dart';
 import 'bt_providers.dart';
 import 'kit_providers.dart';
 
@@ -85,7 +86,16 @@ class CarController {
   // 교육용 시리얼 채팅/AT 터미널 화면에서는 RC 주행 하트비트(PNG:)를 억제한다.
   // 하트비트는 주행 안전 전용이며, "보이는 통신" 교보재 화면의 실제 송신을 오염시키면 안 된다.
   int _hbPauseCount = 0;
-  bool get _heartbeatAllowed => _hbPauseCount == 0;
+
+  /// PNG 하트비트 허용 여부.
+  ///  · 화면 진입 억제(pause) 중이면 금지.
+  ///  · 블루투스 실습(lab) 모드는 RC 주행이 없으므로 절대 전송 금지 —
+  ///    시리얼/AT 실습 중 보드(아두이노 IDE)에 PNG 가 쏟아지지 않게 한다.
+  bool get _heartbeatAllowed {
+    if (_hbPauseCount != 0) return false;
+    if (_ref.read(appModeProvider).valueOrNull == AppMode.lab) return false;
+    return true;
+  }
 
   /// 하트비트 일시 중단(화면 진입 시). 중첩 진입 대비 카운트 기반.
   void pauseHeartbeat() {
@@ -103,6 +113,11 @@ class CarController {
     if (!_heartbeatAllowed) return; // 억제 중이면 재연결로 다시 시작되지 않도록 가드.
     _heartbeat?.cancel();
     _heartbeat = Timer.periodic(_heartbeatInterval, (_) {
+      // 도중에 실습 모드로 전환/억제되면 즉시 중단(PNG 유출 방지).
+      if (!_heartbeatAllowed) {
+        _stopHeartbeat();
+        return;
+      }
       _sendRaw(Commands.ping(), silent: true); // 하트비트는 터미널 스팸 방지 위해 미표시.
     });
   }
