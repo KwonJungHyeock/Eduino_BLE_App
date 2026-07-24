@@ -27,6 +27,9 @@ class KitControl {
     required this.kind,
     this.onChar,
     this.offChar,
+    this.onLine,
+    this.offLine,
+    this.rgbLinePrefix,
     this.icon = Icons.power_settings_new,
     this.longPress = false,
     this.swatches = const [],
@@ -35,8 +38,12 @@ class KitControl {
 
   final String label;
   final KitCtlKind kind;
-  final String? onChar; // toggle ON
-  final String? offChar; // toggle OFF / colorPreset·colorRgb 끄기(문자면 char, 팜은 0,0,0)
+  final String? onChar; // toggle ON (단일문자 · 홈/팩토리)
+  final String? offChar; // toggle OFF (단일문자)
+  // 텍스트 라인 규약(팜 통합 펌웨어 · QA 0-1). 설정 시 단일문자 대신 라인 전송.
+  final String? onLine; // 예: 'FAN:1'
+  final String? offLine; // 예: 'FAN:0'
+  final String? rgbLinePrefix; // colorRgb 를 'PREFIX:r,g,b' 라인으로(팜 'LED')
   final IconData icon;
   final bool longPress; // 오작동 방지(침입자 경보)
   final List<KitSwatch> swatches; // 색상 그리드
@@ -151,7 +158,8 @@ const _home = KitControlSet(
   ],
 );
 
-// 3. 스마트 팜 — 통합 제어판: 냉각팬 토글 + 네오픽셀 RGB. 토양·온습도 모니터.
+// 3. 스마트 팜 — 통합 펌웨어 규약(QA 0-1): 텍스트 라인 송신.
+//    냉각팬 FAN:1/FAN:0 · LED LED:r,g,b/LED:0,0,0. 수신 SOIL:/TH: (파서에서 라우팅).
 const _farm = KitControlSet(
   monitors: [
     KitMonitor('토양수분', KitMonKind.soil, Icons.grass),
@@ -161,14 +169,15 @@ const _farm = KitControlSet(
     KitControl(
       label: '냉각팬',
       kind: KitCtlKind.toggle,
-      onChar: 'A',
-      offChar: 'B',
+      onLine: 'FAN:1',
+      offLine: 'FAN:0',
       icon: Icons.air,
     ),
     KitControl(
       label: 'LED (네오픽셀)',
       kind: KitCtlKind.colorRgb,
       swatches: _farmRgb,
+      rgbLinePrefix: 'LED', // LED:r,g,b 텍스트 라인
       icon: Icons.palette,
     ),
   ],

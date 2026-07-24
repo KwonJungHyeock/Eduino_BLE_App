@@ -134,11 +134,20 @@ class CarController {
   /// 교구 단일 문자 명령(토글/프리셋). 전송 + "보이는 통신" 로그.
   void kitChar(String ch) => _sendChar(ch);
 
-  /// 교구 네오픽셀 RGB — R,G,B 3바이트 전송(팜 LED). 로그는 "R,G,B".
+  /// 교구 네오픽셀 RGB — R,G,B 3바이트 전송(레거시). 로그는 "R,G,B".
   void kitRgb(int r, int g, int b) {
     if (!_connected) return;
     _ref.read(transportProvider).send([r & 0xFF, g & 0xFF, b & 0xFF]);
     _ref.read(terminalProvider.notifier).logOutgoing('$r,$g,$b');
+  }
+
+  /// 교구 텍스트 라인 명령 — 팜 통합 펌웨어 규약(FAN:1 / LED:r,g,b 등). text + \n 전송.
+  /// raw 바이트와 텍스트 혼용 금지(QA 0-5) — 팜/홈 텍스트 라인은 이 경로로만.
+  void kitLine(String line) {
+    if (!_connected) return;
+    final frame = line.endsWith('\n') ? line : '$line\n';
+    _ref.read(transportProvider).send(utf8.encode(frame));
+    _ref.read(terminalProvider.notifier).logOutgoing(line);
   }
 
   /// 모니터 요청 바이트(홈 온습도 0x00 등). 주기 타이머에서 호출.

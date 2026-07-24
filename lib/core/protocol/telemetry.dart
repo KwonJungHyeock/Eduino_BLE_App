@@ -61,29 +61,55 @@ class UnknownEvent extends TelemetryEvent {
   final String raw;
 }
 
-/// 교구(팜/홈) 접두어 없는 모니터링 텍스트 파싱(§4).
-///   "온도,습도" 콤마 → [TMP, HUM]   ·   "N" 또는 "N%" → [SOL]
-/// 수신값은 SensorEvent 로 반환 → 텔레메트리 provider 가 흡수.
+/// 교구(팜/홈) 모니터링 라인 파싱 — 실제 통합 펌웨어 규약(prefix 필수, QA 0-1/0-2).
+///   SOIL:<0~100>     → [SOL]
+///   TH:<온도>,<습도>  → [TMP, HUM]   (예: TH:27,60)
+/// prefix 로 라우팅해 SOIL·TH 가 섞여 깨지지 않게 한다. 수신값은 SensorEvent 로 반환.
 List<SensorEvent> parseMonitorText(String line) {
   final t = line.trim();
   if (t.isEmpty) return const [];
-  if (t.contains(',')) {
-    final p = t.split(',');
-    if (p.length >= 2) {
+  final c = t.indexOf(':');
+  if (c < 0) return const [];
+  final key = t.substring(0, c).trim().toUpperCase();
+  final arg = t.substring(c + 1).trim();
+  switch (key) {
+    case 'SOIL':
+      final v =
+          double.tryParse(arg.endsWith('%') ? arg.substring(0, arg.length - 1).trim() : arg);
+      return v == null ? const [] : [SensorEvent('SOL', v)];
+    case 'TH':
+      final p = arg.split(',');
+      if (p.length < 2) return const [];
       final temp = double.tryParse(p[0].trim());
       final humi = double.tryParse(p[1].trim());
       final out = <SensorEvent>[];
       if (temp != null) out.add(SensorEvent('TMP', temp));
       if (humi != null) out.add(SensorEvent('HUM', humi));
       return out;
-    }
-    return const [];
+    default:
+      return const [];
   }
-  // 토양수분: 숫자 또는 숫자%.
-  final numOnly = t.endsWith('%') ? t.substring(0, t.length - 1).trim() : t;
-  final soil = double.tryParse(numOnly);
-  if (soil != null) return [SensorEvent('SOL', soil)];
-  return const [];
+}
+
+/// 팩토리 단일문자 회신 — 라인 없음(개행 무관). 각 바이트를 이벤트로 처리(QA 0-3/0-5).
+///   y/n = 가동/정지 상태 · r/g/b = 물체 1개 분류될 때마다 그 색.
+enum FactoryChar { running, stopped, sortRed, sortGreen, sortBlue, none }
+
+FactoryChar decodeFactoryChar(int byte) {
+  switch (byte) {
+    case 0x79: // 'y'
+      return FactoryChar.running;
+    case 0x6E: // 'n'
+      return FactoryChar.stopped;
+    case 0x72: // 'r'
+      return FactoryChar.sortRed;
+    case 0x67: // 'g'
+      return FactoryChar.sortGreen;
+    case 0x62: // 'b'
+      return FactoryChar.sortBlue;
+    default:
+      return FactoryChar.none;
+  }
 }
 
 abstract class TelemetryDecoder {

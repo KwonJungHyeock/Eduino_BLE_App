@@ -60,8 +60,8 @@ class StubTransport implements BtTransport {
   @override
   Stream<List<int>> get incoming => _incoming.stream;
 
-  // ── 데모 시뮬레이터(웹) ─────────────────────────────────────────────
-  bool _homeMode = false;
+  // ── 데모 시뮬레이터(웹) — 실제 통합 펌웨어 규약으로 주입(QA 0) ────────────
+  bool _homeMode = false, _factoryMode = false;
 
   void _maybeStartDemo() {
     var farm = false, factory = false;
@@ -75,34 +75,36 @@ class StubTransport implements BtTransport {
     final homeOn = home != null && home.isNotEmpty;
     if (!farm && !factory && !homeOn) return;
     _homeMode = homeOn;
-    final doEmit = farm || homeOn; // 팩토리는 센서 수신 없음(연결만).
+    _factoryMode = factory;
     Timer(const Duration(milliseconds: 900), () {
       if (_state.isClosed) return;
       _cur = BtConnectionState.connected;
       _state.add(_cur);
-      if (doEmit) {
-        _emit();
-        _demoTimer =
-            Timer.periodic(const Duration(milliseconds: 900), (_) => _emit());
-      }
+      _emit();
+      _demoTimer =
+          Timer.periodic(const Duration(milliseconds: 900), (_) => _emit());
     });
   }
 
   void _emit() {
     if (_incoming.isClosed) return;
-    if (_homeMode) {
-      // 홈 — 실내 온·습도 완만한 변동(냉방 느낌).
+    if (_factoryMode) {
+      // 팩토리 — 가동 확인 'y' + 매 틱 색 분류 이벤트(r/g/b 순환). 단일문자(개행 무관).
+      _push('y');
+      _push(const ['r', 'g', 'b'][_tick % 3]);
+    } else if (_homeMode) {
+      // 홈 — 온·습도 한 줄(TH: prefix, 통합 펌웨어 규약).
       final temp = (22 + (_tick % 5)).round(); // 22~26℃
       final humi = (52 + (_tick % 6)).round(); // 52~57%
-      _push('$temp,$humi');
+      _push('TH:$temp,$humi');
     } else {
-      // 팜 — 온도↑·토양↓ 드리프트(건강 → 메마름/열기, 코칭 경고 유발).
+      // 팜 — 토양↓·온도↑ 드리프트. SOIL:/TH: prefix 라인.
       final p = (_tick / 14).clamp(0.0, 1.0);
       final temp = (24 + p * 11).round(); // 24 → 35℃
       final humi = (58 + (_tick % 3) * 3).round(); // 58~64%
       final soil = (72 - p * 52).round(); // 72 → 20%
-      _push('$temp,$humi');
-      _push('$soil%');
+      _push('SOIL:$soil');
+      _push('TH:$temp,$humi');
     }
     _tick++;
   }

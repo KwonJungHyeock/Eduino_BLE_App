@@ -89,8 +89,11 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     final isHome = kit?.type == KitType.smartHome;
     final isFactory = kit?.type == KitType.smartFactory;
     final factory = FactoryState(
-      running: _toggles['컨베이어 가동 / 중지'] ?? false,
+      // 보드 y/n 회신을 우선 반영(없으면 마지막 토글 상태).
+      running: tele.factoryRunning ?? (_toggles['컨베이어 가동 / 중지'] ?? false),
       live: connected,
+      sortCounts: tele.sortCounts,
+      lastSort: tele.lastSort,
     );
     // Living Twin 집 씬 상태(홈).
     final house = HouseState(
@@ -171,9 +174,11 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                         LivingHouse(state: house),
                         Gap.h16,
                       ],
-                      // Living Twin — 가동 라인 씬(팩토리).
+                      // Living Twin — 가동 라인 씬(팩토리) + 실제 색 분류 카운트(QA 0-3).
                       if (isFactory) ...[
                         LivingFactory(state: factory),
+                        Gap.h12,
+                        _FactorySortCard(state: factory),
                         Gap.h16,
                       ],
                       if (!connected) ...[
@@ -227,11 +232,17 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
           value: _toggles[c.label] ?? false,
           enabled: connected,
           onChanged: (v) {
-            final ch = v ? c.onChar! : c.offChar!;
             // 경보(armed) 켜기 = warning급 햅틱(C4), 그 외 토글=light.
             if (c.longPress && v) HapticFeedback.heavyImpact();
             setState(() => _toggles[c.label] = v);
-            _send(ch, () => _car.kitChar(ch));
+            // 팜 통합 펌웨어는 텍스트 라인(FAN:1/0), 나머지는 단일문자.
+            final line = v ? c.onLine : c.offLine;
+            if (line != null) {
+              _send(line, () => _car.kitLine(line));
+            } else {
+              final ch = v ? c.onChar! : c.offChar!;
+              _send(ch, () => _car.kitChar(ch));
+            }
           },
         );
       case KitCtlKind.colorPreset:
@@ -254,21 +265,33 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
           enabled: connected,
           spectrum: true, // C1 · 무지개 자유 색(컬러 피커).
           selectedColor: _ledColor,
-          onSwatch: (s) => _pickColor(s.color),
-          onColor: _pickColor,
+          onSwatch: (s) => _pickColor(c, s.color),
+          onColor: (col) => _pickColor(c, col),
           onOff: () {
             setState(() => _ledColor = null);
-            _send('0,0,0', () => _car.kitRgb(0, 0, 0));
+            final prefix = c.rgbLinePrefix;
+            if (prefix != null) {
+              final line = '$prefix:0,0,0';
+              _send(line, () => _car.kitLine(line));
+            } else {
+              _send('0,0,0', () => _car.kitRgb(0, 0, 0));
+            }
           },
         );
     }
   }
 
-  /// 팜 네오픽셀 — 임의 색 → R,G,B 3바이트 전송 + 온실 조명 틴트 반영.
-  void _pickColor(Color col) {
+  /// 팜 네오픽셀 — 임의 색 → 'LED:r,g,b' 텍스트 라인 전송(통합 펌웨어 · QA 0-1) + 조명 틴트.
+  void _pickColor(KitControl c, Color col) {
     setState(() => _ledColor = col);
-    _send('${_r(col)},${_g(col)},${_b(col)}',
-        () => _car.kitRgb(_r(col), _g(col), _b(col)));
+    final prefix = c.rgbLinePrefix;
+    if (prefix != null) {
+      final line = '$prefix:${_r(col)},${_g(col)},${_b(col)}';
+      _send(line, () => _car.kitLine(line));
+    } else {
+      _send('${_r(col)},${_g(col)},${_b(col)}',
+          () => _car.kitRgb(_r(col), _g(col), _b(col)));
+    }
   }
 
   static int _r(Color c) => (c.r * 255).round();
@@ -299,6 +322,96 @@ class _SentChip extends StatelessWidget {
           Text(text ?? '—',
               style: AppType.mono(
                   size: 16, weight: FontWeight.w800, color: AppColors.accent)),
+        ],
+      ),
+    );
+  }
+}
+
+/// 스마트 팩토리 색 분류 결과(QA 0-3) — 보드가 보낸 r/g/b 를 색별 집계.
+class _FactorySortCard extends StatelessWidget {
+  const _FactorySortCard({required this.state});
+  final FactoryState state;
+
+  static const _cols = {
+    'r': Color(0xFFE53935),
+    'g': Color(0xFF43A047),
+    'b': Color(0xFF1E88E5),
+  };
+  static const _names = {'r': '빨강', 'g': '초록', 'b': '파랑'};
+
+  @override
+  Widget build(BuildContext context) {
+    return SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _iconBox(Icons.category_outlined, AppColors.signal),
+              Gap.w16,
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('색 분류 결과',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700)),
+                    Text('보드가 분류한 실제 개수',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.listDesc)),
+                  ],
+                ),
+              ),
+              Text('합계 ${state.total}',
+                  style: AppType.mono(
+                      size: 14,
+                      weight: FontWeight.w800,
+                      color: AppColors.listTitle)),
+            ],
+          ),
+          Gap.h12,
+          Row(
+            children: [
+              for (final k in const ['r', 'g', 'b']) ...[
+                Expanded(child: _countChip(k, state.sortCounts[k] ?? 0)),
+                if (k != 'b') Gap.w8,
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _countChip(String k, int n) {
+    final col = _cols[k]!;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: col.withValues(alpha: 0.10),
+        borderRadius: Radii.chip,
+        border: Border.all(color: col.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: col, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 5),
+              Text(_names[k]!,
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('$n',
+              style: AppType.instrument(size: 26, color: col)),
         ],
       ),
     );

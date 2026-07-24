@@ -7,6 +7,7 @@ import '../core/bt/bt_transport.dart';
 import '../core/bt/transport_factory.dart';
 import '../core/protocol/commands.dart';
 import '../core/protocol/telemetry.dart';
+import '../features/kit/kit_profile.dart';
 import 'kit_providers.dart';
 import 'module_providers.dart';
 
@@ -52,6 +53,11 @@ final incomingLineProvider = StreamProvider<String>((ref) {
   return transport.incoming.expand(reassembler.add);
 });
 
+/// 수신 원시 바이트 스트림 — 팩토리 단일문자(y/n/r/g/b, 개행 없음) 처리용(QA 0-3/0-5).
+final rawIncomingProvider = StreamProvider<List<int>>((ref) {
+  return ref.watch(transportProvider).incoming;
+});
+
 // ---------------------------------------------------------------------------
 // 텔레메트리 상태 (§4.3)
 // ---------------------------------------------------------------------------
@@ -64,6 +70,9 @@ class TelemetryState {
     this.batteryPercent,
     this.lastAck,
     this.sensors = const {},
+    this.factoryRunning,
+    this.sortCounts = const {'r': 0, 'g': 0, 'b': 0},
+    this.lastSort,
   });
 
   final int? distanceCm;
@@ -74,6 +83,14 @@ class TelemetryState {
 
   /// 범용 센서값 맵(TMP/HUM/SOL/LUX/OBJ 등) — 교구 센서 패널에서 사용.
   final Map<String, double> sensors;
+
+  // ── 스마트 팩토리 실데이터(QA 0-3) ──
+  final bool? factoryRunning; // y/n
+  final Map<String, int> sortCounts; // 색별 분류 누적 {r,g,b}
+  final String? lastSort; // 마지막 분류 색('r'/'g'/'b') — 라인 애니메이션 트리거
+
+  int get sortTotal =>
+      (sortCounts['r'] ?? 0) + (sortCounts['g'] ?? 0) + (sortCounts['b'] ?? 0);
 
   TelemetryState _apply(TelemetryEvent e) {
     switch (e) {
@@ -102,6 +119,9 @@ class TelemetryState {
     int? batteryPercent,
     String? lastAck,
     Map<String, double>? sensors,
+    bool? factoryRunning,
+    Map<String, int>? sortCounts,
+    String? lastSort,
   }) =>
       TelemetryState(
         distanceCm: distanceCm ?? this.distanceCm,
@@ -110,7 +130,32 @@ class TelemetryState {
         batteryPercent: batteryPercent ?? this.batteryPercent,
         lastAck: lastAck ?? this.lastAck,
         sensors: sensors ?? this.sensors,
+        factoryRunning: factoryRunning ?? this.factoryRunning,
+        sortCounts: sortCounts ?? this.sortCounts,
+        lastSort: lastSort ?? this.lastSort,
       );
+
+  /// 팩토리 단일문자 이벤트 반영(y/n 상태, r/g/b 색별 카운트).
+  TelemetryState _applyFactory(FactoryChar e) {
+    switch (e) {
+      case FactoryChar.running:
+        return _copy(factoryRunning: true);
+      case FactoryChar.stopped:
+        return _copy(factoryRunning: false);
+      case FactoryChar.sortRed:
+      case FactoryChar.sortGreen:
+      case FactoryChar.sortBlue:
+        final k = e == FactoryChar.sortRed
+            ? 'r'
+            : e == FactoryChar.sortGreen
+                ? 'g'
+                : 'b';
+        final next = {...sortCounts, k: (sortCounts[k] ?? 0) + 1};
+        return _copy(sortCounts: next, lastSort: k);
+      case FactoryChar.none:
+        return this;
+    }
+  }
 }
 
 /// 수신 라인을 디코딩해 최신 텔레메트리 상태로 유지. 연결 끊기면 초기화.
@@ -140,6 +185,17 @@ class TelemetryNotifier extends Notifier<TelemetryState> {
         }
       }
       state = state._apply(event);
+    });
+    // 팩토리(스마트 팩토리) 단일문자 회신 — 라인 없는 y/n/r/g/b 를 바이트 단위로 처리.
+    ref.listen<AsyncValue<List<int>>>(rawIncomingProvider, (prev, next) {
+      final bytes = next.valueOrNull;
+      if (bytes == null) return;
+      final kit = ref.read(kitProfileProvider).valueOrNull;
+      if (kit?.type != KitType.smartFactory) return;
+      for (final b in bytes) {
+        final e = decodeFactoryChar(b);
+        if (e != FactoryChar.none) state = state._applyFactory(e);
+      }
     });
     return const TelemetryState();
   }

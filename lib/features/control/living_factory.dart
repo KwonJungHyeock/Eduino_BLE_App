@@ -13,9 +13,19 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 
 class FactoryState {
-  const FactoryState({this.running = false, this.live = false});
-  final bool running; // 컨베이어 가동('1') 여부.
+  const FactoryState({
+    this.running = false,
+    this.live = false,
+    this.sortCounts = const {'r': 0, 'g': 0, 'b': 0},
+    this.lastSort,
+  });
+  final bool running; // 컨베이어 가동 여부(보드 y/n 회신 반영).
   final bool live; // 연결 여부.
+  final Map<String, int> sortCounts; // 색별 분류 누적(실데이터 · QA 0-3).
+  final String? lastSort; // 마지막 분류 색('r'/'g'/'b').
+
+  int get total =>
+      (sortCounts['r'] ?? 0) + (sortCounts['g'] ?? 0) + (sortCounts['b'] ?? 0);
 }
 
 class LivingFactory extends StatefulWidget {
@@ -84,7 +94,8 @@ class _LivingFactoryState extends State<LivingFactory>
           animation: _loop,
           builder: (context, _) {
             final scene = CustomPaint(
-              painter: _LinePainter(running: running, t: _loop.value),
+              painter: _LinePainter(
+                  running: running, t: _loop.value, lastSort: st.lastSort),
             );
             return Stack(
               children: [
@@ -197,11 +208,17 @@ class _LivingFactoryState extends State<LivingFactory>
 }
 
 class _LinePainter extends CustomPainter {
-  _LinePainter({required this.running, required this.t});
+  _LinePainter({required this.running, required this.t, this.lastSort});
   final bool running;
   final double t; // 0..1 애니메이션 위상
+  final String? lastSort; // 마지막 분류 색('r'/'g'/'b') — 실데이터(QA 0-3).
 
   static const _blue = AppColors.signal;
+  static const _binColors = <String, Color>{
+    'r': Color(0xFFE53935),
+    'g': Color(0xFF43A047),
+    'b': Color(0xFF1E88E5),
+  };
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -270,40 +287,39 @@ class _LinePainter extends CustomPainter {
           ..strokeCap = StrokeCap.round);
     canvas.drawCircle(armEnd, 4, Paint()..color = const Color(0xFF0E5FC0));
 
-    // 수거함 A/B/C.
+    // 색 분류 수거함 — 빨강/초록/파랑(실제 r/g/b 분류 대상).
     final binY = floorY - h * 0.16, binH = h * 0.16, binW = w * 0.075;
-    final labels = ['A', 'B', 'C'];
+    const keys = ['r', 'g', 'b'];
     final centers = [w * 0.72, w * 0.82, w * 0.92];
     for (var i = 0; i < 3; i++) {
       final cx = centers[i];
+      final col = _binColors[keys[i]]!;
       final bin = Path()
         ..moveTo(cx - binW / 2, binY)
         ..lineTo(cx + binW / 2, binY)
         ..lineTo(cx + binW / 2 - 3, binY + binH)
         ..lineTo(cx - binW / 2 + 3, binY + binH)
         ..close();
-      canvas.drawPath(bin, Paint()..color = const Color(0xFFB9C2CD));
+      canvas.drawPath(bin, Paint()..color = col.withValues(alpha: 0.30));
       canvas.drawPath(
           bin,
           Paint()
-            ..color = _blue.withValues(alpha: 0.5)
+            ..color = col
             ..strokeWidth = 2
             ..style = PaintingStyle.stroke);
-      _text(canvas, labels[i], Offset(cx - 4, binY + binH * 0.34),
-          size: 13, color: const Color(0xFF3A4250));
     }
 
-    // 분류되는 물체(연출) — 서보 끝에서 가리키는 함으로 낙하.
-    if (running) {
-      final drop = phase; // 0..1
-      final targetIdx = ((swing + 0.5) / 1.0 * 2).round().clamp(0, 2);
-      final tx = centers[targetIdx];
+    // 분류되는 물체 — 마지막 수신 색(lastSort)을 해당 색 함으로 낙하(실데이터).
+    if (running && lastSort != null && _binColors.containsKey(lastSort)) {
+      final idx = keys.indexOf(lastSort!);
+      final tx = centers[idx];
+      final drop = phase; // 0..1 낙하 위상
       final ox = armEnd.dx + (tx - armEnd.dx) * drop;
       final oy = armEnd.dy + (binY - armEnd.dy) * drop;
       canvas.drawRRect(
           RRect.fromRectAndRadius(
               Rect.fromLTWH(ox - 6, oy - 5, 12, 10), const Radius.circular(2)),
-          Paint()..color = const Color(0xFFC79A5B));
+          Paint()..color = _binColors[lastSort]!);
     }
 
     // 지지 다리.
@@ -345,5 +361,5 @@ class _LinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_LinePainter old) =>
-      old.t != t || old.running != running;
+      old.t != t || old.running != running || old.lastSort != lastSort;
 }

@@ -65,7 +65,7 @@ class _EduinoAppState extends ConsumerState<EduinoApp>
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'EDUINO RC',
+      title: 'Eduino Bluetooth Controller',
       debugShowCheckedModeBanner: false,
       theme: buildNeoCockpitTheme(),
       routerConfig: _routerHolder.router,

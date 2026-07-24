@@ -23,6 +23,16 @@ def main() -> int:
         return 1
 
     text = MANIFEST.read_text(encoding="utf-8")
+
+    # 런처 라벨 통일(앱 이름) — flutter create 기본값(eduino_rc) → 표시명.
+    import re as _re
+    text2 = _re.sub(r'android:label="[^"]*"',
+                    'android:label="Eduino Bluetooth Controller"', text, count=1)
+    if text2 != text:
+        text = text2
+        MANIFEST.write_text(text, encoding="utf-8")
+        print("[inject_manifest] android:label set")
+
     if "BLUETOOTH_SCAN" in text:
         print("[inject_manifest] permissions already present, skip")
         return 0
