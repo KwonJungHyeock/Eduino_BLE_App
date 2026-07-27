@@ -83,15 +83,21 @@ def patch_kts(t: str) -> str:
     t = re.sub(r"targetSdk\s*=\s*flutter\.targetSdkVersion", "targetSdk = 35", t)
     # signingConfigs 블록을 android { 바로 다음에 주입.
     t = re.sub(r"(\nandroid\s*\{\n)", r"\1" + SIGNING, t, count=1)
-    # buildTypes 의 release 를 릴리스 서명으로 교체.
-    t2 = re.sub(
-        r"        release\s*\{\s*\n\s*signingConfig\s*=\s*signingConfigs\.getByName\(\"debug\"\)\s*\n\s*\}",
-        RELEASE_BUILDTYPE,
+    # buildTypes 의 release 블록 전체를 릴리스 서명+minify 로 교체.
+    # flutter create 템플릿은 `release {` 와 `signingConfig` 사이에 주석 2줄을 넣으므로
+    # 블록 내부(중괄호 없음)를 [^}]* 로 유연 매칭한다(주석/공백 허용).
+    t2, n = re.subn(
+        r'release\s*\{[^}]*?signingConfig\s*=\s*signingConfigs\.getByName\("debug"\)[^}]*?\}',
+        RELEASE_BUILDTYPE.strip(),
         t,
+        count=1,
     )
-    if t2 == t:
-        print("[patch_release_gradle] WARN: release buildType pattern not found — "
-              "signingConfig 미교체(수동 확인 필요)", file=sys.stderr)
+    if n == 0:
+        # 조용한 debug 서명 폴백 방지 — 매칭 실패 시 빌드를 명확히 실패시킨다.
+        raise SystemExit(
+            "[patch_release_gradle] FATAL: release buildType 패턴 미매칭 — "
+            "signingConfig/minify 미적용. 템플릿 변경 확인 필요(디버그 서명 폴백 차단)."
+        )
     t = t2 + f"\n// {MARK} applied\n"
     return t
 
