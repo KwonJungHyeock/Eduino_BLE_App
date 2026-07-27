@@ -24,8 +24,18 @@ def main() -> int:
 
     text = MANIFEST.read_text(encoding="utf-8")
 
-    # 런처 라벨 통일(앱 이름) — flutter create 기본값(eduino_rc) → 표시명.
     import re as _re
+
+    # INTERNET 권한 제거(오프라인 앱) — main 매니페스트에 있으면 삭제.
+    # (기본 템플릿은 debug/profile 변형에만 INTERNET 을 두므로 릴리스는 영향 없음.)
+    text_no_net = _re.sub(
+        r'\s*<uses-permission[^>]*android\.permission\.INTERNET[^>]*/>', '', text)
+    if text_no_net != text:
+        text = text_no_net
+        MANIFEST.write_text(text, encoding="utf-8")
+        print("[inject_manifest] INTERNET permission removed (offline app)")
+
+    # 런처 라벨 통일(앱 이름) — flutter create 기본값(eduino_rc) → 표시명.
     text2 = _re.sub(r'android:label="[^"]*"',
                     'android:label="Eduino Bluetooth Controller"', text, count=1)
     if text2 != text:

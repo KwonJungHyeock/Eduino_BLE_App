@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # Author: eduino
 # flutter create 로 생성된 android/app/build.gradle.kts 를 릴리스 배포용으로 패치한다.
+#   · applicationId = kr.eduino.ble (스토어 패키지명 고정)
 #   · compileSdk / targetSdk = 35 (2026 Play 필수), minSdk = 23 (BLE 권장)
+#   · release: minifyEnabled=true, shrinkResources=true, debuggable=false + proguard-rules.pro
 #   · 업로드 키스토어 서명(key.properties 존재 시). 없으면 debug 서명으로 폴백(파이프라인 검증용).
-# R8 minify 는 BLE 플러그인 keep 규칙이 필요해 기본 비활성(문서 참고). 멱등.
+# R8 minify keep 규칙은 proguard-rules.pro 로 함께 기록(BLE/권한/센서/음성 플러그인 보존). 멱등.
 
 import re
 import sys
@@ -36,9 +38,33 @@ SIGNING = """    signingConfigs {
 """
 
 RELEASE_BUILDTYPE = """        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            isDebuggable = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             signingConfig = if (rootProject.file("key.properties").exists())
                 signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }"""
+
+# R8/shrink 시 리플렉션·플러그인 채널이 제거되지 않도록 보존 규칙(오프라인 교육용 앱).
+PROGUARD_RULES = """# Author: eduino — 릴리스 R8 keep 규칙(멱등 자동 생성)
+# Flutter 임베딩
+-keep class io.flutter.** { *; }
+-dontwarn io.flutter.embedding.**
+# Play Core (deferred component 미사용이나 기본 규칙이 참조)
+-dontwarn com.google.android.play.core.**
+# BLE(HM-10)·SPP(HC-06)
+-keep class com.lib.flutter_blue_plus.** { *; }
+-keep class com.boskokg.flutter_blue_plus.** { *; }
+-keep class io.github.edufolly.flutterbluetoothserial.** { *; }
+# 권한·센서·음성 플러그인
+-keep class com.baseflow.permissionhandler.** { *; }
+-keep class dev.fluttercommunity.plus.sensors.** { *; }
+-keep class com.csdcorp.speech_to_text.** { *; }
+"""
 
 
 def patch_kts(t: str) -> str:
@@ -48,6 +74,9 @@ def patch_kts(t: str) -> str:
     t = IMPORTS + t
     # keystore 로더를 android { 블록 앞에 삽입.
     t = re.sub(r"\nandroid\s*\{", LOADER + "\nandroid {", t, count=1)
+    # 스토어 패키지명 고정(flutter create --org 파생값 → kr.eduino.ble).
+    t = re.sub(r'applicationId\s*=\s*"[^"]*"',
+               'applicationId = "kr.eduino.ble"', t, count=1)
     # SDK 버전 상향(Flutter 관리값 → 고정값).
     t = re.sub(r"compileSdk\s*=\s*flutter\.compileSdkVersion", "compileSdk = 35", t)
     t = re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = 23", t)
@@ -71,7 +100,12 @@ def main() -> int:
     if KTS.exists():
         src = KTS.read_text(encoding="utf-8")
         KTS.write_text(patch_kts(src), encoding="utf-8")
-        print("[patch_release_gradle] patched build.gradle.kts (compile/target 35, minSdk 23, signing)")
+        # R8 keep 규칙 파일 기록(멱등 — 항상 최신 규칙으로 덮어씀).
+        Path("android/app/proguard-rules.pro").write_text(
+            PROGUARD_RULES, encoding="utf-8")
+        print("[patch_release_gradle] patched build.gradle.kts "
+              "(applicationId kr.eduino.ble, compile/target 35, minSdk 23, "
+              "minify+shrink, signing) + proguard-rules.pro")
         return 0
     if GROOVY.exists():
         print("[patch_release_gradle] found Groovy build.gradle — "
