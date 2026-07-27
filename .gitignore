@@ -57,3 +57,5 @@ app.*.map.json
 **/ios/Pods/
 **/ios/.symlinks/
 **/Podfile.lock
+android/key.properties
+android/app/*.jks
