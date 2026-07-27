@@ -35,21 +35,35 @@ def patch_build_gradle(plugin_dir: str) -> None:
         print(f"[patch_spp] no build.gradle at {path}")
         return
     text = open(path, encoding="utf-8").read()
-    if "namespace" in text:
-        print("[patch_spp] namespace already present")
-        return
-    # android { 바로 다음 줄에 namespace 삽입
-    new_text, n = re.subn(
-        r"(android\s*\{)",
-        r'\1\n    namespace "%s"' % NAMESPACE,
-        text,
-        count=1,
-    )
-    if n == 0:
-        print("[patch_spp] 'android {' block not found", file=sys.stderr)
-        return
-    open(path, "w", encoding="utf-8").write(new_text)
-    print("[patch_spp] namespace injected into build.gradle")
+    orig = text
+
+    # 1) namespace(AGP8) 주입 — 없을 때만.
+    if "namespace" not in text:
+        text, n = re.subn(
+            r"(android\s*\{)",
+            r'\1\n    namespace "%s"' % NAMESPACE,
+            text,
+            count=1,
+        )
+        if n == 0:
+            print("[patch_spp] 'android {' block not found", file=sys.stderr)
+            return
+
+    # 2) compileSdk 강제 상향(35) — 구 플러그인이 낮은 SDK 로 컴파일되면
+    #    릴리스 리소스 링크 시 'android:attr/lStar not found'(API31+ 속성) 로 실패한다.
+    if re.search(r"compileSdkVersion\s+\d+", text):
+        text = re.sub(r"compileSdkVersion\s+\d+", "compileSdkVersion 35", text)
+    elif re.search(r"compileSdk\s+\d+", text):
+        text = re.sub(r"compileSdk\s+\d+", "compileSdk 35", text)
+    else:
+        text = re.sub(r"(android\s*\{)", r"\1\n    compileSdkVersion 35",
+                      text, count=1)
+
+    if text != orig:
+        open(path, "w", encoding="utf-8").write(text)
+        print("[patch_spp] build.gradle patched (namespace + compileSdk 35)")
+    else:
+        print("[patch_spp] build.gradle already up to date")
 
 
 def patch_manifest(plugin_dir: str) -> None:
