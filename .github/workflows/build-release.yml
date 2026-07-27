@@ -14,10 +14,6 @@ name: Build Release
 
 on:
   workflow_dispatch:
-  # 임시 트리거(서명 릴리스 빌드 검증용) — 검증 후 제거 예정.
-  push:
-    branches: [claude/new-session-jnm6sg]
-    paths: ['.github/workflows/build-release.yml', 'tool/**']
 
 jobs:
   android-aab:
