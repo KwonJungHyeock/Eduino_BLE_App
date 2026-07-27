@@ -14,6 +14,7 @@ PERMISSIONS = """    <uses-permission android:name="android.permission.BLUETOOTH
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
 """
 
 
@@ -26,10 +27,22 @@ def main() -> int:
 
     import re as _re
 
-    # INTERNET 권한 제거(오프라인 앱) — main 매니페스트에 있으면 삭제.
-    # (기본 템플릿은 debug/profile 변형에만 INTERNET 을 두므로 릴리스는 영향 없음.)
+    # tools 네임스페이스 보장 — INTERNET 제거 지시(tools:node="remove")에 필요.
+    if "xmlns:tools=" not in text:
+        text2 = _re.sub(r"(<manifest\b)",
+                        r'\1 xmlns:tools="http://schemas.android.com/tools"',
+                        text, count=1)
+        if text2 != text:
+            text = text2
+            MANIFEST.write_text(text, encoding="utf-8")
+            print("[inject_manifest] xmlns:tools added")
+
+    # INTERNET 권한 제거(오프라인 앱) — main 매니페스트에 직접 선언돼 있으면 삭제.
+    # 병합(manifest-merger)으로 의존성이 다시 추가하는 경우는 PERMISSIONS 의
+    # tools:node="remove" 지시가 최종 병합 결과에서 제거한다.
     text_no_net = _re.sub(
-        r'\s*<uses-permission[^>]*android\.permission\.INTERNET[^>]*/>', '', text)
+        r'\s*<uses-permission(?![^>]*tools:node)[^>]*android\.permission\.INTERNET[^>]*/>',
+        '', text)
     if text_no_net != text:
         text = text_no_net
         MANIFEST.write_text(text, encoding="utf-8")
