@@ -30,7 +30,6 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conn = ref.watch(connectionProvider);
-    final kit = ref.watch(kitProfileProvider).valueOrNull;
     final module = ref.watch(moduleProvider).valueOrNull;
     final mode = ref.watch(appModeProvider).valueOrNull ?? AppMode.kit;
     final connected = conn.isConnected;
@@ -114,7 +113,7 @@ class HomeScreen extends ConsumerWidget {
               child: ListView(
             padding: pagePadding(context),
             children: _stagger([
-              _StatusCard(conn: conn, kit: kit),
+              _StatusCard(conn: conn),
               Gap.h16,
               _ModeBanner(mode: mode),
               const SizedBox(height: 22),
@@ -373,9 +372,8 @@ class _ModeBanner extends StatelessWidget {
 }
 
 class _StatusCard extends ConsumerWidget {
-  const _StatusCard({required this.conn, required this.kit});
+  const _StatusCard({required this.conn});
   final BtConnectionState conn;
-  final dynamic kit; // KitProfile?
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -452,9 +450,10 @@ class _StatusCard extends ConsumerWidget {
                     ],
                   ),
                   Gap.h4,
+                  // 홈은 아래 그리드에서 키트를 고르는 곳이라 "현재 키트"가 없다 →
+                  // 지난 선택(이전 값) 재사용 표기를 없애고 모듈만 표시(C-1 오표시 방지).
                   Text(
-                    '${module == null ? "모듈 미선택" : "모듈: ${module.shortName}"}'
-                    ' · ${kit == null ? "교구 미선택" : kit.name}',
+                    module == null ? "모듈 미선택" : "모듈: ${module.shortName}",
                     style: AppType.mono(size: 12, color: AppColors.textMuted),
                   ),
                 ],

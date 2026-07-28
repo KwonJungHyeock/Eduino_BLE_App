@@ -139,10 +139,13 @@ class _LivingGreenhouseState extends State<LivingGreenhouse>
                                   color: Colors.white)),
                         ),
                         const SizedBox(width: 6),
+                        // 냉각팬 — 허브+4날개, fanOn 동안 회전(선풍기 모티프).
                         Transform.rotate(
                           angle: _c.value * 2 * math.pi,
-                          child: const Icon(Icons.toys,
-                              size: 26, color: Colors.white),
+                          child: CustomPaint(
+                            size: const Size(26, 26),
+                            painter: _FanPainter(),
+                          ),
                         ),
                       ],
                     ),
@@ -322,10 +325,11 @@ class _ScenePainter extends CustomPainter {
     final scale = 0.78 + health * 0.42; // 건강↓ 작게.
     final rootY = potTop - 2;
 
-    // 짧은 줄기.
+    // 줄기 — 최상단 잎/꽃까지 닿도록 길게(잎 base가 이 선 위 점에 접하도록 기준).
+    final stemH = 36 * scale;
     canvas.drawLine(
       Offset(baseX, rootY),
-      Offset(baseX + sway, rootY - 14 * scale),
+      Offset(baseX + sway, rootY - stemH),
       Paint()
         ..color = leafDark
         ..strokeWidth = 3
@@ -334,7 +338,9 @@ class _ScenePainter extends CustomPainter {
 
     // 잎 — 아래→위로 6장(좌우 교차 + 상단 중앙).
     void leaf(double from, double angFromUp, double len, Color col) {
-      final ox = baseX + sway * (from / 60);
+      // 잎 base를 줄기 선 위 점에 정확히 접하게(높이 from → 줄기 좌표 ox,oy).
+      final f = (from / stemH).clamp(0.0, 1.0);
+      final ox = baseX + sway * f;
       final oy = rootY - from;
       // 처짐: 각도를 바깥/아래로 밀고 tip 을 살짝 내림.
       final a = angFromUp + angFromUp.sign * droop;
@@ -437,4 +443,42 @@ class _ScenePainter extends CustomPainter {
       old.state.humi != state.humi ||
       old.state.fanOn != state.fanOn ||
       old.state.ledColor != state.ledColor;
+}
+
+// 냉각팬 아이콘 — 중심 허브 + 4개 blade(선풍기/바람 모티프).
+// 회전은 상위 Transform.rotate(_c)에서 처리 — 여기선 정지 형태만 그린다.
+class _FanPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = size.width / 2;
+    final blade = Paint()..color = Colors.white.withValues(alpha: 0.95);
+    const n = 4;
+    for (var i = 0; i < n; i++) {
+      canvas.save();
+      canvas.translate(c.dx, c.dy);
+      canvas.rotate(i / n * 2 * math.pi);
+      // 물방울형 날개(허브에서 뻗어 바깥에서 넓어짐).
+      final path = Path()
+        ..moveTo(0, 0)
+        ..quadraticBezierTo(r * 0.30, -r * 0.52, r * 0.06, -r * 0.94)
+        ..quadraticBezierTo(-r * 0.20, -r * 0.66, 0, 0)
+        ..close();
+      canvas.drawPath(path, blade);
+      canvas.restore();
+    }
+    // 허브(중심) — signal 톤 도트 + 흰 링.
+    canvas.drawCircle(c, r * 0.17, Paint()..color = AppColors.signal);
+    canvas.drawCircle(
+      c,
+      r * 0.17,
+      Paint()
+        ..color = Colors.white
+        ..strokeWidth = 1.4
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_FanPainter old) => false;
 }

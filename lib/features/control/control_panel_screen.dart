@@ -42,6 +42,8 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
   Timer? _monitorTimer;
   KitType? _wiredType;
   bool _demoSeeded = false; // 팜 데모: 팬/LED 기본값 1회 시드.
+  bool _factorySynced = false; // 팩토리: 연결당 's' 상태질의 1회.
+  int _lastFactoryToggleMs = 0; // 팩토리 가동/중지 연타 디바운스.
 
   CarController get _car => ref.read(carControllerProvider);
 
@@ -146,6 +148,25 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
       }
     }
 
+    // A-1 · 팩토리 가동 표시는 수신 y/n(factoryRunning) 기준으로 갱신 —
+    // 토글 스위치를 보드 실제 상태에 맞춰 동기화(중지 눌러도 남는 문제 방지).
+    ref.listen<bool?>(telemetryProvider.select((t) => t.factoryRunning),
+        (prev, next) {
+      if (isFactory &&
+          next != null &&
+          (_toggles['컨베이어 가동 / 중지'] ?? false) != next) {
+        setState(() => _toggles['컨베이어 가동 / 중지'] = next);
+      }
+    });
+    // A-1 · 진입/재연결 시 's'로 현재 가동 상태를 질의해 동기화(연결당 1회).
+    if (connected && isFactory && !_factorySynced) {
+      _factorySynced = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _car.kitChar('s');
+      });
+    }
+    if (!connected) _factorySynced = false;
+
     return Scaffold(
       appBar: AppBar(title: Text(kit?.name ?? '교구 제어')),
       body: Column(
@@ -155,44 +176,56 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
             child: (kit == null || set == null)
                 ? _needKit(context)
                 : ListView(
-                    padding: pagePadding(context),
+                    // B-3 · 마지막 카드가 잘리지 않게 하단 스크롤 여백 확보.
+                    padding: pagePadding(context).copyWith(bottom: 40),
                     children: [
                       _KitHeader(kit: kit),
                       Gap.h16,
-                      // Living Twin — 살아있는 온실 씬. 코칭은 실제 센서값이
-                      // 있을 때만(B1 · 미연결 안내는 씬 오버레이 + 연결 CTA 로 일원화).
+                      // Living Twin — 씬 + (미연결 시) 씬 바로 아래 연결 CTA 1곳 통일(C-2).
                       if (isFarm) ...[
                         LivingGreenhouse(state: gh),
-                        if (gh.hasData) ...[
-                          Gap.h12,
-                          _CoachCard(state: gh),
-                        ],
-                        // 모니터링(토양수분·온·습도)을 씬 바로 아래에 통합 —
-                        // 하단 중복 섹션 제거로 잘림·이중 표시 방지(QA 2-a).
                         Gap.h12,
+                        if (!connected) ...[
+                          ConnectCtaBanner(
+                            accent: AppColors.accent,
+                            onConnect: () => context.push(Routes.connect),
+                          ),
+                          Gap.h12,
+                        ],
+                        if (gh.hasData) ...[
+                          _CoachCard(state: gh),
+                          Gap.h12,
+                        ],
+                        // 모니터링(토양수분·온·습도)을 씬 바로 아래에 통합.
                         for (final m in set.monitors) ...[
                           _MonitorCard(monitor: m),
                           Gap.h12,
                         ],
                         Gap.h4,
                       ],
-                      // Living Twin — 살아있는 집 씬(홈).
                       if (isHome) ...[
                         LivingHouse(state: house),
-                        Gap.h16,
+                        Gap.h12,
+                        if (!connected) ...[
+                          ConnectCtaBanner(
+                            accent: AppColors.accent,
+                            onConnect: () => context.push(Routes.connect),
+                          ),
+                          Gap.h12,
+                        ],
+                        Gap.h4,
                       ],
-                      // Living Twin — 가동 라인 씬(팩토리) + 실제 색 분류 카운트(QA 0-3).
                       if (isFactory) ...[
                         LivingFactory(state: factory),
                         Gap.h12,
+                        if (!connected) ...[
+                          ConnectCtaBanner(
+                            accent: AppColors.accent,
+                            onConnect: () => context.push(Routes.connect),
+                          ),
+                          Gap.h12,
+                        ],
                         _FactorySortCard(state: factory),
-                        Gap.h16,
-                      ],
-                      if (!connected) ...[
-                        ConnectCtaBanner(
-                          accent: AppColors.accent,
-                          onConnect: () => context.push(Routes.connect),
-                        ),
                         Gap.h16,
                       ],
                       // 보이는 통신 — 마지막 전송값.
@@ -240,6 +273,12 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
           value: _toggles[c.label] ?? false,
           enabled: connected,
           onChanged: (v) {
+            // A-1 · 팩토리 가동/중지 연타 디바운스(상태 어긋남 방지).
+            if (c.label == '컨베이어 가동 / 중지') {
+              final now = DateTime.now().millisecondsSinceEpoch;
+              if (now - _lastFactoryToggleMs < 350) return;
+              _lastFactoryToggleMs = now;
+            }
             // 경보(armed) 켜기 = warning급 햅틱(C4), 그 외 토글=light.
             if (c.longPress && v) HapticFeedback.heavyImpact();
             setState(() => _toggles[c.label] = v);
@@ -776,21 +815,8 @@ class _MonitorCardState extends ConsumerState<_MonitorCard> {
     });
     final tele = ref.watch(telemetryProvider);
 
-    String value;
-    String extra = '';
-    switch (widget.monitor.kind) {
-      case KitMonKind.tempHumi:
-        final t = tele.sensors['TMP'];
-        final h = tele.sensors['HUM'];
-        value = t == null ? '--' : '${_fmt(t)}℃';
-        extra = h == null ? '' : '습도 ${_fmt(h)}%';
-        break;
-      case KitMonKind.soil:
-        final s = tele.sensors['SOL'];
-        value = s == null ? '--' : '${_fmt(s)}%';
-        extra = s == null ? '' : '${soilStage(s)}단계';
-        break;
-    }
+    final isTH = widget.monitor.kind == KitMonKind.tempHumi;
+    final soil = tele.sensors['SOL'];
 
     return SurfaceCard(
       child: Column(
@@ -800,37 +826,93 @@ class _MonitorCardState extends ConsumerState<_MonitorCard> {
             children: [
               _iconBox(widget.monitor.icon, color),
               Gap.w16,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.monitor.label,
-                        style: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w600)),
-                    if (extra.isNotEmpty)
-                      Text(extra,
-                          style: AppType.mono(
-                              size: 12, color: AppColors.textMuted)),
-                  ],
-                ),
-              ),
-              // 좁은 폭에서도 잘리지 않게 축소(잘림 방지 · ⑩).
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(value,
-                      style: AppType.instrument(size: 28, color: color)),
-                ),
-              ),
+              Text(widget.monitor.label,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600)),
             ],
           ),
+          Gap.h12,
+          if (isTH)
+            // B-2 · 온도·습도를 나란히 같은 크기로 크게(라벨 12px).
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: _bigStat(
+                      '온도',
+                      tele.sensors['TMP'] == null
+                          ? '--'
+                          : '${_fmt(tele.sensors['TMP']!)}℃',
+                      color),
+                ),
+                Gap.w16,
+                Expanded(
+                  child: _bigStat(
+                      '습도',
+                      tele.sensors['HUM'] == null
+                          ? '--'
+                          : '${_fmt(tele.sensors['HUM']!)}%',
+                      AppColors.signal),
+                ),
+              ],
+            )
+          else
+            // B-1 · 토양수분 실제 %(임의 단계 제거) + 상태 라벨(건조<30·적정·과습>70).
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: _bigStat('토양수분',
+                      soil == null ? '--' : '${_fmt(soil)}%', color),
+                ),
+                if (soil != null) _soilStatusChip(soil),
+              ],
+            ),
           if (_hist.length >= 2) ...[
             Gap.h12,
             Sparkline(values: _hist, color: color, height: 34),
           ],
         ],
       ),
+    );
+  }
+
+  // 큰 수치 블록(라벨 12px + 값 인스트루먼트 30px, 좁은 폭 축소).
+  Widget _bigStat(String label, String value, Color c) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: AppType.mono(
+                  size: 12,
+                  weight: FontWeight.w700,
+                  color: AppColors.textMuted)),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child:
+                Text(value, style: AppType.instrument(size: 30, color: c)),
+          ),
+        ],
+      );
+
+  // 토양수분 상태 라벨 — 건조<30 / 적정 / 과습>70.
+  Widget _soilStatusChip(double s) {
+    final (label, c) = s < 30
+        ? ('건조', AppColors.warn)
+        : s > 70
+            ? ('과습', AppColors.signal)
+            : ('적정', AppColors.mint);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.12),
+        borderRadius: Radii.pill,
+      ),
+      child: Text(label,
+          style:
+              AppType.mono(size: 12, weight: FontWeight.w800, color: c)),
     );
   }
 

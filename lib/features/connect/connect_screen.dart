@@ -79,6 +79,53 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     }
   }
 
+  // 연결 실패/권한 오류 시 노출하는 점검 체크리스트 카드
+  // ('기기가 안 보이나요?' 팁 카드와 동일한 시각 패턴).
+  Widget _failHelpCard() => Container(
+        padding: const EdgeInsets.all(Gap.md),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: Radii.card,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('이렇게 확인해 보세요',
+                style: AppType.mono(
+                    size: 12,
+                    weight: FontWeight.w700,
+                    color: AppColors.textPrimary)),
+            Gap.h8,
+            _failTip('블루투스가 켜져 있는지 확인하세요.'),
+            _failTip('기기(RC카/교구) 전원이 켜져 있고, 필요하면 페어링됐는지 확인하세요.'),
+            _failTip('휴대폰과 1~2m 이내로 가까이 두세요.'),
+            _failTip('다른 앱이 그 기기를 이미 연결/점유하고 있지 않은지 확인하세요.'),
+            _failTip('안 되면 기기 전원을 껐다 켜고 다시 시도하세요(앱 재실행).'),
+          ],
+        ),
+      );
+
+  Widget _failTip(String text) => Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(Icons.check_circle_outline,
+                  size: 15, color: AppColors.signal),
+            ),
+            Gap.w8,
+            Expanded(
+              child: Text(text,
+                  style: AppType.mono(
+                      size: 12, color: AppColors.textMuted, height: 1.4)),
+            ),
+          ],
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final conn = ref.watch(connectionProvider);
@@ -171,6 +218,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                 Gap.h8,
                 Text(_error!,
                     style: AppType.mono(size: 12, color: AppColors.accent)),
+                Gap.h8,
+                _failHelpCard(),
               ],
               Gap.h16,
               Expanded(child: _body(conn, module, connected)),

@@ -198,7 +198,14 @@ class TelemetryNotifier extends Notifier<TelemetryState> {
       if (kit?.type != KitType.smartFactory) return;
       for (final b in bytes) {
         final e = decodeFactoryChar(b);
-        if (e != FactoryChar.none) state = state._applyFactory(e);
+        if (e == FactoryChar.none) continue;
+        // A-2 · 물체 분류(r/g/b)는 '가동 중'(y 수신)일 때만 집계 —
+        // 정지 상태의 잔여/노이즈 단일문자로 임의 분류(물체 없이 파랑)되는 것 방지.
+        final isSort = e == FactoryChar.sortRed ||
+            e == FactoryChar.sortGreen ||
+            e == FactoryChar.sortBlue;
+        if (isSort && state.factoryRunning != true) continue;
+        state = state._applyFactory(e);
       }
     });
     return const TelemetryState();
