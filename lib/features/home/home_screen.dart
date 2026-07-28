@@ -38,10 +38,10 @@ class HomeScreen extends ConsumerWidget {
     final content = <Widget>[];
 
     if (mode == AppMode.lab) {
-      // 통신 실습만(연결·시리얼·AT·LED). RC 주행은 교구 학습 모드로 이동.
+      // 통신 실습(연결·시리얼·LED). RC 주행은 교구 학습 모드로 이동.
       final accent = AppMode.lab.color;
       content.addAll([
-        const NodeRailHeader('통신 실습', count: 4),
+        const NodeRailHeader('통신 실습', count: 3),
         _MenuTile(
           icon: Icons.bluetooth_searching,
           title: '블루투스 연결',
@@ -56,14 +56,6 @@ class HomeScreen extends ConsumerWidget {
           subtitle: 'PC 시리얼 모니터와 문자 주고받기',
           accent: accent,
           onTap: () => context.push(Routes.basics),
-        ),
-        Gap.h8,
-        _MenuTile(
-          icon: Icons.terminal,
-          title: 'AT 커맨드',
-          subtitle: '모듈 설정 명령 실습',
-          accent: accent,
-          onTap: () => context.push(Routes.terminal),
         ),
         Gap.h8,
         _MenuTile(

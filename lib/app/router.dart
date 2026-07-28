@@ -30,7 +30,6 @@ import '../features/kit/kit_learn_screen.dart';
 import '../features/kit/kit_select_screen.dart';
 import '../features/module/module_select_screen.dart';
 import '../features/splash/splash_screen.dart';
-import '../features/terminal/terminal_screen.dart';
 import '../widgets/mode_scaffold.dart';
 
 abstract class Routes {
@@ -46,7 +45,6 @@ abstract class Routes {
   static const control = '/control';
   static const motor = '/motor';
   static const rcConfig = '/rc-config';
-  static const terminal = '/terminal';
   static const basics = '/basics';
   static const controller = '/controller';
   static const joystick = '/controller/joystick';
@@ -136,19 +134,6 @@ class GoRouterHolder {
         GoRoute(
           path: Routes.rcConfig,
           pageBuilder: (context, state) => _xfade(const RcConfigScreen()),
-        ),
-        GoRoute(
-          path: Routes.terminal,
-          pageBuilder: (context, state) => _xfade(const ModeScaffold(
-            title: 'AT 커맨드',
-            // 기본 모듈 HM-10(BLE)은 연결 중에만 AT 응답 → 시리얼·LED와 동일하게
-            // 미연결 시 연결 CTA 배너를 노출(일관성). 화면 내 모듈별 안내는 유지.
-            // (후속: HC-06 스코프 진입 시 AT 모드는 미연결이 정상이므로 배너를 모듈별로 분기)
-            help: 'AT 명령으로 블루투스 모듈을 설정·확인합니다. 명령을 보내면 모듈이 응답을 돌려줘요.\n'
-                '· HC-06: 연결 전(AT 모드)에서 응답\n· HM-10(BLE): 연결 중에 응답\n'
-                '빠른 명령 칩을 눌러 예시를 보낼 수 있어요.',
-            child: TerminalScreen(),
-          )),
         ),
         GoRoute(
           path: Routes.basics,

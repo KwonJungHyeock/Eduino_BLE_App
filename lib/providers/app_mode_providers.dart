@@ -36,7 +36,7 @@ final appModeProvider =
 extension AppModeInfo on AppMode {
   String get title => this == AppMode.lab ? '블루투스 실습' : '교구 학습';
   String get desc => this == AppMode.lab
-      ? '연결·시리얼·AT 커맨드로 통신 원리 학습'
+      ? '연결·시리얼 통신·LED로 통신 원리 학습'
       : 'RC카·스마트 팩토리·홈·팜을 앱으로 제어·체험';
   IconData get icon =>
       this == AppMode.lab ? Icons.bluetooth : Icons.smart_toy_outlined;

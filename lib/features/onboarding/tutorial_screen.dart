@@ -93,7 +93,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
                     art: _BtArt(),
                     accent: AppColors.mint,
                     title: '블루투스 실습',
-                    body: '연결·시리얼 통신·AT 커맨드·LED로\n통신 원리를 직접 배워요.',
+                    body: '연결·시리얼 통신·LED로\n통신 원리를 직접 배워요.',
                   ),
                 ],
               ),
