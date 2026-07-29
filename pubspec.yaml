@@ -74,10 +74,15 @@ flutter_native_splash:
 flutter:
   uses-material-design: true
 
-  # 실제 제품 사진·브랜드 로고 에셋 슬롯 — EDUINO가 실사진을 넣도록 구조만 마련 (§6.4)
+  # 실제 제품 사진 에셋 — 사용 파일만 개별 선언(README·미사용 이미지 번들 제외).
+  # assets/brand/* 는 런처아이콘·스플래시 빌드타임 전용이라 런타임 번들에서 제외.
   assets:
-    - assets/kits/
-    - assets/brand/
+    - assets/kits/two_wheel.jpg
+    - assets/kits/four_wheel.jpg
+    - assets/kits/metal.png
+    - assets/kits/smart_factory.jpg
+    - assets/kits/smart_home.jpg
+    - assets/kits/smart_farm.png
 
   # 본문·라벨용 Pretendard 는 폰트 파일을 fonts/ 에 넣고 아래 주석을 해제해 사용 (§6.2).
   # fonts:

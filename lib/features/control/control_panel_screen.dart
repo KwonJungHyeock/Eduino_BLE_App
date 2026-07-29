@@ -28,6 +28,15 @@ import 'living_factory.dart';
 import 'living_greenhouse.dart';
 import 'living_house.dart';
 
+// ── 튜닝 상수(단일 출처) — 매직넘버 제거. 동작 값은 기존과 동일 ──
+const Duration _kMonitorPollInterval = Duration(seconds: 2); // 온습도 요청 주기
+const int _kFactoryToggleDebounceMs = 350; // 가동/중지 연타 무시 간격
+// 센서 임계(코치 카드·상태 칩 공용)
+const double _kSoilDry = 30; // 미만 = 건조
+const double _kSoilWet = 70; // 초과 = 과습
+const double _kTempHot = 30; // 초과 = 더움(냉각 권장)
+const double _kHumiHigh = 85; // 초과 = 과습(환기 권장)
+
 class ControlPanelScreen extends ConsumerStatefulWidget {
   const ControlPanelScreen({super.key});
 
@@ -60,7 +69,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     _monitorTimer?.cancel();
     final req = set.monitorRequest;
     if (req != null) {
-      _monitorTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      _monitorTimer = Timer.periodic(_kMonitorPollInterval, (_) {
         _car.kitRequest(req, log: '온습도 요청(0x00)');
       });
     }
@@ -158,11 +167,12 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
         setState(() => _toggles['컨베이어 가동 / 중지'] = next);
       }
     });
-    // A-1 · 진입/재연결 시 's'로 현재 가동 상태를 질의해 동기화(연결당 1회).
-    if (connected && isFactory && !_factorySynced) {
+    // A-1 · 진입/재연결 시 상태질의 문자(kit_controls 의 initChar='s')로 동기화(연결당 1회).
+    final factoryInit = set?.initChar;
+    if (connected && isFactory && factoryInit != null && !_factorySynced) {
       _factorySynced = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _car.kitChar('s');
+        if (mounted) _car.kitChar(factoryInit);
       });
     }
     if (!connected) _factorySynced = false;
@@ -276,7 +286,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
             // A-1 · 팩토리 가동/중지 연타 디바운스(상태 어긋남 방지).
             if (c.label == '컨베이어 가동 / 중지') {
               final now = DateTime.now().millisecondsSinceEpoch;
-              if (now - _lastFactoryToggleMs < 350) return;
+              if (now - _lastFactoryToggleMs < _kFactoryToggleDebounceMs) return;
               _lastFactoryToggleMs = now;
             }
             // 경보(armed) 켜기 = warning급 햅틱(C4), 그 외 토글=light.
@@ -472,13 +482,13 @@ class _CoachCard extends StatelessWidget {
 
   ({String msg, IconData icon, bool warn}) _coach() {
     final g = state;
-    if (g.soil != null && g.soil! < 30) {
+    if (g.soil != null && g.soil! < _kSoilDry) {
       return (msg: '흙이 많이 말랐어요 — 물을 주거나 습도를 높여 주세요.', icon: Icons.water_drop, warn: true);
     }
-    if (g.temp != null && g.temp! > 30 && !g.fanOn) {
+    if (g.temp != null && g.temp! > _kTempHot && !g.fanOn) {
       return (msg: '온실이 더워요 — 냉각팬을 켜 보세요.', icon: Icons.thermostat, warn: true);
     }
-    if (g.humi != null && g.humi! > 85) {
+    if (g.humi != null && g.humi! > _kHumiHigh) {
       return (msg: '습도가 너무 높아요 — 환기가 필요할 수 있어요.', icon: Icons.cloud, warn: true);
     }
     if (g.soil == null && g.temp == null && g.humi == null) {
@@ -898,9 +908,9 @@ class _MonitorCardState extends ConsumerState<_MonitorCard> {
 
   // 토양수분 상태 라벨 — 건조<30 / 적정 / 과습>70.
   Widget _soilStatusChip(double s) {
-    final (label, c) = s < 30
+    final (label, c) = s < _kSoilDry
         ? ('건조', AppColors.warn)
-        : s > 70
+        : s > _kSoilWet
             ? ('과습', AppColors.signal)
             : ('적정', AppColors.mint);
     return Container(

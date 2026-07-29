@@ -46,9 +46,8 @@ class CarController {
   CarController(this._ref);
   final Ref _ref;
 
-  // §4.4 송신 스로틀링: 조이스틱/틸트 ~20Hz, 슬라이더 ~10Hz.
+  // §4.4 송신 스로틀링: 조이스틱/틸트 ~20Hz.
   final _Throttler _drive = _Throttler(const Duration(milliseconds: 50));
-  final _Throttler _speedCap = _Throttler(const Duration(milliseconds: 100));
   final Map<PrmKey, _Throttler> _prm = {
     for (final k in PrmKey.values) k: _Throttler(const Duration(milliseconds: 100)),
   };
@@ -129,7 +128,6 @@ class CarController {
 
   void _cancelThrottlers() {
     _drive.cancel();
-    _speedCap.cancel();
     _aux.cancel();
     for (final t in _prm.values) {
       t.cancel();
@@ -199,11 +197,6 @@ class CarController {
 
   /// 방향 버튼. press/release 즉시 전송(스로틀 없음).
   void move(MoveDir dir) => _sendFrame(Commands.move(dir));
-
-  /// 속도 상한(%). 스로틀링됨.
-  void setSpeedCap(int percent) {
-    _speedCap.run(() => _sendFrame(Commands.speedCap(percent)));
-  }
 
   /// 즉시 정지(안전). 대기 중 스로틀 전송 취소 후 STP 즉시.
   void stop() {

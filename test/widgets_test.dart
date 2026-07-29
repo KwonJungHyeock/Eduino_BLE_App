@@ -7,13 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:eduino_rc/widgets/brand_mark.dart';
 import 'package:eduino_rc/widgets/circuit.dart';
-import 'package:eduino_rc/widgets/direction_dial.dart';
 import 'package:eduino_rc/widgets/empty_state.dart';
 import 'package:eduino_rc/widgets/kit_illustration.dart';
 import 'package:eduino_rc/widgets/line_sensor_indicator.dart';
 import 'package:eduino_rc/widgets/pressable.dart';
 import 'package:eduino_rc/widgets/sparkline.dart';
-import 'package:eduino_rc/widgets/speed_gauge.dart';
 import 'package:eduino_rc/widgets/success_check.dart';
 
 Future<void> _host(WidgetTester t, Widget w, {double? width}) async {
@@ -44,13 +42,6 @@ void main() {
   testWidgets('Sparkline 데이터 렌더', (t) async {
     await _host(t, const Sparkline(values: [1, 2, 3, 2, 4]), width: 120);
     expect(find.byType(Sparkline), findsOneWidget);
-  });
-
-  testWidgets('DirectionDial 활성/비활성 렌더', (t) async {
-    await _host(t, const DirectionDial(angle: 0));
-    expect(find.byType(DirectionDial), findsOneWidget);
-    await _host(t, const DirectionDial(angle: null));
-    expect(find.byType(DirectionDial), findsOneWidget);
   });
 
   testWidgets('SuccessCheck 재생 완료', (t) async {
@@ -106,12 +97,6 @@ void main() {
         const LineSensorIndicator(line: (l: 1, c: 0, r: 1), count: 3),
         width: 240);
     expect(find.text('C'), findsOneWidget);
-  });
-
-  testWidgets('SpeedGauge 렌더', (t) async {
-    await _host(t, const SpeedGauge(value: 42));
-    await t.pump(const Duration(milliseconds: 300));
-    expect(find.byType(SpeedGauge), findsOneWidget);
   });
 
   testWidgets('Pressable onTap 동작', (t) async {

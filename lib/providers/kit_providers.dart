@@ -60,27 +60,6 @@ class RcNotifier extends AsyncNotifier<KitProfile?> {
 final rcProfileProvider =
     AsyncNotifierProvider<RcNotifier, KitProfile?>(RcNotifier.new);
 
-// ── 라인센서 사용 토글(2휠·메탈: 별매 옵션) ──
-// 켜면 라인트레이싱 기능이 컨트롤러에 노출된다. 4휠은 기본 내장이라 항상 노출.
-const String _lineSensorKey = 'eduino.rc.lineSensor';
-
-class LineSensorNotifier extends AsyncNotifier<bool> {
-  @override
-  Future<bool> build() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_lineSensorKey) ?? false;
-  }
-
-  Future<void> set(bool v) async {
-    state = AsyncData(v);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_lineSensorKey, v);
-  }
-}
-
-final lineSensorEnabledProvider =
-    AsyncNotifierProvider<LineSensorNotifier, bool>(LineSensorNotifier.new);
-
 // ── 팜 데모 시뮬레이션 플래그(웹 데모 전용) ──
 // true 면 StubTransport 가 자동 연결 + 센서 램프를 주입하고, 팜 제어판이
 // 팬/LED 기본값을 시드해 "연결 후 살아있는 온실"을 미리 볼 수 있다.
