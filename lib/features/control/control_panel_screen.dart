@@ -57,8 +57,20 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
   CarController get _car => ref.read(carControllerProvider);
 
   @override
+  void initState() {
+    super.initState();
+    // 스마트 교구(팜·홈·팩토리)에는 RC 주행 하트비트(PNG:)가 불필요하다.
+    // 제어판에 있는 동안 PNG 폭주를 멈춰 보드 수신버퍼가 사용자 명령(FAN:0 등)을
+    // 놓치지 않게 한다(끄기 명령 유실 방지). 위젯 트리 빌드 중 provider 수정 금지 → postFrame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _car.pauseHeartbeat();
+    });
+  }
+
+  @override
   void dispose() {
     _monitorTimer?.cancel();
+    _car.resumeHeartbeat();
     super.dispose();
   }
 
