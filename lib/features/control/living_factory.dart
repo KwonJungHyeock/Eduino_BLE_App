@@ -488,18 +488,6 @@ class _LinePainter extends CustomPainter {
     }
   }
 
-  void _text(Canvas canvas, String s, Offset at,
-      {double size = 12,
-      FontWeight weight = FontWeight.w800,
-      Color color = Colors.black}) {
-    final tp = TextPainter(
-      text: TextSpan(
-          text: s, style: AppType.mono(size: size, weight: weight, color: color)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, at);
-  }
-
   @override
   bool shouldRepaint(_LinePainter old) =>
       old.t != t ||

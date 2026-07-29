@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../providers/motor_config_providers.dart';
 import '../../providers/rc_config_providers.dart';
-import '../kit/kit_profile.dart';
 
 class RcConfigScreen extends ConsumerWidget {
   const RcConfigScreen({super.key});

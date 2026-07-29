@@ -474,23 +474,6 @@ class _DeviceList extends ConsumerWidget {
         ),
       );
 
-  Widget _hint(String text, {bool spinner = false}) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (spinner) ...[
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: AppColors.signal),
-              ),
-              Gap.h16,
-            ],
-            Text(text, style: AppType.mono(size: 13, color: AppColors.textMuted)),
-          ],
-        ),
-      );
 }
 
 class _DeviceTile extends StatelessWidget {
