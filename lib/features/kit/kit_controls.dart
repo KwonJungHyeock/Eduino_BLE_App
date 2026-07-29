@@ -127,14 +127,14 @@ const _home = KitControlSet(
   ],
   controls: [
     KitControl(
-      label: '에어컨',
+      label: '에어컨 가동/중지',
       kind: KitCtlKind.toggle,
       onChar: 'p',
       offChar: 'q',
       icon: Icons.ac_unit,
     ),
     KitControl(
-      label: '현관문',
+      label: '현관문 열기/닫기',
       kind: KitCtlKind.toggle,
       onChar: 'm',
       offChar: 'n',
@@ -167,7 +167,7 @@ const _farm = KitControlSet(
   ],
   controls: [
     KitControl(
-      label: '냉각팬',
+      label: '냉각팬 가동/중지',
       kind: KitCtlKind.toggle,
       onLine: 'FAN:1',
       offLine: 'FAN:0',

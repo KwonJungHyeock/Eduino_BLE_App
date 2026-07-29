@@ -92,7 +92,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
       soil: tele.sensors['SOL'],
       temp: tele.sensors['TMP'],
       humi: tele.sensors['HUM'],
-      fanOn: _toggles['냉각팬'] ?? false,
+      fanOn: _toggles['냉각팬 가동/중지'] ?? false,
       ledColor: _ledColor,
       live: connected,
     );
@@ -110,8 +110,8 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     final house = HouseState(
       temp: tele.sensors['TMP'],
       humi: tele.sensors['HUM'],
-      acOn: _toggles['에어컨'] ?? false,
-      doorOpen: _toggles['현관문'] ?? false,
+      acOn: _toggles['에어컨 가동/중지'] ?? false,
+      doorOpen: _toggles['현관문 열기/닫기'] ?? false,
       alarmOn: _toggles['침입자 경보'] ?? false,
       ledColor: _ledColor,
       live: connected,
@@ -136,7 +136,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           setState(() {
-            _toggles['냉각팬'] = true;
+            _toggles['냉각팬 가동/중지'] = true;
             _ledColor = const Color(0xFFB56BFF); // 보라 그로우라이트 틴트.
           });
         });
@@ -148,8 +148,8 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
             if (demoHome == 'alarm') {
               _toggles['침입자 경보'] = true;
             } else {
-              _toggles['에어컨'] = true;
-              _toggles['현관문'] = true;
+              _toggles['에어컨 가동/중지'] = true;
+              _toggles['현관문 열기/닫기'] = true;
               _ledColor = const Color(0xFFB56BFF); // 보라 무드라이트(앰비언트 가시성).
             }
           });
@@ -485,6 +485,9 @@ class _CoachCard extends StatelessWidget {
     if (g.soil != null && g.soil! < _kSoilDry) {
       return (msg: '흙이 많이 말랐어요 — 물을 주거나 습도를 높여 주세요.', icon: Icons.water_drop, warn: true);
     }
+    if (g.soil != null && g.soil! > _kSoilWet) {
+      return (msg: '흙이 과습이에요 — 물 주기를 줄여 주세요.', icon: Icons.water_drop, warn: true);
+    }
     if (g.temp != null && g.temp! > _kTempHot && !g.fanOn) {
       return (msg: '온실이 더워요 — 냉각팬을 켜 보세요.', icon: Icons.thermostat, warn: true);
     }
@@ -647,6 +650,7 @@ class _ColorCard extends StatelessWidget {
             _SpectrumBar(
               enabled: enabled,
               onPick: onColor!,
+              selectedColor: selectedColor, // 프리셋 선택 시 핸들도 그 색 위치로
             ),
           ],
           Gap.h12,
@@ -721,16 +725,27 @@ class _ColorCard extends StatelessWidget {
 
 /// 무지개 스펙트럼 바(C1) — 탭/드래그로 임의 색 선택 → HSV(색상,1,1) → RGB 전송.
 class _SpectrumBar extends StatefulWidget {
-  const _SpectrumBar({required this.enabled, required this.onPick});
+  const _SpectrumBar(
+      {required this.enabled, required this.onPick, this.selectedColor});
   final bool enabled;
   final void Function(Color) onPick;
+  final Color? selectedColor; // 외부 선택색(프리셋 포함) — 핸들 위치·색 반영.
 
   @override
   State<_SpectrumBar> createState() => _SpectrumBarState();
 }
 
 class _SpectrumBarState extends State<_SpectrumBar> {
-  double? _frac; // 0..1 선택 위치(무선택 시 null).
+  // 핸들 위치(0..1)는 현재 선택색의 색상(hue)에서 도출 — 스펙트럼 드래그·프리셋
+  // 선택 모두 selectedColor 로 수렴하므로 별도 로컬 상태 없이 항상 동기화된다.
+  // 무채색(흰색·끄기)은 hue 의미가 없어 핸들 숨김.
+  double? get _frac {
+    final c = widget.selectedColor;
+    if (c == null) return null;
+    final hsv = HSVColor.fromColor(c);
+    if (hsv.saturation < 0.12) return null;
+    return (hsv.hue / 360).clamp(0.0, 1.0);
+  }
 
   static const List<Color> _hues = [
     Color(0xFFFF0000),
@@ -748,8 +763,8 @@ class _SpectrumBarState extends State<_SpectrumBar> {
     if (!widget.enabled) return;
     final f = (dx / width).clamp(0.0, 1.0);
     final color = HSVColor.fromAHSV(1, f * 360, 1, 1).toColor();
-    setState(() => _frac = f);
     HapticFeedback.selectionClick();
+    // 핸들 위치는 selectedColor(=onPick 결과)에서 재계산되므로 로컬 상태 불필요.
     widget.onPick(color);
   }
 
@@ -782,6 +797,7 @@ class _SpectrumBarState extends State<_SpectrumBar> {
                     width: 18,
                     height: 24,
                     decoration: BoxDecoration(
+                      color: widget.selectedColor, // 선택색으로 핸들 채움(가시성)
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: Colors.white, width: 2.5),
                       boxShadow: Shadows.tap,

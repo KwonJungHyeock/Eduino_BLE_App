@@ -189,7 +189,7 @@ class _KitGridState extends ConsumerState<_KitGrid> {
 
   static const _tabs = <(_KitFilter, String)>[
     (_KitFilter.all, '전체'),
-    (_KitFilter.rc, 'RC'),
+    (_KitFilter.rc, 'RC카'),
     (_KitFilter.farm, '스마트팜'),
     (_KitFilter.factory, '스마트팩토리'),
     (_KitFilter.home, '스마트홈'),

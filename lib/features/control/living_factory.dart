@@ -151,7 +151,8 @@ class _LivingFactoryState extends State<LivingFactory>
                   running: running,
                   t: _loop.value,
                   lastSort: st.lastSort,
-                  sortProgress: _sort.value),
+                  sortProgress: _sort.value,
+                  sortCounts: st.sortCounts),
             );
             return Stack(
               children: [
@@ -280,11 +281,13 @@ class _LinePainter extends CustomPainter {
       {required this.running,
       required this.t,
       this.lastSort,
-      this.sortProgress = 0});
+      this.sortProgress = 0,
+      this.sortCounts = const {'r': 0, 'g': 0, 'b': 0}});
   final bool running;
   final double t; // 0..1 애니메이션 위상
   final String? lastSort; // 마지막 분류 색('r'/'g'/'b') — 실데이터(QA 0-3).
   final double sortProgress; // 0..1 감지→판정 단계 진행(0=대기).
+  final Map<String, int> sortCounts; // 색별 분류 누적(실데이터) — 바구니 적층 표시용.
 
   static const _blue = AppColors.signal;
   static const _binColors = <String, Color>{
@@ -381,6 +384,45 @@ class _LinePainter extends CustomPainter {
         ..lineTo(cx - binW / 2 + 3, binY + binH)
         ..close();
       canvas.drawPath(bin, Paint()..color = col.withValues(alpha: 0.30));
+
+      // 누적 분류 개수만큼 바닥부터 위로 색 블록 적층(실데이터 · 표시 전용).
+      final count = (sortCounts[keys[i]] ?? 0);
+      if (count > 0) {
+        final blockH = binH * 0.13;
+        final gapY = binH * 0.045;
+        final rowH = blockH + gapY;
+        final pad = binH * 0.07;
+        final maxRows = ((binH - pad) ~/ rowH).clamp(1, 40);
+        final rows = count > maxRows ? maxRows : count;
+        for (var r = 0; r < rows; r++) {
+          final yb = binY + binH - pad - r * rowH; // 이 블록의 바닥.
+          var yt = yb - blockH; // 이 블록의 상단.
+          // 바구니 벽 기울기에 맞춰 폭 테이퍼(위=넓게, 아래=좁게).
+          final frac = ((yt - binY) / binH).clamp(0.0, 1.0);
+          final inset = 3 * frac + 2.5;
+          final bw = binW - 2 * inset;
+          // 새 분류 낙하와 연계 — 맨 위 한 칸이 "톡" 떨어져 안착.
+          if (r == rows - 1 &&
+              running &&
+              lastSort == keys[i] &&
+              sortProgress > 0.82) {
+            final s = (sortProgress - 0.82) / 0.18; // 0..1
+            final e = (1 - s) * (1 - s);
+            yt -= e * blockH * 2.2;
+          }
+          final block = RRect.fromRectAndRadius(
+              Rect.fromLTWH(cx - bw / 2, yt, bw, blockH),
+              Radius.circular(blockH * 0.3));
+          canvas.drawRRect(block, Paint()..color = col.withValues(alpha: 0.90));
+          canvas.drawRRect(
+              block,
+              Paint()
+                ..color = Colors.white.withValues(alpha: 0.22)
+                ..strokeWidth = 0.8
+                ..style = PaintingStyle.stroke);
+        }
+      }
+
       canvas.drawPath(
           bin,
           Paint()
@@ -493,5 +535,8 @@ class _LinePainter extends CustomPainter {
       old.t != t ||
       old.running != running ||
       old.lastSort != lastSort ||
-      old.sortProgress != sortProgress;
+      old.sortProgress != sortProgress ||
+      (old.sortCounts['r'] ?? 0) != (sortCounts['r'] ?? 0) ||
+      (old.sortCounts['g'] ?? 0) != (sortCounts['g'] ?? 0) ||
+      (old.sortCounts['b'] ?? 0) != (sortCounts['b'] ?? 0);
 }

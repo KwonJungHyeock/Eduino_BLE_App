@@ -286,8 +286,8 @@ class _HousePainter extends CustomPainter {
     canvas.drawLine(win.centerLeft, win.centerRight, winFrame);
     canvas.drawLine(win.topCenter, win.bottomCenter, winFrame);
 
-    // 6) 벽 온도계 플라크 — 수신 온·습도 표시.
-    _thermo(canvas, w * 0.13, h * 0.30);
+    // 6) 온·습도 판독부 — 창문 아래 벽면 하단 여백에 크게 표시.
+    _thermo(canvas, w, h);
 
     // 7) 소파(중앙) — 중립 톤.
     _sofa(canvas, w * 0.40, floorY);
@@ -341,22 +341,104 @@ class _HousePainter extends CustomPainter {
           ..style = PaintingStyle.stroke);
   }
 
-  // 벽 온도계 — 수신값(없으면 --).
-  void _thermo(Canvas canvas, double x, double y) {
-    final rect = Rect.fromLTWH(x, y, 92, 34);
-    canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8)),
+  // 온·습도 판독부 — 창문 아래(벽면 하단 여백)에 크게 표시(수신값, 없으면 --).
+  // 창문(left=w*0.12, width=w*0.20, bottom≈h*0.58) 바로 밑, 바닥(h*0.80) 위 공간.
+  void _thermo(Canvas canvas, double w, double h) {
+    final panel = Rect.fromLTWH(w * 0.085, h * 0.60, w * 0.30, h * 0.185);
+    final hh = panel.height;
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(panel, const Radius.circular(10)),
         Paint()..color = Colors.white.withValues(alpha: 0.94));
-    // 온도계 글리프.
-    final gx = x + 14, gy = y + 17;
-    canvas.drawLine(Offset(gx, y + 7), Offset(gx, gy + 4),
-        Paint()..color = AppColors.mint..strokeWidth = 3..strokeCap = StrokeCap.round);
-    canvas.drawCircle(Offset(gx, gy + 7), 4.5, Paint()..color = AppColors.mint);
-    final tp = state.temp == null ? '--' : '${state.temp!.round()}℃';
-    final hp = state.humi == null ? '' : '${state.humi!.round()}%';
-    _text(canvas, tp, Offset(x + 26, y + 5),
-        size: 14, weight: FontWeight.w800, color: const Color(0xFF1A1D21));
-    _text(canvas, hp, Offset(x + 26, y + 20),
-        size: 10, weight: FontWeight.w700, color: const Color(0xFF8A9099));
+    // 온도/습도 두 칸 구분선.
+    canvas.drawLine(
+        Offset(panel.center.dx, panel.top + hh * 0.18),
+        Offset(panel.center.dx, panel.bottom - hh * 0.14),
+        Paint()
+          ..color = AppColors.border
+          ..strokeWidth = 1);
+
+    final labelSize = hh * 0.21;
+    final numSize = hh * 0.50;
+    final labelTop = panel.top + hh * 0.07;
+    final glyphCy = labelTop + labelSize * 0.66;
+    final numTop = panel.top + hh * 0.34;
+    final lcx = panel.left + panel.width * 0.28;
+    final rcx = panel.left + panel.width * 0.72;
+    final gs = labelSize * 0.95;
+
+    // 라벨(온도/습도) + 좌측 글리프.
+    final lw = _textCentered(canvas, '온도', lcx + gs * 0.55, labelTop,
+        size: labelSize, weight: FontWeight.w700, color: AppColors.textMuted);
+    _thermoGlyph(canvas, lcx + gs * 0.55 - lw / 2 - gs * 0.7, glyphCy, gs);
+    final rw = _textCentered(canvas, '습도', rcx + gs * 0.55, labelTop,
+        size: labelSize, weight: FontWeight.w700, color: AppColors.textMuted);
+    _dropGlyph(canvas, rcx + gs * 0.55 - rw / 2 - gs * 0.7, glyphCy, gs);
+
+    // 판독값(없으면 --) + 단위(℃/%).
+    final tp = state.temp == null ? '--' : state.temp!.round().toString();
+    final hp = state.humi == null ? '--' : state.humi!.round().toString();
+    _reading(canvas, lcx, numTop, tp, '℃', numSize);
+    _reading(canvas, rcx, numTop, hp, '%', numSize);
+  }
+
+  // 온도계 글리프(민트) — (cx,cy) 중심.
+  void _thermoGlyph(Canvas canvas, double cx, double cy, double s) {
+    canvas.drawLine(
+        Offset(cx, cy - s * 0.55),
+        Offset(cx, cy + s * 0.15),
+        Paint()
+          ..color = AppColors.mint
+          ..strokeWidth = s * 0.34
+          ..strokeCap = StrokeCap.round);
+    canvas.drawCircle(Offset(cx, cy + s * 0.5), s * 0.42,
+        Paint()..color = AppColors.mint);
+  }
+
+  // 물방울 글리프(블루) — (cx,cy) 중심.
+  void _dropGlyph(Canvas canvas, double cx, double cy, double s) {
+    final path = Path()
+      ..moveTo(cx, cy - s * 0.68)
+      ..quadraticBezierTo(cx + s * 0.6, cy + s * 0.1, cx, cy + s * 0.58)
+      ..quadraticBezierTo(cx - s * 0.6, cy + s * 0.1, cx, cy - s * 0.68)
+      ..close();
+    canvas.drawPath(path, Paint()..color = AppColors.signal);
+  }
+
+  // 큰 숫자 + 작은 단위를 columnCenterX 기준 가운데 정렬로 그린다.
+  void _reading(Canvas canvas, double centerX, double top, String value,
+      String unit, double numSize) {
+    const numColor = Color(0xFF1A1D21);
+    final tp = TextPainter(
+      text: TextSpan(children: [
+        TextSpan(
+            text: value,
+            style: AppType.mono(
+                size: numSize, weight: FontWeight.w800, color: numColor)),
+        TextSpan(
+            text: unit,
+            style: AppType.mono(
+                size: numSize * 0.52,
+                weight: FontWeight.w800,
+                color: numColor.withValues(alpha: 0.66))),
+      ]),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(centerX - tp.width / 2, top));
+  }
+
+  // 가운데 정렬 텍스트 — 그린 폭을 반환(글리프 배치용).
+  double _textCentered(Canvas canvas, String s, double centerX, double top,
+      {double size = 12,
+      FontWeight weight = FontWeight.w700,
+      Color color = Colors.black}) {
+    final tp = TextPainter(
+      text: TextSpan(
+          text: s,
+          style: AppType.mono(size: size, weight: weight, color: color)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(centerX - tp.width / 2, top));
+    return tp.width;
   }
 
   void _sofa(Canvas canvas, double x, double floorY) {
@@ -459,19 +541,6 @@ class _HousePainter extends CustomPainter {
     // 손잡이.
     canvas.drawCircle(Offset(freeX + 5, (top + bot) / 2), 2.6,
         Paint()..color = const Color(0xFFFFD24B));
-  }
-
-  void _text(Canvas canvas, String s, Offset at,
-      {double size = 12,
-      FontWeight weight = FontWeight.w700,
-      Color color = Colors.black}) {
-    if (s.isEmpty) return;
-    final tp = TextPainter(
-      text: TextSpan(
-          text: s, style: AppType.mono(size: size, weight: weight, color: color)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, at);
   }
 
   @override
