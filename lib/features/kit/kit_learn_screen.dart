@@ -39,7 +39,7 @@ class KitLearnScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: (kit == null || cur == null)
-            ? _fallback(context, kit)
+            ? _fallback(context)
             : ListView(
                 padding: pagePadding(context),
                 children: [
@@ -75,16 +75,15 @@ class KitLearnScreen extends ConsumerWidget {
         _ => '🤖',
       };
 
-  Widget _fallback(BuildContext context, KitProfile? kit) => EmptyState(
+  // 커리큘럼이 있는 키트만 이 화면에 도달하므로(홈은 제어판 직행) fallback 은
+  // "교구 미선택" 한 경우만 — "준비 중" 잔재 문구 제거(단일 경로).
+  Widget _fallback(BuildContext context) => EmptyState(
         icon: Icons.menu_book_outlined,
         accent: AppColors.accent,
-        title: kit == null ? '먼저 교구를 선택하세요' : '학습 자료 준비 중',
-        message: kit == null
-            ? '스마트 팩토리 · 홈 · 팜 중에서\n보유한 교구를 고르면 학습이 열려요.'
-            : '${kit.name} 학습 콘텐츠는 준비 중입니다.\n제어판에서 먼저 제어해 볼 수 있어요.',
-        actionLabel: kit == null ? '교구 선택' : '제어판 열기',
-        onAction: () =>
-            context.push(kit == null ? Routes.kit : Routes.control),
+        title: '먼저 교구를 선택하세요',
+        message: '스마트 팩토리 · 홈 · 팜 중에서\n보유한 교구를 고르면 학습이 열려요.',
+        actionLabel: '교구 선택',
+        onAction: () => context.push(Routes.kit),
       );
 }
 

@@ -22,6 +22,7 @@ import '../../widgets/double_back_exit.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/responsive.dart';
+import '../kit/kit_curriculum.dart';
 import '../kit/kit_profile.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -206,11 +207,17 @@ class _KitGridState extends ConsumerState<_KitGrid> {
   Future<void> _open(KitType type) async {
     HapticFeedback.selectionClick();
     if (KitProfile.forType(type).isRc) {
+      // RC카는 기존 주행 컨트롤러 흐름 유지.
       await ref.read(rcProfileProvider.notifier).select(type);
       if (mounted) context.push(Routes.controller);
     } else {
+      // 스마트 교구: 카드 → 학습 화면(부품 배선·단계별·제어) 직행.
+      // 커리큘럼이 아직 없는 키트(홈)는 학습 콘텐츠가 없으므로 제어판으로 —
+      // "소개/준비 중" 중간 페이지 없이 단일 경로(kit_select 와 동일 규칙).
       await ref.read(kitProfileProvider.notifier).select(type);
-      if (mounted) context.push(Routes.control);
+      if (!mounted) return;
+      context.push(
+          kitCurriculumFor(type) != null ? Routes.kitLearn : Routes.control);
     }
   }
 
