@@ -59,3 +59,5 @@ app.*.map.json
 **/Podfile.lock
 android/key.properties
 android/app/*.jks
+# 업로드 키스토어 base64 반출본 — 절대 커밋 금지(전달용 임시 파일)
+*.jks.base64.txt
