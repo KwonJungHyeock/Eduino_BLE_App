@@ -96,6 +96,18 @@ class BleTransport implements BtTransport {
           }
         });
 
+        // iOS: CBCentralManager 초기화 직후 adapterState 가 잠시 unknown 이라
+        // 곧바로 스캔하면 초기 1회가 실패할 수 있다. on 이 될 때까지 최대 5초 대기.
+        // 실제로 꺼져 있어도 무한 대기하지 않도록 타임아웃 후 그대로 진행
+        // (아래 startScan 이 에러를 잡아 controller 로 전달).
+        if (FlutterBluePlus.adapterStateNow != BluetoothAdapterState.on) {
+          await FlutterBluePlus.adapterState
+              .firstWhere((s) => s == BluetoothAdapterState.on)
+              .timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => BluetoothAdapterState.on,
+              );
+        }
         await FlutterBluePlus.startScan(
           timeout: timeout,
           androidUsesFineLocation: false,
