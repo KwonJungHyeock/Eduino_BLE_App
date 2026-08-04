@@ -12,6 +12,7 @@ import '../../app/theme.dart';
 import '../../providers/kit_providers.dart';
 import '../../widgets/kit_pick_card.dart';
 import '../../widgets/responsive.dart';
+import '../../widgets/home_button.dart';
 import '../kit/kit_profile.dart';
 
 class RcSelectScreen extends ConsumerWidget {
@@ -22,7 +23,10 @@ class RcSelectScreen extends ConsumerWidget {
     final current = ref.watch(rcProfileProvider).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('RC 주행하기')),
+      appBar: AppBar(
+        title: const Text('RC 주행하기'),
+        actions: const [HomeButton()],
+      ),
       body: SafeArea(
         child: ListView(
           padding: pagePadding(context),

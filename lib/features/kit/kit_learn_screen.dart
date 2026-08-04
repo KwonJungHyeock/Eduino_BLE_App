@@ -15,6 +15,7 @@ import '../../widgets/pressable.dart';
 import '../../widgets/responsive.dart';
 import 'kit_curriculum.dart';
 import 'kit_profile.dart';
+import '../../widgets/home_button.dart';
 
 class KitLearnScreen extends ConsumerWidget {
   const KitLearnScreen({super.key});
@@ -36,6 +37,7 @@ class KitLearnScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(kit == null ? '교구 학습' : '${_emoji(kit.type)} ${kit.name}'),
+        actions: const [HomeButton()],
       ),
       body: SafeArea(
         child: (kit == null || cur == null)

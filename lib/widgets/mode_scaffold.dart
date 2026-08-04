@@ -10,6 +10,7 @@ import '../app/router.dart';
 import '../app/theme.dart';
 import '../providers/bt_providers.dart';
 import 'empty_state.dart';
+import 'home_button.dart';
 import 'status_bar.dart';
 
 class ModeScaffold extends ConsumerWidget {
@@ -46,6 +47,7 @@ class ModeScaffold extends ConsumerWidget {
       appBar: AppBar(
         title: Text(title),
         actions: [
+          const HomeButton(),
           ...?actions,
           IconButton(
             icon: const Icon(Icons.help_outline),

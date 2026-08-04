@@ -21,6 +21,7 @@ import '../../widgets/skeleton.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/success_check.dart';
 import '../../widgets/surface_card.dart';
+import '../../widgets/home_button.dart';
 
 class ConnectScreen extends ConsumerStatefulWidget {
   const ConnectScreen({super.key});
@@ -155,6 +156,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       appBar: AppBar(
         title: const Text('연결'),
         actions: [
+          const HomeButton(),
           if (kit != null)
             TextButton.icon(
               onPressed: () => context.push(Routes.kit),

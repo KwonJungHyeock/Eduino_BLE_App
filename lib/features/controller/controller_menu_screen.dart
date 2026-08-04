@@ -17,6 +17,7 @@ import '../../widgets/empty_state.dart';
 import '../../widgets/responsive.dart';
 import '../kit/kit_profile.dart';
 import '../home/home_screen.dart' show HomeMenuTile;
+import '../../widgets/home_button.dart';
 
 class ControllerMenuScreen extends ConsumerWidget {
   const ControllerMenuScreen({super.key});
@@ -32,6 +33,7 @@ class ControllerMenuScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('RC 주행 컨트롤러'),
         actions: [
+          const HomeButton(),
           IconButton(
             tooltip: 'RC 키트 변경',
             icon: const Icon(Icons.cached),

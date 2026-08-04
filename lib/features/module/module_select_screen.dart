@@ -40,7 +40,7 @@ class ModuleSelectScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(Gap.md),
           children: [
             Text(
-              'RC카에 연결된 블루투스 모듈을 선택하세요. 모듈에 따라 연결 방식이 달라집니다.',
+              '키트에 연결된 블루투스 모듈을 선택하세요. 모듈에 따라 연결 방식이 달라집니다.',
               style:
                   AppType.mono(size: 13, color: AppColors.textMuted, height: 1.5),
             ),

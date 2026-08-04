@@ -130,7 +130,7 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
   }
 
   String get _sensGuide {
-    if (_sensitivity < 0.8) return '부드럽게 · 살짝 기울여도 천천히 (초보용)';
+    if (_sensitivity < 0.8) return '부드럽게 · 많이 기울여도 천천히 (초보용)';
     if (_sensitivity < 1.4) return '보통 · 균형잡힌 반응';
     return '민감 · 조금만 기울여도 크게 움직여요';
   }

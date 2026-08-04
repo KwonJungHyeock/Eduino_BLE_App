@@ -14,6 +14,7 @@ import '../../providers/motor_config_providers.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/skeleton.dart';
 import '../../widgets/surface_card.dart';
+import '../../widgets/home_button.dart';
 import '../kit/kit_profile.dart';
 
 class MotorConfigScreen extends ConsumerWidget {
@@ -25,7 +26,10 @@ class MotorConfigScreen extends ConsumerWidget {
     final config = ref.watch(motorConfigProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('모터 포트 설정')),
+      appBar: AppBar(
+        title: const Text('모터 포트 설정'),
+        actions: const [HomeButton()],
+      ),
       body: SafeArea(
         child: kit == null
             ? _NeedKit()

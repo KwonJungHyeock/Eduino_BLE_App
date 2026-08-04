@@ -27,6 +27,7 @@ import '../kit/kit_profile.dart';
 import 'living_factory.dart';
 import 'living_greenhouse.dart';
 import 'living_house.dart';
+import '../../widgets/home_button.dart';
 
 // ── 튜닝 상수(단일 출처) — 매직넘버 제거. 동작 값은 기존과 동일 ──
 const Duration _kMonitorPollInterval = Duration(seconds: 2); // 온습도 요청 주기
@@ -190,7 +191,10 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     if (!connected) _factorySynced = false;
 
     return Scaffold(
-      appBar: AppBar(title: Text(kit?.name ?? '교구 제어')),
+      appBar: AppBar(
+        title: Text(kit?.name ?? '교구 제어'),
+        actions: const [HomeButton()],
+      ),
       body: Column(
         children: [
           const StatusBar(),

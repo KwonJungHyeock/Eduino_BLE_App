@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import '../../widgets/home_button.dart';
 
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
@@ -11,7 +12,10 @@ class PrivacyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('개인정보처리방침')),
+      appBar: AppBar(
+        title: const Text('개인정보처리방침'),
+        actions: const [HomeButton()],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(Gap.md),

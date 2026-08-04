@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import '../../widgets/home_button.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -49,7 +50,10 @@ class HelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('도움말 & FAQ')),
+      appBar: AppBar(
+        title: const Text('도움말 & FAQ'),
+        actions: const [HomeButton()],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(Gap.md),

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../providers/motor_config_providers.dart';
 import '../../providers/rc_config_providers.dart';
+import '../../widgets/home_button.dart';
 
 class RcConfigScreen extends ConsumerWidget {
   const RcConfigScreen({super.key});
@@ -25,7 +26,10 @@ class RcConfigScreen extends ConsumerWidget {
     final slots = motorSlotLabels(kitType);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('RC카 설정')),
+      appBar: AppBar(
+        title: const Text('RC카 설정'),
+        actions: const [HomeButton()],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(Gap.md),

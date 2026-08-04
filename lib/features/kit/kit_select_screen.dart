@@ -14,6 +14,7 @@ import '../../widgets/kit_pick_card.dart';
 import '../../widgets/responsive.dart';
 import 'kit_curriculum.dart';
 import 'kit_profile.dart';
+import '../../widgets/home_button.dart';
 
 class KitSelectScreen extends ConsumerWidget {
   const KitSelectScreen({super.key});
@@ -23,7 +24,10 @@ class KitSelectScreen extends ConsumerWidget {
     final current = ref.watch(kitProfileProvider).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('에듀이노 교구')),
+      appBar: AppBar(
+        title: const Text('에듀이노 교구'),
+        actions: const [HomeButton()],
+      ),
       body: SafeArea(
         child: ListView(
           padding: pagePadding(context),
