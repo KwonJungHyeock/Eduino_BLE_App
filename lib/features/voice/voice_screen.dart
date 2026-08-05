@@ -26,6 +26,7 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
   bool _listening = false;
   String _heard = '';
   String _mapped = '';
+  bool _sent = false; // 이번 듣기 세션에서 명령을 이미 보냈는지(중복 전송 방지)
 
   // 키워드 → 단일 문자 명령. "정지"를 맨 앞에 둬 최우선 매칭(안전).
   static final List<(List<String>, DriveCmd)> _rules = [
@@ -66,12 +67,25 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
       _listening = true;
       _heard = '';
       _mapped = '';
+      _sent = false;
     });
     await _stt.listen(
       localeId: 'ko_KR',
+      // 지연 원인 제거: 기존엔 r.finalResult(발화 종료 후 침묵 감지)까지 기다려 전송했다.
+      // 명령 어휘가 짧으므로 부분결과에서 키워드가 잡히는 즉시 1회 전송하고 멈춘다.
       onResult: (r) {
-        setState(() => _heard = r.recognizedWords);
-        if (r.finalResult) _apply(r.recognizedWords);
+        if (r.recognizedWords != _heard) {
+          setState(() => _heard = r.recognizedWords);
+        }
+        if (_sent) return;
+        final cmd = _match(r.recognizedWords);
+        if (cmd != null) {
+          _sent = true;
+          _send(cmd);
+          _stt.stop();
+        } else if (r.finalResult) {
+          setState(() => _mapped = '매칭 없음');
+        }
       },
     );
   }
@@ -81,22 +95,24 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
     if (mounted) setState(() => _listening = false);
   }
 
-  void _apply(String text) {
+  // 인식 문자열 → 명령 매칭(부분결과에도 사용). 매칭 없으면 null.
+  DriveCmd? _match(String text) {
     final t = text.replaceAll(' ', '');
-    final car = ref.read(carControllerProvider);
     for (final rule in _rules) {
-      if (rule.$1.any((k) => t.contains(k.replaceAll(' ', '')))) {
-        final cmd = rule.$2;
-        setState(() => _mapped = '${cmd.label} (${cmd.code})');
-        if (cmd == DriveCmd.stop) {
-          car.driveStop();
-        } else {
-          car.driveCmd(cmd);
-        }
-        return;
-      }
+      if (rule.$1.any((k) => t.contains(k.replaceAll(' ', '')))) return rule.$2;
     }
-    setState(() => _mapped = '매칭 없음');
+    return null;
+  }
+
+  // 매칭된 명령 전송(통신 규약 불변 — 기존과 동일한 CarController 경유).
+  void _send(DriveCmd cmd) {
+    final car = ref.read(carControllerProvider);
+    setState(() => _mapped = '${cmd.label} (${cmd.code})');
+    if (cmd == DriveCmd.stop) {
+      car.driveStop();
+    } else {
+      car.driveCmd(cmd);
+    }
   }
 
   @override
