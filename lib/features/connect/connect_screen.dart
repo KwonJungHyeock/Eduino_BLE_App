@@ -51,16 +51,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     }
     setState(() => _requesting = true);
     try {
-      const msg = '블루투스 권한이 필요합니다. 설정에서 허용해 주세요.';
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        // iOS: CBManager 권한(permission_handler 의 bluetooth)만 판정.
-        // bluetoothScan/Connect 는 Android 12+ 전용이라 iOS 에선 항상 미허가로
-        // 잡혀 배너가 오표시된다. 위치 권한도 iOS BLE 엔 불필요 → 요청하지 않음.
+        // iOS: 권한 팝업만 띄운다. permission_handler 의 bluetooth 판정은 불안정해
+        // (연결·사용 가능해도 denied) 이 값으로 _error 를 세팅하면 상단 배너가
+        // 연결됨 상태에서도 남는다. 권한 안내는 _body 의 어댑터·연결 기반 화면이 담당.
         final st = await Permission.bluetooth.request();
-        setState(() {
-          _permsReady = st.isGranted;
-          _error = _permsReady ? null : msg;
-        });
+        setState(() => _permsReady = st.isGranted);
       } else {
         // Android(및 기타): 스캔·연결 런타임 권한 + 위치(11↓ 스캔용).
         final statuses = await [
@@ -71,10 +67,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         final ok = statuses[Permission.bluetoothScan]?.isGranted ?? false;
         final okConnect =
             statuses[Permission.bluetoothConnect]?.isGranted ?? false;
-        setState(() {
-          _permsReady = ok && okConnect;
-          _error = _permsReady ? null : msg;
-        });
+        setState(() => _permsReady = ok && okConnect);
       }
     } finally {
       if (mounted) setState(() => _requesting = false);
@@ -319,13 +312,14 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       return const Center(
           child: CircularProgressIndicator(color: AppColors.signal));
     }
-    // iOS: permission_handler 의 bluetooth 판정이 불안정(사용 가능해도 denied)해
-    // 배너가 남는다. 실제 어댑터가 켜져 있으면 권한 배너를 띄우지 않는다.
-    // (연결됨은 위에서 이미 처리 · 웹은 kIsWeb 로 provider 미구독)
-    final iosBtOn = !kIsWeb &&
+    // iOS: permission_handler 의 bluetooth 판정이 불안정(사용 가능해도 denied)하다.
+    // 실제 어댑터가 켜졌거나(adapterState==on) 이미 연결됐으면 권한 화면을 띄우지 않는다.
+    // btOn 은 StreamProvider 를 ref.watch 로 구독 → 상태가 바뀌면 리빌드된다.
+    // (웹은 kIsWeb 로 provider 미구독 · Android 는 기존 _permsReady 그대로)
+    final btOn = !kIsWeb &&
         defaultTargetPlatform == TargetPlatform.iOS &&
         (ref.watch(bluetoothOnProvider).valueOrNull ?? false);
-    if (!_permsReady && !iosBtOn) {
+    if (!_permsReady && !(btOn || connected)) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
