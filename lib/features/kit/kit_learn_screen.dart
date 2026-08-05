@@ -15,6 +15,7 @@ import '../../widgets/pressable.dart';
 import '../../widgets/responsive.dart';
 import 'kit_curriculum.dart';
 import 'kit_profile.dart';
+import '../../providers/onboarding_providers.dart';
 import '../../widgets/home_button.dart';
 
 class KitLearnScreen extends ConsumerWidget {
@@ -24,6 +25,13 @@ class KitLearnScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final kit = ref.watch(kitProfileProvider).valueOrNull;
     final cur = kit == null ? null : kitCurriculumFor(kit.type);
+
+    // 학습 페이지를 실제로 여는 순간 '봤음'으로 기록 → 이후 같은 키트는 제어판 직행(QA A).
+    if (kit != null && cur != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(learnSeenProvider.notifier).markSeen(kit.type.name);
+      });
+    }
 
     // 강의 커리큘럼이 아직 없는 교구(홈 등)는 준비중 벽 대신 제어판(집 씬)으로
     // 바로 보낸다(A1). 콘텐츠가 OCR 로 채워지면 커리큘럼이 생겨 학습이 열림.
