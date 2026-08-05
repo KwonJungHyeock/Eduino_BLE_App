@@ -26,7 +26,6 @@ import '../features/motor/rc_config_screen.dart';
 import '../features/onboarding/tutorial_screen.dart';
 import '../features/tilt/tilt_screen.dart';
 import '../features/voice/voice_screen.dart';
-import '../features/kit/kit_learn_screen.dart';
 import '../features/kit/kit_select_screen.dart';
 import '../features/module/module_select_screen.dart';
 import '../features/splash/splash_screen.dart';
@@ -40,7 +39,6 @@ abstract class Routes {
   static const home = '/home';
   static const connect = '/connect';
   static const kit = '/kit';
-  static const kitLearn = '/kit-learn';
   static const rcSelect = '/rc-select';
   static const control = '/control';
   static const motor = '/motor';
@@ -118,10 +116,6 @@ class GoRouterHolder {
         GoRoute(
           path: Routes.kit,
           pageBuilder: (context, state) => _xfade(const KitSelectScreen()),
-        ),
-        GoRoute(
-          path: Routes.kitLearn,
-          pageBuilder: (context, state) => _xfade(const KitLearnScreen()),
         ),
         GoRoute(
           path: Routes.control,

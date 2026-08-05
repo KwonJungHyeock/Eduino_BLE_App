@@ -23,7 +23,6 @@ import '../../widgets/sparkline.dart';
 import '../../widgets/status_bar.dart';
 import '../../widgets/surface_card.dart';
 import '../kit/kit_controls.dart';
-import '../kit/kit_curriculum.dart';
 import '../kit/kit_profile.dart';
 import 'living_factory.dart';
 import 'living_greenhouse.dart';
@@ -194,16 +193,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(kit?.name ?? '교구 제어'),
-        actions: [
-          // 학습을 이미 본 뒤에도 언제든 '수업 안내'를 다시 열 수 있는 진입점(QA A).
-          if (kit != null && kitCurriculumFor(kit.type) != null)
-            IconButton(
-              icon: const Icon(Icons.menu_book_outlined),
-              tooltip: '수업 안내',
-              onPressed: () => context.push(Routes.kitLearn),
-            ),
-          const HomeButton(),
-        ],
+        actions: const [HomeButton()],
       ),
       body: Column(
         children: [

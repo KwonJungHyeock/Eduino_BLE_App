@@ -12,9 +12,7 @@ import '../../app/theme.dart';
 import '../../providers/kit_providers.dart';
 import '../../widgets/kit_pick_card.dart';
 import '../../widgets/responsive.dart';
-import 'kit_curriculum.dart';
 import 'kit_profile.dart';
-import '../../providers/onboarding_providers.dart';
 import '../../widgets/home_button.dart';
 
 class KitSelectScreen extends ConsumerWidget {
@@ -75,17 +73,11 @@ class KitSelectScreen extends ConsumerWidget {
           HapticFeedback.selectionClick();
           await ref.read(kitProfileProvider.notifier).select(type);
           if (!context.mounted) return;
-          // 강의 커리큘럼이 있으면 학습으로, 없으면(홈 등) 제어판(집 씬) 직행(A1).
-          // 단 이미 학습을 본 키트는 제어판 직행(QA A) — 재열람은 제어판 '수업 안내'.
-          final seen = ref.read(learnSeenProvider).valueOrNull ?? const <String>{};
-          final dest =
-              (kitCurriculumFor(type) != null && !seen.contains(type.name))
-                  ? Routes.kitLearn
-                  : Routes.control;
+          // 학습(수업 안내) 페이지 제거 — 스마트 교구는 항상 제어판(집 씬) 직행.
           if (context.canPop()) {
-            context.pushReplacement(dest);
+            context.pushReplacement(Routes.control);
           } else {
-            context.go(dest);
+            context.go(Routes.control);
           }
         },
       ),

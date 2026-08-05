@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../app/router.dart';
 import '../../app/theme.dart';
 import '../../core/bt/bt_transport.dart';
+import '../../providers/ble_adapter_providers.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/last_device_providers.dart';
@@ -318,7 +319,13 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       return const Center(
           child: CircularProgressIndicator(color: AppColors.signal));
     }
-    if (!_permsReady) {
+    // iOS: permission_handler 의 bluetooth 판정이 불안정(사용 가능해도 denied)해
+    // 배너가 남는다. 실제 어댑터가 켜져 있으면 권한 배너를 띄우지 않는다.
+    // (연결됨은 위에서 이미 처리 · 웹은 kIsWeb 로 provider 미구독)
+    final iosBtOn = !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        (ref.watch(bluetoothOnProvider).valueOrNull ?? false);
+    if (!_permsReady && !iosBtOn) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
