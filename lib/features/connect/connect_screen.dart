@@ -1,7 +1,8 @@
 // Author: eduino
 // 연결 화면 (§5.1): 권한 → 스캔 → 연결. HM-10(BLE) 주력. HC-06 탭은 현재 스코프 미포함.
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,18 +50,31 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     }
     setState(() => _requesting = true);
     try {
-      final statuses = await [
-        Permission.bluetoothScan,
-        Permission.bluetoothConnect,
-        Permission.locationWhenInUse, // Android 11↓ 스캔용 (§3.3)
-      ].request();
-      final ok = statuses[Permission.bluetoothScan]?.isGranted ?? false;
-      final okConnect =
-          statuses[Permission.bluetoothConnect]?.isGranted ?? false;
-      setState(() {
-        _permsReady = ok && okConnect;
-        _error = _permsReady ? null : '블루투스 권한이 필요합니다. 설정에서 허용해 주세요.';
-      });
+      const msg = '블루투스 권한이 필요합니다. 설정에서 허용해 주세요.';
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        // iOS: CBManager 권한(permission_handler 의 bluetooth)만 판정.
+        // bluetoothScan/Connect 는 Android 12+ 전용이라 iOS 에선 항상 미허가로
+        // 잡혀 배너가 오표시된다. 위치 권한도 iOS BLE 엔 불필요 → 요청하지 않음.
+        final st = await Permission.bluetooth.request();
+        setState(() {
+          _permsReady = st.isGranted;
+          _error = _permsReady ? null : msg;
+        });
+      } else {
+        // Android(및 기타): 스캔·연결 런타임 권한 + 위치(11↓ 스캔용).
+        final statuses = await [
+          Permission.bluetoothScan,
+          Permission.bluetoothConnect,
+          Permission.locationWhenInUse, // Android 11↓ 스캔용 (§3.3)
+        ].request();
+        final ok = statuses[Permission.bluetoothScan]?.isGranted ?? false;
+        final okConnect =
+            statuses[Permission.bluetoothConnect]?.isGranted ?? false;
+        setState(() {
+          _permsReady = ok && okConnect;
+          _error = _permsReady ? null : msg;
+        });
+      }
     } finally {
       if (mounted) setState(() => _requesting = false);
     }

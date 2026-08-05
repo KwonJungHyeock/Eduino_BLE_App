@@ -14,6 +14,7 @@ import '../../widgets/kit_pick_card.dart';
 import '../../widgets/responsive.dart';
 import 'kit_curriculum.dart';
 import 'kit_profile.dart';
+import '../../providers/onboarding_providers.dart';
 import '../../widgets/home_button.dart';
 
 class KitSelectScreen extends ConsumerWidget {
@@ -75,9 +76,12 @@ class KitSelectScreen extends ConsumerWidget {
           await ref.read(kitProfileProvider.notifier).select(type);
           if (!context.mounted) return;
           // 강의 커리큘럼이 있으면 학습으로, 없으면(홈 등) 제어판(집 씬) 직행(A1).
-          // 학습 콘텐츠는 추후 강의자료 OCR 로 채워지면 자동 재활성.
+          // 단 이미 학습을 본 키트는 제어판 직행(QA A) — 재열람은 제어판 '수업 안내'.
+          final seen = ref.read(learnSeenProvider).valueOrNull ?? const <String>{};
           final dest =
-              kitCurriculumFor(type) != null ? Routes.kitLearn : Routes.control;
+              (kitCurriculumFor(type) != null && !seen.contains(type.name))
+                  ? Routes.kitLearn
+                  : Routes.control;
           if (context.canPop()) {
             context.pushReplacement(dest);
           } else {
