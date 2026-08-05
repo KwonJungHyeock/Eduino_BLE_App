@@ -15,7 +15,6 @@ import '../../providers/bt_providers.dart';
 import '../../providers/connection_manager.dart';
 import '../../providers/kit_providers.dart';
 import '../../providers/module_providers.dart';
-import '../../providers/onboarding_providers.dart';
 import '../../widgets/brand_mark.dart';
 import '../../widgets/circuit.dart';
 import '../../widgets/dialogs.dart';
@@ -23,7 +22,6 @@ import '../../widgets/double_back_exit.dart';
 import '../../widgets/kit_illustration.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/responsive.dart';
-import '../kit/kit_curriculum.dart';
 import '../kit/kit_profile.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -217,11 +215,8 @@ class _KitGridState extends ConsumerState<_KitGrid> {
       // "소개/준비 중" 중간 페이지 없이 단일 경로(kit_select 와 동일 규칙).
       await ref.read(kitProfileProvider.notifier).select(type);
       if (!mounted) return;
-      // 이미 학습을 본 키트는 제어판 직행(QA A). 재열람은 제어판 '수업 안내'.
-      final seen = ref.read(learnSeenProvider).valueOrNull ?? const <String>{};
-      context.push((kitCurriculumFor(type) != null && !seen.contains(type.name))
-          ? Routes.kitLearn
-          : Routes.control);
+      // 학습(수업 안내) 페이지 제거 — 스마트 교구는 항상 제어판 직행.
+      context.push(Routes.control);
     }
   }
 
