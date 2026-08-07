@@ -203,7 +203,11 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                 ? _needKit(context)
                 : ListView(
                     // B-3 · 마지막 카드가 잘리지 않게 하단 스크롤 여백 확보.
-                    padding: pagePadding(context).copyWith(bottom: 40),
+                    // Android 15+/targetSdk 36 은 edge-to-edge 가 기본이라 내비게이션 바가
+                    // 콘텐츠 위에 겹친다 → 시스템 인셋만큼 더해 마지막 카드 가림을 막는다.
+                    padding: pagePadding(context).copyWith(
+                      bottom: 40 + MediaQuery.viewPaddingOf(context).bottom,
+                    ),
                     children: [
                       _KitHeader(kit: kit),
                       Gap.h16,
