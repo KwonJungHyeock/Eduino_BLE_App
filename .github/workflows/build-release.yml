@@ -1,6 +1,6 @@
 # Author: eduino
 # 스토어 배포용 릴리스 빌드 — 수동 트리거(workflow_dispatch).
-#   Android: AAB(--release) + 업로드 키스토어 서명(secret) + 난독화 심볼. targetSdk 35.
+#   Android: AAB(--release) + 업로드 키스토어 서명(secret) + 난독화 심볼. targetSdk 36.
 #   iOS: 릴리스 컴파일 검증(--no-codesign). 서명 ipa 는 Apple 인증서 필요(문서 RELEASE.md 참조).
 # platform 폴더(android/·ios/)는 저장소에 없으므로 CI 에서 flutter create 로 생성 후 패치.
 #
@@ -14,10 +14,6 @@ name: Build Release
 
 on:
   workflow_dispatch:
-  # 임시 트리거(targetSdk 36 검증 빌드) — 실행 후 제거.
-  push:
-    branches: [claude/new-session-jnm6sg]
-    paths: ['.github/workflows/build-release.yml']
 
 jobs:
   android-aab:
@@ -48,7 +44,7 @@ jobs:
       - name: Patch HC-06 SPP plugin (AGP 8 namespace)
         run: python3 tool/patch_spp_plugin.py
 
-      - name: Patch gradle for release (SDK 35 + signing)
+      - name: Patch gradle for release (SDK 36 + signing)
         run: python3 tool/patch_release_gradle.py
 
       - name: Show patched build.gradle.kts (debug)
@@ -128,7 +124,7 @@ jobs:
           tag_name: release-latest
           name: EDUINO 서명 릴리스 APK (최신)
           body: |
-            업로드 키로 서명된 release APK (minify/proguard, targetSdk 35, 오프라인).
+            업로드 키로 서명된 release APK (minify/proguard, targetSdk 36, 오프라인).
             아래 app-release.apk 를 받아 설치하세요 (출처 알 수 없는 앱 허용 필요).
           files: build/app/outputs/flutter-apk/app-release.apk
           make_latest: "false"
