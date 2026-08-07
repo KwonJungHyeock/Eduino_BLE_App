@@ -49,19 +49,19 @@ def patch_build_gradle(plugin_dir: str) -> None:
             print("[patch_spp] 'android {' block not found", file=sys.stderr)
             return
 
-    # 2) compileSdk 강제 상향(35) — 구 플러그인이 낮은 SDK 로 컴파일되면
+    # 2) compileSdk 강제 상향(36) — 구 플러그인이 낮은 SDK 로 컴파일되면
     #    릴리스 리소스 링크 시 'android:attr/lStar not found'(API31+ 속성) 로 실패한다.
     if re.search(r"compileSdkVersion\s+\d+", text):
-        text = re.sub(r"compileSdkVersion\s+\d+", "compileSdkVersion 35", text)
+        text = re.sub(r"compileSdkVersion\s+\d+", "compileSdkVersion 36", text)
     elif re.search(r"compileSdk\s+\d+", text):
-        text = re.sub(r"compileSdk\s+\d+", "compileSdk 35", text)
+        text = re.sub(r"compileSdk\s+\d+", "compileSdk 36", text)
     else:
-        text = re.sub(r"(android\s*\{)", r"\1\n    compileSdkVersion 35",
+        text = re.sub(r"(android\s*\{)", r"\1\n    compileSdkVersion 36",
                       text, count=1)
 
     if text != orig:
         open(path, "w", encoding="utf-8").write(text)
-        print("[patch_spp] build.gradle patched (namespace + compileSdk 35)")
+        print("[patch_spp] build.gradle patched (namespace + compileSdk 36)")
     else:
         print("[patch_spp] build.gradle already up to date")
 

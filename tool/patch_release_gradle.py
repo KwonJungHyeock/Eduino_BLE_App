@@ -2,7 +2,7 @@
 # Author: eduino
 # flutter create 로 생성된 android/app/build.gradle.kts 를 릴리스 배포용으로 패치한다.
 #   · applicationId = kr.eduino.ble (스토어 패키지명 고정)
-#   · compileSdk / targetSdk = 35 (2026 Play 필수), minSdk = 23 (BLE 권장)
+#   · compileSdk / targetSdk = 36 (2026-08 Play 업데이트 필수 · Android 16), minSdk = 23 (BLE 권장)
 #   · release: minifyEnabled=true, shrinkResources=true, debuggable=false + proguard-rules.pro
 #   · 업로드 키스토어 서명(key.properties 존재 시). 없으면 debug 서명으로 폴백(파이프라인 검증용).
 # R8 minify keep 규칙은 proguard-rules.pro 로 함께 기록(BLE/권한/센서/음성 플러그인 보존). 멱등.
@@ -78,9 +78,9 @@ def patch_kts(t: str) -> str:
     t = re.sub(r'applicationId\s*=\s*"[^"]*"',
                'applicationId = "kr.eduino.ble"', t, count=1)
     # SDK 버전 상향(Flutter 관리값 → 고정값).
-    t = re.sub(r"compileSdk\s*=\s*flutter\.compileSdkVersion", "compileSdk = 35", t)
+    t = re.sub(r"compileSdk\s*=\s*flutter\.compileSdkVersion", "compileSdk = 36", t)
     t = re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = 23", t)
-    t = re.sub(r"targetSdk\s*=\s*flutter\.targetSdkVersion", "targetSdk = 35", t)
+    t = re.sub(r"targetSdk\s*=\s*flutter\.targetSdkVersion", "targetSdk = 36", t)
     # signingConfigs 블록을 android { 바로 다음에 주입.
     t = re.sub(r"(\nandroid\s*\{\n)", r"\1" + SIGNING, t, count=1)
     # buildTypes 의 release 블록 전체를 릴리스 서명+minify 로 교체.
@@ -110,7 +110,7 @@ def main() -> int:
         Path("android/app/proguard-rules.pro").write_text(
             PROGUARD_RULES, encoding="utf-8")
         print("[patch_release_gradle] patched build.gradle.kts "
-              "(applicationId kr.eduino.ble, compile/target 35, minSdk 23, "
+              "(applicationId kr.eduino.ble, compile/target 36, minSdk 23, "
               "minify+shrink, signing) + proguard-rules.pro")
         return 0
     if GROOVY.exists():
