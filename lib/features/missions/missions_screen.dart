@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../app/theme.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/surface_card.dart';
+import '../../widgets/orientation_fill.dart';
 
 class MissionsScreen extends ConsumerStatefulWidget {
   const MissionsScreen({super.key});
@@ -104,7 +105,7 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(Gap.md),
-        child: Column(
+        child: OrientationFillColumn(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 챌린지 선택

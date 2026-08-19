@@ -12,6 +12,7 @@ import '../../core/protocol/commands.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../widgets/surface_card.dart';
+import '../../widgets/orientation_fill.dart';
 
 class VoiceScreen extends ConsumerStatefulWidget {
   const VoiceScreen({super.key});
@@ -122,7 +123,7 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(Gap.md),
-        child: Column(
+        child: OrientationFillColumn(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SurfaceCard(

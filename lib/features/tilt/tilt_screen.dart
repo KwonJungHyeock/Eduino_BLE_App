@@ -36,8 +36,19 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
   DriveCmd _cmd = DriveCmd.stop;
 
   @override
+  void initState() {
+    super.initState();
+    // 03-9 (C) · 이 화면만 세로 고정. 가로에서는 가속도계 x/y 축이 바뀌는데
+    // 좌/우 어느 쪽으로 눕혔는지는 프레임워크가 구분해 주지 않아(네이티브 4방향 필요)
+    // 조향이 반대로 나갈 위험이 있다 → 주행 안전 우선으로 세로만 허용.
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  }
+
+  @override
   void dispose() {
     _sub?.cancel();
+    // 화면을 벗어나면 전체 방향 복원(다른 화면은 가로 지원 유지).
+    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     super.dispose();
   }
 
@@ -146,8 +157,15 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
     final connected = ref.watch(connectionProvider).isConnected;
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(Gap.md),
+      // 03-9 · 스크롤 부재로 하단(캘리브레이션 버튼·안내문)이 잘리던 문제 수정.
+      // 콘텐츠가 화면보다 길면 스크롤되고, 하단 인셋(iOS 홈 인디케이터)만큼 여백을 둔다.
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          Gap.md,
+          Gap.md,
+          Gap.md,
+          Gap.md + MediaQuery.viewPaddingOf(context).bottom,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -224,7 +242,8 @@ class _TiltScreenState extends ConsumerState<TiltScreen> {
                 ],
               ),
             ),
-            const Spacer(),
+            // 스크롤 안에서는 높이가 무한이라 Spacer 사용 불가 → 고정 갭.
+            Gap.h24,
             OutlinedButton.icon(
               onPressed: _calibrate,
               style: OutlinedButton.styleFrom(

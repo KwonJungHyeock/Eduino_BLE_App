@@ -9,6 +9,7 @@ import '../../app/theme.dart';
 import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../providers/rc_config_providers.dart';
+import '../../widgets/orientation_fill.dart';
 
 class LedScreen extends ConsumerStatefulWidget {
   const LedScreen({super.key});
@@ -49,7 +50,7 @@ class _LedScreenState extends ConsumerState<LedScreen> {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(Gap.lg),
-        child: Column(
+        child: OrientationFillColumn(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Spacer(),

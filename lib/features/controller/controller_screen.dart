@@ -12,6 +12,7 @@ import '../../providers/bt_providers.dart';
 import '../../providers/car_controller.dart';
 import '../../widgets/drive_cmd_display.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/orientation_fill.dart';
 
 class ControllerScreen extends ConsumerStatefulWidget {
   const ControllerScreen({super.key});
@@ -40,7 +41,7 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(Gap.md),
-        child: Column(
+        child: OrientationFillColumn(
           children: [
             RiseIn(child: DriveCmdDisplay(cmd: _cmd)),
             const Spacer(),
