@@ -88,6 +88,20 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     }
   }
 
+  /// 03-9 · Living Twin 씬(AspectRatio 1.9~2.0) 높이 상한.
+  /// 가로에서는 폭이 넓어져 씬 높이(=폭/비율)가 화면을 넘어서므로 뷰포트 비율로 제한한다.
+  /// 세로에서는 기존 트리를 그대로 반환 → 세로 레이아웃 회귀 없음.
+  Widget _scene(BuildContext context, Widget child) {
+    final size = MediaQuery.sizeOf(context);
+    if (size.width <= size.height) return child;
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: size.height * 0.55),
+        child: child,
+      ),
+    );
+  }
+
   void _send(String display, VoidCallback action) {
     HapticFeedback.selectionClick();
     action();
@@ -213,7 +227,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                       Gap.h16,
                       // Living Twin — 씬 + (미연결 시) 씬 바로 아래 연결 CTA 1곳 통일(C-2).
                       if (isFarm) ...[
-                        LivingGreenhouse(state: gh),
+                        _scene(context, LivingGreenhouse(state: gh)),
                         Gap.h12,
                         if (!connected) ...[
                           ConnectCtaBanner(
@@ -234,7 +248,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                         Gap.h4,
                       ],
                       if (isHome) ...[
-                        LivingHouse(state: house),
+                        _scene(context, LivingHouse(state: house)),
                         Gap.h12,
                         if (!connected) ...[
                           ConnectCtaBanner(
@@ -246,7 +260,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                         Gap.h4,
                       ],
                       if (isFactory) ...[
-                        LivingFactory(state: factory),
+                        _scene(context, LivingFactory(state: factory)),
                         Gap.h12,
                         if (!connected) ...[
                           ConnectCtaBanner(
